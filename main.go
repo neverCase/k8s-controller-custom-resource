@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"path/filepath"
 	"time"
 
 	"github.com/golang/glog"
@@ -12,7 +13,9 @@ import (
 
 	clientset "github.com/nevercase/k8s-controller-custom-resource/pkg/client/clientset/versioned"
 	informers "github.com/nevercase/k8s-controller-custom-resource/pkg/client/informers/externalversions"
+	crd "github.com/nevercase/k8s-controller-custom-resource/pkg/controller"
 	"github.com/nevercase/k8s-controller-custom-resource/pkg/signals"
+	"k8s.io/client-go/util/homedir"
 )
 
 var (
@@ -43,8 +46,7 @@ func main() {
 
 	networkInformerFactory := informers.NewSharedInformerFactory(networkClient, time.Second*30)
 
-	controller := NewController(kubeClient, networkClient,
-		networkInformerFactory.Samplecrd().V1().Networks())
+	controller := crd.NewController(kubeClient, networkClient, networkInformerFactory.Samplecrd().V1().Networks())
 
 	go networkInformerFactory.Start(stopCh)
 
@@ -54,6 +56,7 @@ func main() {
 }
 
 func init() {
-	flag.StringVar(&kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required if out-of-cluster.")
+	home := homedir.HomeDir()
+	flag.StringVar(&kubeconfig, "kubeconfig",  filepath.Join(home, ".kube", "config"), "Path to a kubeconfig. Only required if out-of-cluster.")
 	flag.StringVar(&masterURL, "master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
 }
