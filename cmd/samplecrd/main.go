@@ -13,7 +13,7 @@ import (
 
 	clientset "github.com/nevercase/k8s-controller-custom-resource/pkg/client/clientset/versioned"
 	informers "github.com/nevercase/k8s-controller-custom-resource/pkg/client/informers/externalversions"
-	crd "github.com/nevercase/k8s-controller-custom-resource/pkg/controller"
+	crd "github.com/nevercase/k8s-controller-custom-resource/pkg/controller/samplecrd"
 	"github.com/nevercase/k8s-controller-custom-resource/pkg/signals"
 	"k8s.io/client-go/util/homedir"
 )
