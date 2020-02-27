@@ -1,0 +1,5 @@
+apiVersion: redis.redis-operator/v1
+kind: Redis
+metadata:
+  name: example-redis
+spec:
