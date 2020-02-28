@@ -8,7 +8,7 @@ import (
 // +genclient:noStatus
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// Redis describes a Redis resource
+// Redis describes a RedisOperator resource
 type RedisOperator struct {
 	// TypeMeta is the metadata for the resource, like kind and apiversion
 	metav1.TypeMeta `json:",inline"`
@@ -27,21 +27,34 @@ type RedisOperator struct {
 	Status RedisOperatorStatus `json:"status"`
 }
 
-// RedisSpec is the spec for a Network resource
+// RedisSpec is the spec for a RedisOperator resource
 type RedisOperatorSpec struct {
-	DeploymentName string `json:"deploymentName"`
-	MasterReplicas *int32 `json:"master_replicas"`
-	SlaveReplicas  *int32 `json:"slave_replicas"`
+	MasterSpec RedisDeploymentSpec `json:"master_spec"`
+	SlaveSpec  RedisDeploymentSpec `json:"slave_spec"`
 }
 
-// RedisStatus is the status for a Redis resource
+// RedisDeploymentSpec is the sub spec for a RedisOperator resource
+type RedisDeploymentSpec struct {
+	DeploymentName   string `json:"deploymentName"`
+	Replicas         *int32 `json:"replicas"`
+	Image            string `json:"image"`
+	ImagePullSecrets string `json:"imagePullSecrets"`
+}
+
+// RedisOperatorStatus is the status for a RedisOperator resource
 type RedisOperatorStatus struct {
+	MasterStatus RedisDeploymentStatus `json:"master_status"`
+	SlaveStatus  RedisDeploymentStatus `json:"slave_status"`
+}
+
+// RedisDeploymentStatus is the sub status for a RedisOperator resource
+type RedisDeploymentStatus struct {
 	AvailableReplicas int32 `json:"availableReplicas"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// RedisList is a list of Redis resources
+// RedisList is a list of RedisOperator resources
 type RedisOperatorList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata"`

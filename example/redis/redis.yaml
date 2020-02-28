@@ -1,11 +1,11 @@
-apiVersion: apiextensions.k8s.io/v1beta1
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: redis.redis-operator
+  name: redisoperators.redisoperator.nevercase.io
 spec:
-  group: redis-operator
+  group: redisoperator.nevercase.io
   version: v1
   names:
-    kind: Redis
-    plural: redis
+    kind: RedisOperator
+    plural: redisoperators
   scope: Namespaced
