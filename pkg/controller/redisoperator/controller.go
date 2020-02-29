@@ -263,73 +263,21 @@ func (c *Controller) syncHandler(key string) error {
 			utilruntime.HandleError(fmt.Errorf("redisOperator '%s' in work queue no longer exists", key))
 			return nil
 		}
-
 		return err
 	}
 
+	// Create the Deployment of master with MasterSpec
 	err = c.createRedisDeploymentAndService(foo, name, key, true)
 	if err != nil {
-		return nil
+		return err
 	}
 
+	// Create the Deployment of slave with SlaveSpec
 	err = c.createRedisDeploymentAndService(foo, name, key, false)
 	if err != nil {
-		// todo remove Master deployment and service
-		return nil
+		// todo remove Master's deployment and service
+		return err
 	}
-
-	//deploymentName := foo.Spec.DeploymentName
-	//if deploymentName == "" {
-	//	// We choose to absorb the error here as the worker would requeue the
-	//	// resource otherwise. Instead, the next time the resource is updated
-	//	// the resource will be queued again.
-	//	utilruntime.HandleError(fmt.Errorf("%s: deployment name must be specified", key))
-	//	return nil
-	//}
-	//
-	//// Get the deployment with the name specified in Foo.spec
-	//deployment, err := c.deploymentsLister.Deployments(foo.Namespace).Get(deploymentName)
-	//// If the resource doesn't exist, we'll create it
-	//if errors.IsNotFound(err) {
-	//	deployment, err = c.kubeclientset.AppsV1().Deployments(foo.Namespace).Create(newDeployment(foo))
-	//}
-	//
-	//// If an error occurs during Get/Create, we'll requeue the item so we can
-	//// attempt processing again later. This could have been caused by a
-	//// temporary network failure, or any other transient reason.
-	//if err != nil {
-	//	return err
-	//}
-	//
-	//// If the Deployment is not controlled by this RedisOperator resource, we should log
-	//// a warning to the event recorder and return error msg.
-	//if !metav1.IsControlledBy(deployment, foo) {
-	//	msg := fmt.Sprintf(MessageResourceExists, deployment.Name)
-	//	c.recorder.Event(foo, corev1.EventTypeWarning, ErrResourceExists, msg)
-	//	return fmt.Errorf(msg)
-	//}
-	//
-	//// If this number of the replicas on the RedisOperator resource is specified, and the
-	//// number does not equal the current desired replicas on the Deployment, we
-	//// should update the Deployment resource.
-	//if foo.Spec.MasterReplicas != nil && *foo.Spec.MasterReplicas != *deployment.Spec.Replicas {
-	//	klog.V(4).Infof("Foo %s replicas: %d, deployment replicas: %d", name, *foo.Spec.MasterReplicas, *deployment.Spec.Replicas)
-	//	deployment, err = c.kubeclientset.AppsV1().Deployments(foo.Namespace).Update(newDeployment(foo))
-	//}
-	//
-	//// If an error occurs during Update, we'll requeue the item so we can
-	//// attempt processing again later. THis could have been caused by a
-	//// temporary network failure, or any other transient reason.
-	//if err != nil {
-	//	return err
-	//}
-	//
-	//// Finally, we update the status block of the RedisOperator resource to reflect the
-	//// current state of the world
-	//err = c.updateFooStatus(foo, deployment)
-	//if err != nil {
-	//	return err
-	//}
 
 	c.recorder.Event(foo, corev1.EventTypeNormal, SuccessSynced, MessageResourceSynced)
 	return nil
@@ -338,7 +286,7 @@ func (c *Controller) syncHandler(key string) error {
 func (c *Controller) createRedisDeploymentAndService(foo *redisoperatorv1.RedisOperator, name, key string, isMaster bool) error {
 	deploymentName := foo.Spec.MasterSpec.DeploymentName
 	if isMaster == false {
-		deploymentName = fmt.Sprintf("%s-slave:", foo.Spec.SlaveSpec.DeploymentName)
+		deploymentName = fmt.Sprintf("%s-slave", foo.Spec.SlaveSpec.DeploymentName)
 	}
 	if deploymentName == "" {
 		// We choose to absorb the error here as the worker would requeue the
@@ -520,7 +468,7 @@ func newDeployment(foo *redisoperatorv1.RedisOperator, isMaster bool) *appsv1.De
 	}
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-slave:", foo.Spec.SlaveSpec.DeploymentName),
+			Name:      fmt.Sprintf("%s-slave", foo.Spec.SlaveSpec.DeploymentName),
 			Namespace: foo.Namespace,
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(foo, redisoperatorv1.SchemeGroupVersion.WithKind("RedisOperator")),

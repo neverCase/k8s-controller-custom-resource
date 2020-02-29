@@ -1,4 +1,4 @@
-apiVersion: redis.redis-operator/v1
+apiVersion: redisoperator.nevercase.io/v1
 kind: RedisOperator
 metadata:
   name: example-redis
