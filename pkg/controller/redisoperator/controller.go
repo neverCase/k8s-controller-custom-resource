@@ -18,6 +18,7 @@ package redisoperator
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -45,7 +46,7 @@ import (
 	listers "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/listers/redisoperator/v1"
 )
 
-const controllerAgentName = "sample-controller"
+const controllerAgentName = "redis-operator-controller"
 
 const (
 	// SuccessSynced is used as part of the Event 'reason' when a Foo is synced
@@ -60,6 +61,18 @@ const (
 	// MessageResourceSynced is the message used for an Event fired when a Foo
 	// is synced successfully
 	MessageResourceSynced = "Foo synced successfully"
+)
+
+const (
+	RedisDefaultPort = 6379
+)
+
+const (
+	DeploymentNameTemplate = "deployment-%s-%s"
+	ServiceNameTemplate    = "service-%s-%s"
+	ContainerNameTemplate  = "container-%s-%s"
+	MasterName             = "master"
+	SlaveName              = "slave"
 )
 
 // Controller is the controller implementation for RedisOperator resources
@@ -284,30 +297,40 @@ func (c *Controller) syncHandler(key string) error {
 }
 
 func (c *Controller) createRedisDeploymentAndService(foo *redisoperatorv1.RedisOperator, name, key string, isMaster bool) error {
-	deploymentName := foo.Spec.MasterSpec.DeploymentName
-	if isMaster == false {
-		deploymentName = fmt.Sprintf("%s-slave", foo.Spec.SlaveSpec.DeploymentName)
-	}
-	if deploymentName == "" {
-		// We choose to absorb the error here as the worker would requeue the
-		// resource otherwise. Instead, the next time the resource is updated
-		// the resource will be queued again.
-		utilruntime.HandleError(fmt.Errorf("%s: deployment name must be specified", key))
-		return nil
+	var deploymentName, serviceName string
+	if isMaster == true {
+		if foo.Spec.MasterSpec.DeploymentName == "" {
+			// We choose to absorb the error here as the worker would requeue the
+			// resource otherwise. Instead, the next time the resource is updated
+			// the resource will be queued again.
+			utilruntime.HandleError(fmt.Errorf("%s: MasterSpec DeploymentName must be specified", key))
+			return nil
+		}
+		deploymentName = fmt.Sprintf(DeploymentNameTemplate, foo.Spec.MasterSpec.DeploymentName, MasterName)
+		serviceName = fmt.Sprintf(ServiceNameTemplate, foo.Spec.MasterSpec.DeploymentName, MasterName)
+	} else {
+		if foo.Spec.SlaveSpec.DeploymentName == "" {
+			// We choose to absorb the error here as the worker would requeue the
+			// resource otherwise. Instead, the next time the resource is updated
+			// the resource will be queued again.
+			utilruntime.HandleError(fmt.Errorf("%s: SlaveSpec DeploymentName must be specified", key))
+			return nil
+		}
+		deploymentName = fmt.Sprintf(DeploymentNameTemplate, foo.Spec.SlaveSpec.DeploymentName, SlaveName)
+		serviceName = fmt.Sprintf(ServiceNameTemplate, foo.Spec.SlaveSpec.DeploymentName, SlaveName)
 	}
 
-	// Get the deployment with the name specified in Foo.spec
+	// Get the deployment with the name specified in RedisOperator.spec
 	deployment, err := c.deploymentsLister.Deployments(foo.Namespace).Get(deploymentName)
 	// If the resource doesn't exist, we'll create it
 	if errors.IsNotFound(err) {
 		deployment, err = c.kubeclientset.AppsV1().Deployments(foo.Namespace).Create(newDeployment(foo, isMaster))
-	}
-
-	// If an error occurs during Get/Create, we'll requeue the item so we can
-	// attempt processing again later. This could have been caused by a
-	// temporary network failure, or any other transient reason.
-	if err != nil {
-		return err
+		// If an error occurs during Get/Create, we'll requeue the item so we can
+		// attempt processing again later. This could have been caused by a
+		// temporary network failure, or any other transient reason.
+		if err != nil {
+			return err
+		}
 	}
 
 	// If the Deployment is not controlled by this RedisOperator resource, we should log
@@ -318,28 +341,52 @@ func (c *Controller) createRedisDeploymentAndService(foo *redisoperatorv1.RedisO
 		return fmt.Errorf(msg)
 	}
 
+	// Get the service with the name specified in RedisOperator.spec
+	service, err := c.servicesLister.Services(foo.Namespace).Get(serviceName)
+	// If the resource doesn't exist, we'll create it
+	if errors.IsNotFound(err) {
+		service, err = c.kubeclientset.CoreV1().Services(foo.Namespace).Create(newService(foo, isMaster))
+		// If an error occurs during Get/Create, we'll requeue the item so we can
+		// attempt processing again later. This could have been caused by a
+		// temporary network failure, or any other transient reason.
+		if err != nil {
+			return err
+		}
+	}
+
+	// If the Service is not controlled by this RedisOperator resource, we should log
+	// a warning to the event recorder and return error msg.
+	if !metav1.IsControlledBy(service, foo) {
+		msg := fmt.Sprintf(MessageResourceExists, deployment.Name)
+		c.recorder.Event(foo, corev1.EventTypeWarning, ErrResourceExists, msg)
+		return fmt.Errorf(msg)
+	}
+
 	// If this number of the replicas on the RedisOperator resource is specified, and the
 	// number does not equal the current desired replicas on the Deployment, we
 	// should update the Deployment resource.
+	var match = true
 	if isMaster == true {
 		if foo.Spec.MasterSpec.Replicas != nil && *foo.Spec.MasterSpec.Replicas != *deployment.Spec.Replicas {
 			klog.V(4).Infof("MasterSpec %s replicas: %d, deployment replicas: %d", name, *foo.Spec.MasterSpec.Replicas, *deployment.Spec.Replicas)
-			deployment, err = c.kubeclientset.AppsV1().Deployments(foo.Namespace).Update(newDeployment(foo, isMaster))
+			match = false
 		}
-		// todo create service
 	} else {
 		if foo.Spec.SlaveSpec.Replicas != nil && *foo.Spec.SlaveSpec.Replicas != *deployment.Spec.Replicas {
 			klog.V(4).Infof("SlaveSpec %s replicas: %d, deployment replicas: %d", name, *foo.Spec.SlaveSpec.Replicas, *deployment.Spec.Replicas)
-			deployment, err = c.kubeclientset.AppsV1().Deployments(foo.Namespace).Update(newDeployment(foo, isMaster))
+			match = false
 		}
-		// todo create service
 	}
-
-	// If an error occurs during Update, we'll requeue the item so we can
-	// attempt processing again later. THis could have been caused by a
-	// temporary network failure, or any other transient reason.
-	if err != nil {
-		return err
+	if match == false {
+		// If an error occurs during Update, we'll requeue the item so we can
+		// attempt processing again later. THis could have been caused by a
+		// temporary network failure, or any other transient reason.
+		if deployment, err = c.kubeclientset.AppsV1().Deployments(foo.Namespace).Update(newDeployment(foo, isMaster)); err != nil {
+			return err
+		}
+		if service, err = c.kubeclientset.CoreV1().Services(foo.Namespace).Update(newService(foo, isMaster)); err != nil {
+			return err
+		}
 	}
 
 	// Finally, we update the status block of the RedisOperator resource to reflect the
@@ -362,7 +409,7 @@ func (c *Controller) updateFooStatus(foo *redisoperatorv1.RedisOperator, deploym
 	} else {
 		fooCopy.Status.SlaveStatus.AvailableReplicas = deployment.Status.AvailableReplicas
 	}
-	// If the CustomResourceSubresources feature gate is not enabled,
+	// If the CustomResourceSubResources feature gate is not enabled,
 	// we must use Update instead of UpdateStatus to update the Status block of the RedisOperator resource.
 	// UpdateStatus will not allow changes to the Spec of the resource,
 	// which is ideal for ensuring nothing other than resource status has been updated.
@@ -425,16 +472,18 @@ func (c *Controller) handleObject(obj interface{}) {
 
 // newDeployment creates a new Deployment for a RedisOperator resource. It also sets
 // the appropriate OwnerReferences on the resource so handleObject can discover
-// the RedisOperator resource that 'owns' it.
+// the RedisOperator resource that 'owns' it, and sets the deploymentName with the
+// suffix of `master` or `slave`.
 func newDeployment(foo *redisoperatorv1.RedisOperator, isMaster bool) *appsv1.Deployment {
 	labels := map[string]string{
-		"app":        "redis-test",
+		"app":        "redis-operator",
 		"controller": foo.Name,
+		"role":       MasterName,
 	}
 	if isMaster == true {
 		return &appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      foo.Spec.MasterSpec.DeploymentName,
+				Name:      fmt.Sprintf(DeploymentNameTemplate, foo.Spec.MasterSpec.DeploymentName, MasterName),
 				Namespace: foo.Namespace,
 				OwnerReferences: []metav1.OwnerReference{
 					*metav1.NewControllerRef(foo, redisoperatorv1.SchemeGroupVersion.WithKind("RedisOperator")),
@@ -452,11 +501,11 @@ func newDeployment(foo *redisoperatorv1.RedisOperator, isMaster bool) *appsv1.De
 					Spec: corev1.PodSpec{
 						Containers: []corev1.Container{
 							{
-								Name:  "redis-test",
+								Name:  fmt.Sprintf(ContainerNameTemplate, foo.Spec.MasterSpec.DeploymentName, MasterName),
 								Image: foo.Spec.MasterSpec.Image,
 								Ports: []corev1.ContainerPort{
 									{
-										ContainerPort: 6379,
+										ContainerPort: RedisDefaultPort,
 									},
 								},
 							},
@@ -466,9 +515,10 @@ func newDeployment(foo *redisoperatorv1.RedisOperator, isMaster bool) *appsv1.De
 			},
 		}
 	}
+	labels["role"] = SlaveName
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-slave", foo.Spec.SlaveSpec.DeploymentName),
+			Name:      fmt.Sprintf(DeploymentNameTemplate, foo.Spec.SlaveSpec.DeploymentName, SlaveName),
 			Namespace: foo.Namespace,
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(foo, redisoperatorv1.SchemeGroupVersion.WithKind("RedisOperator")),
@@ -486,7 +536,7 @@ func newDeployment(foo *redisoperatorv1.RedisOperator, isMaster bool) *appsv1.De
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name:  "redis-test",
+							Name:  fmt.Sprintf(ContainerNameTemplate, foo.Spec.SlaveSpec.DeploymentName, SlaveName),
 							Image: foo.Spec.SlaveSpec.Image,
 							Ports: []corev1.ContainerPort{
 								{
@@ -500,11 +550,11 @@ func newDeployment(foo *redisoperatorv1.RedisOperator, isMaster bool) *appsv1.De
 								},
 								{
 									Name:  "ENV_REDIS_MASTER",
-									Value: foo.Spec.MasterSpec.DeploymentName,
+									Value: fmt.Sprintf(ServiceNameTemplate, foo.Spec.MasterSpec.DeploymentName, MasterName),
 								},
 								{
 									Name:  "ENV_REDIS_MASTER_PORT",
-									Value: "6379",
+									Value: strconv.Itoa(RedisDefaultPort),
 								},
 							},
 						},
@@ -520,6 +570,38 @@ func newDeployment(foo *redisoperatorv1.RedisOperator, isMaster bool) *appsv1.De
 	}
 }
 
-func newService(ro *redisoperatorv1.RedisOperator) *corev1.Service {
-	return &corev1.Service{}
+// newService creates a new Service for a RedisOperator resource. It also sets
+// the appropriate OwnerReferences on the resource so handleObject can discover
+// the RedisOperator resource that 'owns' it.
+func newService(foo *redisoperatorv1.RedisOperator, isMaster bool) *corev1.Service {
+	var serviceName string
+	var labels = map[string]string{
+		"app":        "redis-operator",
+		"controller": foo.Name,
+		"role":       MasterName,
+	}
+	if isMaster == true {
+		serviceName = fmt.Sprintf(ServiceNameTemplate, foo.Spec.MasterSpec.DeploymentName, MasterName)
+	} else {
+		labels["role"] = SlaveName
+		serviceName = fmt.Sprintf(ServiceNameTemplate, foo.Spec.MasterSpec.DeploymentName, SlaveName)
+	}
+	return &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      serviceName,
+			Namespace: foo.Namespace,
+			OwnerReferences: []metav1.OwnerReference{
+				*metav1.NewControllerRef(foo, redisoperatorv1.SchemeGroupVersion.WithKind("RedisOperator")),
+			},
+			Labels: labels,
+		},
+		Spec: corev1.ServiceSpec{
+			Ports: []corev1.ServicePort{
+				{
+					Port: RedisDefaultPort,
+				},
+			},
+			Selector: labels,
+		},
+	}
 }
