@@ -19,11 +19,13 @@ package redisoperator
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	resource "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -70,6 +72,7 @@ const (
 const (
 	DeploymentNameTemplate = "deployment-%s-%s"
 	ServiceNameTemplate    = "service-%s-%s"
+	PVCNameTemplate        = "pvc-%s-%s"
 	ContainerNameTemplate  = "container-%s-%s"
 	MasterName             = "master"
 	SlaveName              = "slave"
@@ -84,6 +87,8 @@ type Controller struct {
 
 	deploymentsLister   appslistersv1.DeploymentLister
 	deploymentsSynced   cache.InformerSynced
+	pvcLister           corelistersv1.PersistentVolumeClaimLister
+	pvcSynced           cache.InformerSynced
 	servicesLister      corelistersv1.ServiceLister
 	servicesSynced      cache.InformerSynced
 	redisOperatorLister listers.RedisOperatorLister
@@ -106,6 +111,7 @@ func NewController(
 	sampleclientset clientset.Interface,
 	deploymentInformer appsinformersv1.DeploymentInformer,
 	serviceInformer coreinformersv1.ServiceInformer,
+	pvcInformer coreinformersv1.PersistentVolumeClaimInformer,
 	fooInformer informers.RedisOperatorInformer) *Controller {
 
 	// Create event broadcaster
@@ -123,6 +129,8 @@ func NewController(
 		sampleclientset:     sampleclientset,
 		deploymentsLister:   deploymentInformer.Lister(),
 		deploymentsSynced:   deploymentInformer.Informer().HasSynced,
+		pvcLister:           pvcInformer.Lister(),
+		pvcSynced:           pvcInformer.Informer().HasSynced,
 		servicesLister:      serviceInformer.Lister(),
 		servicesSynced:      serviceInformer.Informer().HasSynced,
 		redisOperatorLister: fooInformer.Lister(),
@@ -151,6 +159,36 @@ func NewController(
 			newDepl := new.(*appsv1.Deployment)
 			oldDepl := old.(*appsv1.Deployment)
 			if newDepl.ResourceVersion == oldDepl.ResourceVersion {
+				// Periodic resync will send update events for all known Deployments.
+				// Two different versions of the same Deployment will always have different RVs.
+				return
+			}
+			controller.handleObject(new)
+		},
+		DeleteFunc: controller.handleObject,
+	})
+
+	serviceInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: controller.handleObject,
+		UpdateFunc: func(old, new interface{}) {
+			newSvc := new.(*corev1.Service)
+			oldSvc := old.(*corev1.Service)
+			if newSvc.ResourceVersion == oldSvc.ResourceVersion {
+				// Periodic resync will send update events for all known Deployments.
+				// Two different versions of the same Deployment will always have different RVs.
+				return
+			}
+			controller.handleObject(new)
+		},
+		DeleteFunc: controller.handleObject,
+	})
+
+	pvcInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: controller.handleObject,
+		UpdateFunc: func(old, new interface{}) {
+			newPvc := new.(*corev1.PersistentVolumeClaim)
+			oldPvc := old.(*corev1.PersistentVolumeClaim)
+			if newPvc.ResourceVersion == oldPvc.ResourceVersion {
 				// Periodic resync will send update events for all known Deployments.
 				// Two different versions of the same Deployment will always have different RVs.
 				return
@@ -470,6 +508,34 @@ func (c *Controller) handleObject(obj interface{}) {
 	}
 }
 
+func newPvc(foo *redisoperatorv1.RedisOperator) *corev1.PersistentVolumeClaim {
+	name := "manual"
+	quantity, err := resource.ParseQuantity(strings.TrimSpace("1Gi"))
+	if err != nil {
+		klog.V(2).Info(err)
+	}
+	return &corev1.PersistentVolumeClaim{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fmt.Sprintf(PVCNameTemplate, foo.Spec.MasterSpec.DeploymentName, MasterName),
+			Namespace: foo.Namespace,
+			OwnerReferences: []metav1.OwnerReference{
+				*metav1.NewControllerRef(foo, redisoperatorv1.SchemeGroupVersion.WithKind("RedisOperator")),
+			},
+		},
+		Spec: corev1.PersistentVolumeClaimSpec{
+			StorageClassName: &name,
+			AccessModes: []corev1.PersistentVolumeAccessMode{
+				corev1.ReadWriteOnce,
+			},
+			Resources: corev1.ResourceRequirements{
+				Requests: corev1.ResourceList{
+					corev1.ResourceStorage: quantity,
+				},
+			},
+		},
+	}
+}
+
 // newDeployment creates a new Deployment for a RedisOperator resource. It also sets
 // the appropriate OwnerReferences on the resource so handleObject can discover
 // the RedisOperator resource that 'owns' it, and sets the deploymentName with the
@@ -499,6 +565,16 @@ func newDeployment(foo *redisoperatorv1.RedisOperator, isMaster bool) *appsv1.De
 						Labels: labels,
 					},
 					Spec: corev1.PodSpec{
+						Volumes: []corev1.Volume{
+							{
+								Name: "name1",
+								VolumeSource: corev1.VolumeSource{
+									PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+										ClaimName: "",
+									},
+								},
+							},
+						},
 						Containers: []corev1.Container{
 							{
 								Name:  fmt.Sprintf(ContainerNameTemplate, foo.Spec.MasterSpec.DeploymentName, MasterName),
@@ -506,6 +582,12 @@ func newDeployment(foo *redisoperatorv1.RedisOperator, isMaster bool) *appsv1.De
 								Ports: []corev1.ContainerPort{
 									{
 										ContainerPort: RedisDefaultPort,
+									},
+								},
+								VolumeMounts: []corev1.VolumeMount{
+									{
+										MountPath: "",
+										Name:      "",
 									},
 								},
 							},
@@ -534,6 +616,16 @@ func newDeployment(foo *redisoperatorv1.RedisOperator, isMaster bool) *appsv1.De
 					Labels: labels,
 				},
 				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{
+						{
+							Name: "name1",
+							VolumeSource: corev1.VolumeSource{
+								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+									ClaimName: "",
+								},
+							},
+						},
+					},
 					Containers: []corev1.Container{
 						{
 							Name:  fmt.Sprintf(ContainerNameTemplate, foo.Spec.SlaveSpec.DeploymentName, SlaveName),
@@ -555,6 +647,12 @@ func newDeployment(foo *redisoperatorv1.RedisOperator, isMaster bool) *appsv1.De
 								{
 									Name:  "ENV_REDIS_MASTER_PORT",
 									Value: strconv.Itoa(RedisDefaultPort),
+								},
+							},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									MountPath: "",
+									Name:      "",
 								},
 							},
 						},
