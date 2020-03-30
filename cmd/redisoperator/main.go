@@ -12,8 +12,8 @@ import (
 	// _ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 
 	crd "github.com/nevercase/k8s-controller-custom-resource/pkg/controller/redisoperator"
-	clientset "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/clientset/versioned"
-	informers "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/informers/externalversions"
+	clientset "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/redisoperator/clientset/versioned"
+	informers "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/redisoperator/informers/externalversions"
 	"github.com/nevercase/k8s-controller-custom-resource/pkg/signals"
 )
 

@@ -19,9 +19,9 @@ limitations under the License.
 package fake
 
 import (
-	clientset "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/clientset/versioned"
-	redisoperatorv1 "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/clientset/versioned/typed/redisoperator/v1"
-	fakeredisoperatorv1 "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/clientset/versioned/typed/redisoperator/v1/fake"
+	clientset "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/redisoperator/clientset/versioned"
+	redisoperatorv1 "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/redisoperator/clientset/versioned/typed/redisoperator/v1"
+	fakeredisoperatorv1 "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/redisoperator/clientset/versioned/typed/redisoperator/v1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"

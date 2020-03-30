@@ -42,10 +42,10 @@ import (
 	"k8s.io/klog"
 
 	redisoperatorv1 "github.com/nevercase/k8s-controller-custom-resource/pkg/apis/redisoperator/v1"
-	clientset "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/clientset/versioned"
-	redisoperatorscheme "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/clientset/versioned/scheme"
-	informers "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/informers/externalversions/redisoperator/v1"
-	listers "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/listers/redisoperator/v1"
+	clientset "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/redisoperator/clientset/versioned"
+	redisoperatorscheme "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/redisoperator/clientset/versioned/scheme"
+	informers "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/redisoperator/informers/externalversions/redisoperator/v1"
+	listers "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/redisoperator/listers/redisoperator/v1"
 )
 
 const controllerAgentName = "redis-operator-controller"
@@ -74,8 +74,14 @@ const (
 	ServiceNameTemplate    = "service-%s-%s"
 	PVCNameTemplate        = "pvc-%s-%s"
 	ContainerNameTemplate  = "container-%s-%s"
-	MasterName             = "master"
-	SlaveName              = "slave"
+
+	MasterName = "master"
+	SlaveName  = "slave"
+
+	EnvRedisMaster     = "ENV_REDIS_MASTER"
+	EnvRedisMasterPort = "ENV_REDIS_MASTER_PORT"
+	EnvRedisDir        = "ENV_REDIS_DIR"
+	EnvRedisDbFileName = "ENV_REDIS_DBFILENAME"
 )
 
 // Controller is the controller implementation for RedisOperator resources
@@ -554,7 +560,7 @@ func newPvc(foo *redisoperatorv1.RedisOperator, isMaster bool) *corev1.Persisten
 		Spec: corev1.PersistentVolumeClaimSpec{
 			StorageClassName: &name,
 			AccessModes: []corev1.PersistentVolumeAccessMode{
-				corev1.ReadWriteOnce,
+				corev1.ReadWriteMany,
 			},
 			Resources: corev1.ResourceRequirements{
 				Requests: corev1.ResourceList{
@@ -613,6 +619,16 @@ func newDeployment(foo *redisoperatorv1.RedisOperator, isMaster bool) *appsv1.De
 										ContainerPort: RedisDefaultPort,
 									},
 								},
+								Env: []corev1.EnvVar{
+									{
+										Name:  EnvRedisDir,
+										Value: "",
+									},
+									{
+										Name:  EnvRedisDbFileName,
+										Value: "",
+									},
+								},
 								VolumeMounts: []corev1.VolumeMount{
 									{
 										MountPath: "/data",
@@ -666,15 +682,23 @@ func newDeployment(foo *redisoperatorv1.RedisOperator, isMaster bool) *appsv1.De
 							},
 							Env: []corev1.EnvVar{
 								{
+									Name:  EnvRedisDir,
+									Value: "",
+								},
+								{
+									Name:  EnvRedisDbFileName,
+									Value: "",
+								},
+								{
 									Name:  "GET_HOSTS_FROM",
 									Value: "dns",
 								},
 								{
-									Name:  "ENV_REDIS_MASTER",
+									Name:  EnvRedisMaster,
 									Value: fmt.Sprintf(ServiceNameTemplate, foo.Spec.MasterSpec.DeploymentName, MasterName),
 								},
 								{
-									Name:  "ENV_REDIS_MASTER_PORT",
+									Name:  EnvRedisMasterPort,
 									Value: strconv.Itoa(RedisDefaultPort),
 								},
 							},

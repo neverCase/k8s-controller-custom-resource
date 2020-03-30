@@ -21,7 +21,7 @@ package versioned
 import (
 	"fmt"
 
-	redisoperatorv1 "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/clientset/versioned/typed/redisoperator/v1"
+	redisoperatorv1 "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/redisoperator/clientset/versioned/typed/redisoperator/v1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"

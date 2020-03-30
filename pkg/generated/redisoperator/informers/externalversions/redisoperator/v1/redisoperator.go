@@ -22,9 +22,9 @@ import (
 	time "time"
 
 	redisoperatorv1 "github.com/nevercase/k8s-controller-custom-resource/pkg/apis/redisoperator/v1"
-	versioned "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/clientset/versioned"
-	internalinterfaces "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/informers/externalversions/internalinterfaces"
-	v1 "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/listers/redisoperator/v1"
+	versioned "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/redisoperator/clientset/versioned"
+	internalinterfaces "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/redisoperator/informers/externalversions/internalinterfaces"
+	v1 "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/redisoperator/listers/redisoperator/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"

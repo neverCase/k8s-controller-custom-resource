@@ -23,9 +23,9 @@ import (
 	sync "sync"
 	time "time"
 
-	versioned "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/clientset/versioned"
-	internalinterfaces "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/informers/externalversions/internalinterfaces"
-	redisoperator "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/informers/externalversions/redisoperator"
+	versioned "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/redisoperator/clientset/versioned"
+	internalinterfaces "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/redisoperator/informers/externalversions/internalinterfaces"
+	redisoperator "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/redisoperator/informers/externalversions/redisoperator"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

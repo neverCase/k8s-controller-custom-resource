@@ -19,7 +19,7 @@ limitations under the License.
 package fake
 
 import (
-	v1 "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/clientset/versioned/typed/redisoperator/v1"
+	v1 "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/redisoperator/clientset/versioned/typed/redisoperator/v1"
 	rest "k8s.io/client-go/rest"
 	testing "k8s.io/client-go/testing"
 )

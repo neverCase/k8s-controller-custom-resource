@@ -22,7 +22,7 @@ import (
 	"time"
 
 	v1 "github.com/nevercase/k8s-controller-custom-resource/pkg/apis/redisoperator/v1"
-	scheme "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/clientset/versioned/scheme"
+	scheme "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/redisoperator/clientset/versioned/scheme"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"

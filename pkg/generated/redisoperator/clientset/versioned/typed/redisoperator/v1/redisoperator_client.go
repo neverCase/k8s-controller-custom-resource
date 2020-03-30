@@ -20,7 +20,7 @@ package v1
 
 import (
 	v1 "github.com/nevercase/k8s-controller-custom-resource/pkg/apis/redisoperator/v1"
-	"github.com/nevercase/k8s-controller-custom-resource/pkg/generated/clientset/versioned/scheme"
+	"github.com/nevercase/k8s-controller-custom-resource/pkg/generated/redisoperator/clientset/versioned/scheme"
 	rest "k8s.io/client-go/rest"
 )
 
