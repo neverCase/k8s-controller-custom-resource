@@ -82,6 +82,10 @@ const (
 	EnvRedisMasterPort = "ENV_REDIS_MASTER_PORT"
 	EnvRedisDir        = "ENV_REDIS_DIR"
 	EnvRedisDbFileName = "ENV_REDIS_DBFILENAME"
+	EnvRedisConf       = "ENV_REDIS_CONF"
+
+	EnvRedisConfTemplate       = "redis-%s-%s.conf"
+	EnvRedisDbFileNameTemplate = "redis-%s-%s.rdb"
 )
 
 // Controller is the controller implementation for RedisOperator resources
@@ -330,11 +334,11 @@ func (c *Controller) syncHandler(key string) error {
 	}
 
 	// Create the Deployment of slave with SlaveSpec
-	err = c.createRedisDeploymentAndService(foo, name, key, false)
-	if err != nil {
-		// todo remove Master's deployment and service
-		return err
-	}
+	//err = c.createRedisDeploymentAndService(foo, name, key, false)
+	//if err != nil {
+	//	// todo remove Master's deployment and service
+	//	return err
+	//}
 
 	c.recorder.Event(foo, corev1.EventTypeNormal, SuccessSynced, MessageResourceSynced)
 	return nil
@@ -408,7 +412,7 @@ func (c *Controller) createRedisDeploymentAndService(foo *redisoperatorv1.RedisO
 		return fmt.Errorf(msg)
 	}
 
-	// Get the service with the name specified in RedisOperator.spec
+	// Get the pvc with the name specified in RedisOperator.spec
 	pvc, err := c.pvcLister.PersistentVolumeClaims(foo.Namespace).Get(pvcName)
 	// If the resource doesn't exist, we'll create it
 	if errors.IsNotFound(err) {
@@ -421,7 +425,7 @@ func (c *Controller) createRedisDeploymentAndService(foo *redisoperatorv1.RedisO
 		}
 	}
 
-	// If the Service is not controlled by this RedisOperator resource, we should log
+	// If the pvc is not controlled by this RedisOperator resource, we should log
 	// a warning to the event recorder and return error msg.
 	if !metav1.IsControlledBy(pvc, foo) {
 		msg := fmt.Sprintf(MessageResourceExists, deployment.Name)
@@ -621,12 +625,16 @@ func newDeployment(foo *redisoperatorv1.RedisOperator, isMaster bool) *appsv1.De
 								},
 								Env: []corev1.EnvVar{
 									{
+										Name:  EnvRedisConf,
+										Value: fmt.Sprintf(EnvRedisConfTemplate, foo.Spec.MasterSpec.DeploymentName, MasterName),
+									},
+									{
 										Name:  EnvRedisDir,
 										Value: "",
 									},
 									{
 										Name:  EnvRedisDbFileName,
-										Value: "",
+										Value: fmt.Sprintf(EnvRedisDbFileNameTemplate, foo.Spec.MasterSpec.DeploymentName, MasterName),
 									},
 								},
 								VolumeMounts: []corev1.VolumeMount{
@@ -635,6 +643,11 @@ func newDeployment(foo *redisoperatorv1.RedisOperator, isMaster bool) *appsv1.De
 										Name:      "task-pv-storage",
 									},
 								},
+							},
+						},
+						ImagePullSecrets: []corev1.LocalObjectReference{
+							{
+								Name: foo.Spec.MasterSpec.ImagePullSecrets,
 							},
 						},
 					},
@@ -681,6 +694,10 @@ func newDeployment(foo *redisoperatorv1.RedisOperator, isMaster bool) *appsv1.De
 								},
 							},
 							Env: []corev1.EnvVar{
+								{
+									Name:  EnvRedisConf,
+									Value: fmt.Sprintf(EnvRedisConfTemplate, foo.Spec.SlaveSpec.DeploymentName, SlaveName),
+								},
 								{
 									Name:  EnvRedisDir,
 									Value: "",
