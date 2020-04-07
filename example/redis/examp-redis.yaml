@@ -6,8 +6,8 @@ spec:
   master_spec:
     deploymentName: "test-redis-operator"
     replicas: 1
-    image: redis:latest
-    imagePullSecrets: ""
+    image: domain.com/redis-slave:1.1
+    imagePullSecrets: self-secret
   slave_spec:
     deploymentName: "test-redis-operator"
     replicas: 4

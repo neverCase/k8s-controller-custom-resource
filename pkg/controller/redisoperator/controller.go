@@ -329,19 +329,48 @@ func (c *Controller) syncHandler(key string) error {
 	}
 
 	// Create the Deployment of master with MasterSpec
-	err = c.createRedisDeploymentAndService(foo, name, key, true)
+	err = c.createRedisDeploymentAndService2(foo, name, key, true)
 	if err != nil {
 		return err
 	}
 
 	// Create the Deployment of slave with SlaveSpec
-	err = c.createRedisDeploymentAndService(foo, name, key, false)
+	err = c.createRedisDeploymentAndService2(foo, name, key, false)
 	if err != nil {
 		// todo remove Master's deployment and service
 		return err
 	}
 
 	c.recorder.Event(foo, corev1.EventTypeNormal, SuccessSynced, MessageResourceSynced)
+	return nil
+}
+
+func (c *Controller) createRedisDeploymentAndService2(foo *redisoperatorv1.RedisOperator, name, key string, isMaster bool) (err error) {
+	klog.Info("createRedisDeploymentAndService2:")
+	if isMaster == true {
+		rds := foo.Spec.MasterSpec
+		rds.DeploymentName = fmt.Sprintf("%s-%s", rds.DeploymentName, MasterName)
+		klog.Info("rds:", rds)
+		if err = c.createDeployment(foo, &rds, isMaster); err != nil {
+			return err
+		}
+		if err = c.createService(foo, &rds, isMaster); err != nil {
+			return err
+		}
+		return nil
+	}
+
+	for i := 0; i < int(*foo.Spec.SlaveSpec.Replicas); i++ {
+		rds := foo.Spec.SlaveSpec
+		rds.DeploymentName = fmt.Sprintf("%s-%s-%d", rds.DeploymentName, SlaveName, i)
+		klog.Info("rds:", rds)
+		if err = c.createDeployment(foo, &rds, isMaster); err != nil {
+			return err
+		}
+		if err = c.createService(foo, &rds, isMaster); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
