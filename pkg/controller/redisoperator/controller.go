@@ -72,6 +72,7 @@ const (
 const (
 	DeploymentNameTemplate = "deployment-%s-%s"
 	ServiceNameTemplate    = "service-%s-%s"
+	PVNameTemplate         = "pv-%s-%s"
 	PVCNameTemplate        = "pvc-%s-%s"
 	ContainerNameTemplate  = "container-%s-%s"
 
@@ -334,11 +335,11 @@ func (c *Controller) syncHandler(key string) error {
 	}
 
 	// Create the Deployment of slave with SlaveSpec
-	//err = c.createRedisDeploymentAndService(foo, name, key, false)
-	//if err != nil {
-	//	// todo remove Master's deployment and service
-	//	return err
-	//}
+	err = c.createRedisDeploymentAndService(foo, name, key, false)
+	if err != nil {
+		// todo remove Master's deployment and service
+		return err
+	}
 
 	c.recorder.Event(foo, corev1.EventTypeNormal, SuccessSynced, MessageResourceSynced)
 	return nil
@@ -369,6 +370,8 @@ func (c *Controller) createRedisDeploymentAndService(foo *redisoperatorv1.RedisO
 		serviceName = fmt.Sprintf(ServiceNameTemplate, foo.Spec.SlaveSpec.DeploymentName, SlaveName)
 		pvcName = fmt.Sprintf(PVCNameTemplate, foo.Spec.MasterSpec.DeploymentName, SlaveName)
 	}
+
+	_ = pvcName
 
 	// Get the deployment with the name specified in RedisOperator.spec
 	deployment, err := c.deploymentsLister.Deployments(foo.Namespace).Get(deploymentName)
@@ -412,26 +415,26 @@ func (c *Controller) createRedisDeploymentAndService(foo *redisoperatorv1.RedisO
 		return fmt.Errorf(msg)
 	}
 
-	// Get the pvc with the name specified in RedisOperator.spec
-	pvc, err := c.pvcLister.PersistentVolumeClaims(foo.Namespace).Get(pvcName)
-	// If the resource doesn't exist, we'll create it
-	if errors.IsNotFound(err) {
-		pvc, err = c.kubeclientset.CoreV1().PersistentVolumeClaims(foo.Namespace).Create(newPvc(foo, isMaster))
-		// If an error occurs during Get/Create, we'll requeue the item so we can
-		// attempt processing again later. This could have been caused by a
-		// temporary network failure, or any other transient reason.
-		if err != nil {
-			return err
-		}
-	}
-
-	// If the pvc is not controlled by this RedisOperator resource, we should log
-	// a warning to the event recorder and return error msg.
-	if !metav1.IsControlledBy(pvc, foo) {
-		msg := fmt.Sprintf(MessageResourceExists, deployment.Name)
-		c.recorder.Event(foo, corev1.EventTypeWarning, ErrResourceExists, msg)
-		return fmt.Errorf(msg)
-	}
+	//// Get the pvc with the name specified in RedisOperator.spec
+	//pvc, err := c.pvcLister.PersistentVolumeClaims(foo.Namespace).Get(pvcName)
+	//// If the resource doesn't exist, we'll create it
+	//if errors.IsNotFound(err) {
+	//	pvc, err = c.kubeclientset.CoreV1().PersistentVolumeClaims(foo.Namespace).Create(newPvc(foo, isMaster))
+	//	// If an error occurs during Get/Create, we'll requeue the item so we can
+	//	// attempt processing again later. This could have been caused by a
+	//	// temporary network failure, or any other transient reason.
+	//	if err != nil {
+	//		return err
+	//	}
+	//}
+	//
+	//// If the pvc is not controlled by this RedisOperator resource, we should log
+	//// a warning to the event recorder and return error msg.
+	//if !metav1.IsControlledBy(pvc, foo) {
+	//	msg := fmt.Sprintf(MessageResourceExists, deployment.Name)
+	//	c.recorder.Event(foo, corev1.EventTypeWarning, ErrResourceExists, msg)
+	//	return fmt.Errorf(msg)
+	//}
 
 	// If this number of the replicas on the RedisOperator resource is specified, and the
 	// number does not equal the current desired replicas on the Deployment, we
@@ -541,8 +544,41 @@ func (c *Controller) handleObject(obj interface{}) {
 	}
 }
 
+func newPv(foo *redisoperatorv1.RedisOperator, isMaster bool) *corev1.PersistentVolume {
+	name := "local-storage"
+	quantity, err := resource.ParseQuantity(strings.TrimSpace("1Gi"))
+	if err != nil {
+		klog.V(2).Info(err)
+	}
+	var suffixName string
+	if isMaster == true {
+		suffixName = MasterName
+	} else {
+		suffixName = SlaveName
+	}
+	return &corev1.PersistentVolume{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fmt.Sprintf(PVNameTemplate, foo.Spec.MasterSpec.DeploymentName, suffixName),
+			Namespace: foo.Namespace,
+			OwnerReferences: []metav1.OwnerReference{
+				*metav1.NewControllerRef(foo, redisoperatorv1.SchemeGroupVersion.WithKind("RedisOperator")),
+			},
+		},
+		Spec: corev1.PersistentVolumeSpec{
+			StorageClassName: name,
+			Capacity: corev1.ResourceList{
+				"storage": quantity,
+			},
+			AccessModes: []corev1.PersistentVolumeAccessMode{
+				corev1.ReadWriteMany,
+			},
+		},
+	}
+}
+
 func newPvc(foo *redisoperatorv1.RedisOperator, isMaster bool) *corev1.PersistentVolumeClaim {
-	name := "manual"
+	//name := "manual"
+	name := "local-storage"
 	quantity, err := resource.ParseQuantity(strings.TrimSpace("1Gi"))
 	if err != nil {
 		klog.V(2).Info(err)
@@ -585,6 +621,11 @@ func newDeployment(foo *redisoperatorv1.RedisOperator, isMaster bool) *appsv1.De
 		"controller": foo.Name,
 		"role":       MasterName,
 	}
+	t := corev1.HostPathDirectoryOrCreate
+	hostPath := &corev1.HostPathVolumeSource{
+		Type: &t,
+		Path: "/mnt/ssd1",
+	}
 	if isMaster == true {
 		return &appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
@@ -608,9 +649,10 @@ func newDeployment(foo *redisoperatorv1.RedisOperator, isMaster bool) *appsv1.De
 							{
 								Name: "task-pv-storage",
 								VolumeSource: corev1.VolumeSource{
-									PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-										ClaimName: fmt.Sprintf(PVCNameTemplate, foo.Spec.MasterSpec.DeploymentName, MasterName),
-									},
+									HostPath: hostPath,
+									//PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+									//	ClaimName: fmt.Sprintf(PVCNameTemplate, foo.Spec.MasterSpec.DeploymentName, MasterName),
+									//},
 								},
 							},
 						},
@@ -666,6 +708,7 @@ func newDeployment(foo *redisoperatorv1.RedisOperator, isMaster bool) *appsv1.De
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: foo.Spec.SlaveSpec.Replicas,
+			//Replicas: int2pointer(1),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels,
 			},
@@ -678,9 +721,10 @@ func newDeployment(foo *redisoperatorv1.RedisOperator, isMaster bool) *appsv1.De
 						{
 							Name: "task-pv-storage",
 							VolumeSource: corev1.VolumeSource{
-								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-									ClaimName: fmt.Sprintf(PVCNameTemplate, foo.Spec.MasterSpec.DeploymentName, SlaveName),
-								},
+								HostPath: hostPath,
+								//PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+								//	ClaimName: fmt.Sprintf(PVCNameTemplate, foo.Spec.MasterSpec.DeploymentName, SlaveName),
+								//},
 							},
 						},
 					},
@@ -704,7 +748,7 @@ func newDeployment(foo *redisoperatorv1.RedisOperator, isMaster bool) *appsv1.De
 								},
 								{
 									Name:  EnvRedisDbFileName,
-									Value: "",
+									Value: fmt.Sprintf(EnvRedisDbFileNameTemplate, foo.Spec.SlaveSpec.DeploymentName, SlaveName),
 								},
 								{
 									Name:  "GET_HOSTS_FROM",
@@ -752,7 +796,7 @@ func newService(foo *redisoperatorv1.RedisOperator, isMaster bool) *corev1.Servi
 		serviceName = fmt.Sprintf(ServiceNameTemplate, foo.Spec.MasterSpec.DeploymentName, MasterName)
 	} else {
 		labels["role"] = SlaveName
-		serviceName = fmt.Sprintf(ServiceNameTemplate, foo.Spec.MasterSpec.DeploymentName, SlaveName)
+		serviceName = fmt.Sprintf(ServiceNameTemplate, foo.Spec.SlaveSpec.DeploymentName, SlaveName)
 	}
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -773,3 +817,5 @@ func newService(foo *redisoperatorv1.RedisOperator, isMaster bool) *corev1.Servi
 		},
 	}
 }
+
+func int2pointer(i int32) *int32 { return &i }
