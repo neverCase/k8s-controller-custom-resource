@@ -5,30 +5,12 @@ import (
 	"k8s.io/klog"
 	"regexp"
 
-	//"strconv"
-
-	//appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	//"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	//"k8s.io/apimachinery/pkg/util/wait"
-	//appsinformersv1 "k8s.io/client-go/informers/apps/v1"
-	//coreinformersv1 "k8s.io/client-go/informers/core/v1"
-	//"k8s.io/client-go/kubernetes"
-	//"k8s.io/client-go/kubernetes/scheme"
-	//typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
-	//appslistersv1 "k8s.io/client-go/listers/apps/v1"
-	//corelistersv1 "k8s.io/client-go/listers/core/v1"
-	//"k8s.io/client-go/tools/cache"
-	//"k8s.io/client-go/tools/record"
-	//"k8s.io/client-go/util/workqueue"
-	//"k8s.io/klog"
 
 	redisoperatorv1 "github.com/nevercase/k8s-controller-custom-resource/pkg/apis/redisoperator/v1"
-	//clientset "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/redisoperator/clientset/versioned"
-	//redisoperatorscheme "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/redisoperator/clientset/versioned/scheme"
 )
 
 func (c *Controller) createService(foo *redisoperatorv1.RedisOperator, rds *redisoperatorv1.RedisDeploymentSpec, isMaster bool) error {
@@ -41,7 +23,7 @@ func (c *Controller) createService(foo *redisoperatorv1.RedisOperator, rds *redi
 		utilruntime.HandleError(fmt.Errorf("%s: MasterSpec DeploymentName must be specified", rds.DeploymentName))
 		return nil
 	}
-	serviceName = fmt.Sprintf("service-%s", rds.DeploymentName)
+	serviceName = fmt.Sprintf(ServiceNameTemplate, rds.DeploymentName)
 
 	// Get the service with the name specified in RedisOperator.spec
 	service, err := c.servicesLister.Services(foo.Namespace).Get(serviceName)
@@ -83,12 +65,40 @@ func (c *Controller) createService(foo *redisoperatorv1.RedisOperator, rds *redi
 	return nil
 }
 
+func (c *Controller) deleteService(foo *redisoperatorv1.RedisOperator, rds *redisoperatorv1.RedisDeploymentSpec, isMaster bool) error {
+	var serviceName string
+	if rds.DeploymentName == "" {
+		// We choose to absorb the error here as the worker would requeue the
+		// resource otherwise. Instead, the next time the resource is updated
+		// the resource will be queued again.
+		utilruntime.HandleError(fmt.Errorf("%s: MasterSpec DeploymentName must be specified", rds.DeploymentName))
+		return nil
+	}
+	serviceName = fmt.Sprintf(ServiceNameTemplate, rds.DeploymentName)
+	// Get the service with the name specified in RedisOperator.spec
+	service, err := c.servicesLister.Services(foo.Namespace).Get(serviceName)
+	// If the resource doesn't exist, we'll create it
+	if errors.IsNotFound(err) {
+		return nil
+	} else {
+		_ = service
+		opts := &metav1.DeleteOptions{
+			//GracePeriodSeconds: int64ToPointer(30),
+		}
+		err = c.kubeclientset.CoreV1().Services(foo.Namespace).Delete(serviceName, opts)
+		if err != nil {
+			klog.V(2).Info(err)
+			return err
+		}
+	}
+	return nil
+}
+
 // newService creates a new Service for a RedisOperator resource. It also sets
 // the appropriate OwnerReferences on the resource so handleObject can discover
 // the RedisOperator resource that 'owns' it.
 func (c *Controller) newService(foo *redisoperatorv1.RedisOperator, rds *redisoperatorv1.RedisDeploymentSpec) *corev1.Service {
 	var serviceName, role string
-	serviceName = fmt.Sprintf("service-%s", rds.DeploymentName)
 	res, err := regexp.Match(`master`, []byte(rds.DeploymentName))
 	if err != nil {
 		klog.V(2).Info(err)
@@ -103,7 +113,7 @@ func (c *Controller) newService(foo *redisoperatorv1.RedisOperator, rds *redisop
 		"controller": foo.Name,
 		"role":       role,
 	}
-	serviceName = fmt.Sprintf("service-%s", rds.DeploymentName)
+	serviceName = fmt.Sprintf(ServiceNameTemplate, rds.DeploymentName)
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      serviceName,

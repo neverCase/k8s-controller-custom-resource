@@ -18,14 +18,11 @@ package redisoperator
 
 import (
 	"fmt"
-	"strconv"
-	"strings"
 	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -70,11 +67,11 @@ const (
 )
 
 const (
-	DeploymentNameTemplate = "deployment-%s-%s"
-	ServiceNameTemplate    = "service-%s-%s"
-	PVNameTemplate         = "pv-%s-%s"
-	PVCNameTemplate        = "pvc-%s-%s"
-	ContainerNameTemplate  = "container-%s-%s"
+	DeploymentNameTemplate = "deployment-%s"
+	ServiceNameTemplate    = "service-%s"
+	PVNameTemplate         = "pv-%s"
+	PVCNameTemplate        = "pvc-%s"
+	ContainerNameTemplate  = "container-%s"
 
 	MasterName = "master"
 	SlaveName  = "slave"
@@ -85,8 +82,8 @@ const (
 	EnvRedisDbFileName = "ENV_REDIS_DBFILENAME"
 	EnvRedisConf       = "ENV_REDIS_CONF"
 
-	EnvRedisConfTemplate       = "redis-%s-%s.conf"
-	EnvRedisDbFileNameTemplate = "redis-%s-%s.rdb"
+	EnvRedisConfTemplate       = "redis-%s.conf"
+	EnvRedisDbFileNameTemplate = "redis-%s.rdb"
 )
 
 // Controller is the controller implementation for RedisOperator resources
@@ -146,7 +143,7 @@ func NewController(
 		servicesSynced:      serviceInformer.Informer().HasSynced,
 		redisOperatorLister: fooInformer.Lister(),
 		redisOperatorSynced: fooInformer.Informer().HasSynced,
-		workqueue:           workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Foos"),
+		workqueue:           workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "redis-operator"),
 		recorder:            recorder,
 	}
 
@@ -155,6 +152,26 @@ func NewController(
 	fooInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: controller.enqueueFoo,
 		UpdateFunc: func(old, new interface{}) {
+
+			newDepl := new.(*redisoperatorv1.RedisOperator)
+			oldDepl := old.(*redisoperatorv1.RedisOperator)
+			if newDepl.ResourceVersion == oldDepl.ResourceVersion {
+				// Periodic resync will send update events for all known Deployments.
+				// Two different versions of the same Deployment will always have different RVs.
+				return
+			}
+
+			//if *newDepl.Spec.SlaveSpec.Replicas == *oldDepl.Spec.SlaveSpec.Replicas {
+			//
+			//	return
+			//}
+			//controller.handleObject2(old, new)
+			//
+
+			klog.Infof("old-slave-replicas:%d new-slave-replicas:%d", *oldDepl.Spec.SlaveSpec.Replicas, *newDepl.Spec.SlaveSpec.Replicas)
+			klog.Info("old:", *oldDepl)
+			klog.Info("new:", *newDepl)
+
 			controller.enqueueFoo(new)
 		},
 	})
@@ -293,7 +310,7 @@ func (c *Controller) processNextWorkItem() bool {
 		// Finally, if no error occurs we Forget this item so it does not
 		// get queued again until another change happens.
 		c.workqueue.Forget(obj)
-		klog.Infof("Successfully synced '%s'", key)
+		//klog.Infof("Successfully synced '%s'", key)
 		return nil
 	}(obj)
 
@@ -346,11 +363,11 @@ func (c *Controller) syncHandler(key string) error {
 }
 
 func (c *Controller) createRedisDeploymentAndService2(foo *redisoperatorv1.RedisOperator, name, key string, isMaster bool) (err error) {
-	klog.Info("createRedisDeploymentAndService2:")
+	//klog.Info("createRedisDeploymentAndService2:")
 	if isMaster == true {
 		rds := foo.Spec.MasterSpec
 		rds.DeploymentName = fmt.Sprintf("%s-%s", rds.DeploymentName, MasterName)
-		klog.Info("rds:", rds)
+		//klog.Info("rds:", rds)
 		if err = c.createDeployment(foo, &rds, isMaster); err != nil {
 			return err
 		}
@@ -363,7 +380,7 @@ func (c *Controller) createRedisDeploymentAndService2(foo *redisoperatorv1.Redis
 	for i := 0; i < int(*foo.Spec.SlaveSpec.Replicas); i++ {
 		rds := foo.Spec.SlaveSpec
 		rds.DeploymentName = fmt.Sprintf("%s-%s-%d", rds.DeploymentName, SlaveName, i)
-		klog.Info("rds:", rds)
+		//klog.Info("rds:", rds)
 		if err = c.createDeployment(foo, &rds, isMaster); err != nil {
 			return err
 		}
@@ -371,132 +388,17 @@ func (c *Controller) createRedisDeploymentAndService2(foo *redisoperatorv1.Redis
 			return err
 		}
 	}
-	return nil
-}
 
-func (c *Controller) createRedisDeploymentAndService(foo *redisoperatorv1.RedisOperator, name, key string, isMaster bool) error {
-	var deploymentName, serviceName, pvcName string
-	if isMaster == true {
-		if foo.Spec.MasterSpec.DeploymentName == "" {
-			// We choose to absorb the error here as the worker would requeue the
-			// resource otherwise. Instead, the next time the resource is updated
-			// the resource will be queued again.
-			utilruntime.HandleError(fmt.Errorf("%s: MasterSpec DeploymentName must be specified", key))
-			return nil
-		}
-		deploymentName = fmt.Sprintf(DeploymentNameTemplate, foo.Spec.MasterSpec.DeploymentName, MasterName)
-		serviceName = fmt.Sprintf(ServiceNameTemplate, foo.Spec.MasterSpec.DeploymentName, MasterName)
-		pvcName = fmt.Sprintf(PVCNameTemplate, foo.Spec.MasterSpec.DeploymentName, MasterName)
-	} else {
-		if foo.Spec.SlaveSpec.DeploymentName == "" {
-			// We choose to absorb the error here as the worker would requeue the
-			// resource otherwise. Instead, the next time the resource is updated
-			// the resource will be queued again.
-			utilruntime.HandleError(fmt.Errorf("%s: SlaveSpec DeploymentName must be specified", key))
-			return nil
-		}
-		deploymentName = fmt.Sprintf(DeploymentNameTemplate, foo.Spec.SlaveSpec.DeploymentName, SlaveName)
-		serviceName = fmt.Sprintf(ServiceNameTemplate, foo.Spec.SlaveSpec.DeploymentName, SlaveName)
-		pvcName = fmt.Sprintf(PVCNameTemplate, foo.Spec.MasterSpec.DeploymentName, SlaveName)
-	}
-
-	_ = pvcName
-
-	// Get the deployment with the name specified in RedisOperator.spec
-	deployment, err := c.deploymentsLister.Deployments(foo.Namespace).Get(deploymentName)
-	// If the resource doesn't exist, we'll create it
-	if errors.IsNotFound(err) {
-		deployment, err = c.kubeclientset.AppsV1().Deployments(foo.Namespace).Create(newDeployment(foo, isMaster))
-		// If an error occurs during Get/Create, we'll requeue the item so we can
-		// attempt processing again later. This could have been caused by a
-		// temporary network failure, or any other transient reason.
-		if err != nil {
+	for i := int(*foo.Spec.SlaveSpec.Replicas); i < 10; i++ {
+		rds := foo.Spec.SlaveSpec
+		rds.DeploymentName = fmt.Sprintf("%s-%s-%d", rds.DeploymentName, SlaveName, i)
+		//klog.Info("rds:", rds)
+		if err = c.deleteDeployment(foo, &rds, isMaster); err != nil {
 			return err
 		}
-	}
-
-	// If the Deployment is not controlled by this RedisOperator resource, we should log
-	// a warning to the event recorder and return error msg.
-	if !metav1.IsControlledBy(deployment, foo) {
-		msg := fmt.Sprintf(MessageResourceExists, deployment.Name)
-		c.recorder.Event(foo, corev1.EventTypeWarning, ErrResourceExists, msg)
-		return fmt.Errorf(msg)
-	}
-
-	// Get the service with the name specified in RedisOperator.spec
-	service, err := c.servicesLister.Services(foo.Namespace).Get(serviceName)
-	// If the resource doesn't exist, we'll create it
-	if errors.IsNotFound(err) {
-		service, err = c.kubeclientset.CoreV1().Services(foo.Namespace).Create(newService(foo, isMaster))
-		// If an error occurs during Get/Create, we'll requeue the item so we can
-		// attempt processing again later. This could have been caused by a
-		// temporary network failure, or any other transient reason.
-		if err != nil {
+		if err = c.deleteService(foo, &rds, isMaster); err != nil {
 			return err
 		}
-	}
-
-	// If the Service is not controlled by this RedisOperator resource, we should log
-	// a warning to the event recorder and return error msg.
-	if !metav1.IsControlledBy(service, foo) {
-		msg := fmt.Sprintf(MessageResourceExists, deployment.Name)
-		c.recorder.Event(foo, corev1.EventTypeWarning, ErrResourceExists, msg)
-		return fmt.Errorf(msg)
-	}
-
-	//// Get the pvc with the name specified in RedisOperator.spec
-	//pvc, err := c.pvcLister.PersistentVolumeClaims(foo.Namespace).Get(pvcName)
-	//// If the resource doesn't exist, we'll create it
-	//if errors.IsNotFound(err) {
-	//	pvc, err = c.kubeclientset.CoreV1().PersistentVolumeClaims(foo.Namespace).Create(newPvc(foo, isMaster))
-	//	// If an error occurs during Get/Create, we'll requeue the item so we can
-	//	// attempt processing again later. This could have been caused by a
-	//	// temporary network failure, or any other transient reason.
-	//	if err != nil {
-	//		return err
-	//	}
-	//}
-	//
-	//// If the pvc is not controlled by this RedisOperator resource, we should log
-	//// a warning to the event recorder and return error msg.
-	//if !metav1.IsControlledBy(pvc, foo) {
-	//	msg := fmt.Sprintf(MessageResourceExists, deployment.Name)
-	//	c.recorder.Event(foo, corev1.EventTypeWarning, ErrResourceExists, msg)
-	//	return fmt.Errorf(msg)
-	//}
-
-	// If this number of the replicas on the RedisOperator resource is specified, and the
-	// number does not equal the current desired replicas on the Deployment, we
-	// should update the Deployment resource.
-	var match = true
-	if isMaster == true {
-		if foo.Spec.MasterSpec.Replicas != nil && *foo.Spec.MasterSpec.Replicas != *deployment.Spec.Replicas {
-			klog.V(4).Infof("MasterSpec %s replicas: %d, deployment replicas: %d", name, *foo.Spec.MasterSpec.Replicas, *deployment.Spec.Replicas)
-			match = false
-		}
-	} else {
-		if foo.Spec.SlaveSpec.Replicas != nil && *foo.Spec.SlaveSpec.Replicas != *deployment.Spec.Replicas {
-			klog.V(4).Infof("SlaveSpec %s replicas: %d, deployment replicas: %d", name, *foo.Spec.SlaveSpec.Replicas, *deployment.Spec.Replicas)
-			match = false
-		}
-	}
-	if match == false {
-		// If an error occurs during Update, we'll requeue the item so we can
-		// attempt processing again later. THis could have been caused by a
-		// temporary network failure, or any other transient reason.
-		if deployment, err = c.kubeclientset.AppsV1().Deployments(foo.Namespace).Update(newDeployment(foo, isMaster)); err != nil {
-			return err
-		}
-		if service, err = c.kubeclientset.CoreV1().Services(foo.Namespace).Update(newService(foo, isMaster)); err != nil {
-			return err
-		}
-	}
-
-	// Finally, we update the status block of the RedisOperator resource to reflect the
-	// current state of the world
-	err = c.updateFooStatus(foo, deployment, isMaster)
-	if err != nil {
-		return err
 	}
 
 	return nil
@@ -573,278 +475,6 @@ func (c *Controller) handleObject(obj interface{}) {
 	}
 }
 
-func newPv(foo *redisoperatorv1.RedisOperator, isMaster bool) *corev1.PersistentVolume {
-	name := "local-storage"
-	quantity, err := resource.ParseQuantity(strings.TrimSpace("1Gi"))
-	if err != nil {
-		klog.V(2).Info(err)
-	}
-	var suffixName string
-	if isMaster == true {
-		suffixName = MasterName
-	} else {
-		suffixName = SlaveName
-	}
-	return &corev1.PersistentVolume{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf(PVNameTemplate, foo.Spec.MasterSpec.DeploymentName, suffixName),
-			Namespace: foo.Namespace,
-			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(foo, redisoperatorv1.SchemeGroupVersion.WithKind("RedisOperator")),
-			},
-		},
-		Spec: corev1.PersistentVolumeSpec{
-			StorageClassName: name,
-			Capacity: corev1.ResourceList{
-				"storage": quantity,
-			},
-			AccessModes: []corev1.PersistentVolumeAccessMode{
-				corev1.ReadWriteMany,
-			},
-		},
-	}
-}
+func int32ToPointer(i int32) *int32 { return &i }
 
-func newPvc(foo *redisoperatorv1.RedisOperator, isMaster bool) *corev1.PersistentVolumeClaim {
-	//name := "manual"
-	name := "local-storage"
-	quantity, err := resource.ParseQuantity(strings.TrimSpace("1Gi"))
-	if err != nil {
-		klog.V(2).Info(err)
-	}
-	var suffixName string
-	if isMaster == true {
-		suffixName = MasterName
-	} else {
-		suffixName = SlaveName
-	}
-	return &corev1.PersistentVolumeClaim{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf(PVCNameTemplate, foo.Spec.MasterSpec.DeploymentName, suffixName),
-			Namespace: foo.Namespace,
-			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(foo, redisoperatorv1.SchemeGroupVersion.WithKind("RedisOperator")),
-			},
-		},
-		Spec: corev1.PersistentVolumeClaimSpec{
-			StorageClassName: &name,
-			AccessModes: []corev1.PersistentVolumeAccessMode{
-				corev1.ReadWriteMany,
-			},
-			Resources: corev1.ResourceRequirements{
-				Requests: corev1.ResourceList{
-					corev1.ResourceStorage: quantity,
-				},
-			},
-		},
-	}
-}
-
-// newDeployment creates a new Deployment for a RedisOperator resource. It also sets
-// the appropriate OwnerReferences on the resource so handleObject can discover
-// the RedisOperator resource that 'owns' it, and sets the deploymentName with the
-// suffix of `master` or `slave`.
-func newDeployment(foo *redisoperatorv1.RedisOperator, isMaster bool) *appsv1.Deployment {
-	labels := map[string]string{
-		"app":        "redis-operator",
-		"controller": foo.Name,
-		"role":       MasterName,
-	}
-	t := corev1.HostPathDirectoryOrCreate
-	hostPath := &corev1.HostPathVolumeSource{
-		Type: &t,
-		Path: "/mnt/ssd1",
-	}
-	if isMaster == true {
-		return &appsv1.Deployment{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      fmt.Sprintf(DeploymentNameTemplate, foo.Spec.MasterSpec.DeploymentName, MasterName),
-				Namespace: foo.Namespace,
-				OwnerReferences: []metav1.OwnerReference{
-					*metav1.NewControllerRef(foo, redisoperatorv1.SchemeGroupVersion.WithKind("RedisOperator")),
-				},
-			},
-			Spec: appsv1.DeploymentSpec{
-				Replicas: foo.Spec.MasterSpec.Replicas,
-				Selector: &metav1.LabelSelector{
-					MatchLabels: labels,
-				},
-				Template: corev1.PodTemplateSpec{
-					ObjectMeta: metav1.ObjectMeta{
-						Labels: labels,
-					},
-					Spec: corev1.PodSpec{
-						Volumes: []corev1.Volume{
-							{
-								Name: "task-pv-storage",
-								VolumeSource: corev1.VolumeSource{
-									HostPath: hostPath,
-									//PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-									//	ClaimName: fmt.Sprintf(PVCNameTemplate, foo.Spec.MasterSpec.DeploymentName, MasterName),
-									//},
-								},
-							},
-						},
-						Containers: []corev1.Container{
-							{
-								Name:  fmt.Sprintf(ContainerNameTemplate, foo.Spec.MasterSpec.DeploymentName, MasterName),
-								Image: foo.Spec.MasterSpec.Image,
-								Ports: []corev1.ContainerPort{
-									{
-										ContainerPort: RedisDefaultPort,
-									},
-								},
-								Env: []corev1.EnvVar{
-									{
-										Name:  EnvRedisConf,
-										Value: fmt.Sprintf(EnvRedisConfTemplate, foo.Spec.MasterSpec.DeploymentName, MasterName),
-									},
-									{
-										Name:  EnvRedisDir,
-										Value: "",
-									},
-									{
-										Name:  EnvRedisDbFileName,
-										Value: fmt.Sprintf(EnvRedisDbFileNameTemplate, foo.Spec.MasterSpec.DeploymentName, MasterName),
-									},
-								},
-								VolumeMounts: []corev1.VolumeMount{
-									{
-										MountPath: "/data",
-										Name:      "task-pv-storage",
-									},
-								},
-							},
-						},
-						ImagePullSecrets: []corev1.LocalObjectReference{
-							{
-								Name: foo.Spec.MasterSpec.ImagePullSecrets,
-							},
-						},
-					},
-				},
-			},
-		}
-	}
-	labels["role"] = SlaveName
-	return &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf(DeploymentNameTemplate, foo.Spec.SlaveSpec.DeploymentName, SlaveName),
-			Namespace: foo.Namespace,
-			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(foo, redisoperatorv1.SchemeGroupVersion.WithKind("RedisOperator")),
-			},
-		},
-		Spec: appsv1.DeploymentSpec{
-			Replicas: foo.Spec.SlaveSpec.Replicas,
-			//Replicas: int2pointer(1),
-			Selector: &metav1.LabelSelector{
-				MatchLabels: labels,
-			},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: labels,
-				},
-				Spec: corev1.PodSpec{
-					Volumes: []corev1.Volume{
-						{
-							Name: "task-pv-storage",
-							VolumeSource: corev1.VolumeSource{
-								HostPath: hostPath,
-								//PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-								//	ClaimName: fmt.Sprintf(PVCNameTemplate, foo.Spec.MasterSpec.DeploymentName, SlaveName),
-								//},
-							},
-						},
-					},
-					Containers: []corev1.Container{
-						{
-							Name:  fmt.Sprintf(ContainerNameTemplate, foo.Spec.SlaveSpec.DeploymentName, SlaveName),
-							Image: foo.Spec.SlaveSpec.Image,
-							Ports: []corev1.ContainerPort{
-								{
-									ContainerPort: 6379,
-								},
-							},
-							Env: []corev1.EnvVar{
-								{
-									Name:  EnvRedisConf,
-									Value: fmt.Sprintf(EnvRedisConfTemplate, foo.Spec.SlaveSpec.DeploymentName, SlaveName),
-								},
-								{
-									Name:  EnvRedisDir,
-									Value: "",
-								},
-								{
-									Name:  EnvRedisDbFileName,
-									Value: fmt.Sprintf(EnvRedisDbFileNameTemplate, foo.Spec.SlaveSpec.DeploymentName, SlaveName),
-								},
-								{
-									Name:  "GET_HOSTS_FROM",
-									Value: "dns",
-								},
-								{
-									Name:  EnvRedisMaster,
-									Value: fmt.Sprintf(ServiceNameTemplate, foo.Spec.MasterSpec.DeploymentName, MasterName),
-								},
-								{
-									Name:  EnvRedisMasterPort,
-									Value: strconv.Itoa(RedisDefaultPort),
-								},
-							},
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									MountPath: "/data",
-									Name:      "task-pv-storage",
-								},
-							},
-						},
-					},
-					ImagePullSecrets: []corev1.LocalObjectReference{
-						{
-							Name: foo.Spec.SlaveSpec.ImagePullSecrets,
-						},
-					},
-				},
-			},
-		},
-	}
-}
-
-// newService creates a new Service for a RedisOperator resource. It also sets
-// the appropriate OwnerReferences on the resource so handleObject can discover
-// the RedisOperator resource that 'owns' it.
-func newService(foo *redisoperatorv1.RedisOperator, isMaster bool) *corev1.Service {
-	var serviceName string
-	var labels = map[string]string{
-		"app":        "redis-operator",
-		"controller": foo.Name,
-		"role":       MasterName,
-	}
-	if isMaster == true {
-		serviceName = fmt.Sprintf(ServiceNameTemplate, foo.Spec.MasterSpec.DeploymentName, MasterName)
-	} else {
-		labels["role"] = SlaveName
-		serviceName = fmt.Sprintf(ServiceNameTemplate, foo.Spec.SlaveSpec.DeploymentName, SlaveName)
-	}
-	return &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      serviceName,
-			Namespace: foo.Namespace,
-			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(foo, redisoperatorv1.SchemeGroupVersion.WithKind("RedisOperator")),
-			},
-			Labels: labels,
-		},
-		Spec: corev1.ServiceSpec{
-			Ports: []corev1.ServicePort{
-				{
-					Port: RedisDefaultPort,
-				},
-			},
-			Selector: labels,
-		},
-	}
-}
-
-func int2pointer(i int32) *int32 { return &i }
+func int64ToPointer(i int64) *int64 { return &i }

@@ -8,25 +8,11 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	//"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	//"k8s.io/apimachinery/pkg/util/wait"
-	//appsinformersv1 "k8s.io/client-go/informers/apps/v1"
-	//coreinformersv1 "k8s.io/client-go/informers/core/v1"
-	//"k8s.io/client-go/kubernetes"
-	//"k8s.io/client-go/kubernetes/scheme"
-	//typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
-	//appslistersv1 "k8s.io/client-go/listers/apps/v1"
-	//corelistersv1 "k8s.io/client-go/listers/core/v1"
-	//"k8s.io/client-go/tools/cache"
-	//"k8s.io/client-go/tools/record"
-	//"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog"
 
 	redisoperatorv1 "github.com/nevercase/k8s-controller-custom-resource/pkg/apis/redisoperator/v1"
-	//clientset "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/redisoperator/clientset/versioned"
-	//redisoperatorscheme "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/redisoperator/clientset/versioned/scheme"
 )
 
 func (c *Controller) createDeployment(foo *redisoperatorv1.RedisOperator, rds *redisoperatorv1.RedisDeploymentSpec, isMaster bool) error {
@@ -38,7 +24,7 @@ func (c *Controller) createDeployment(foo *redisoperatorv1.RedisOperator, rds *r
 		utilruntime.HandleError(fmt.Errorf("%s: DeploymentName must be specified", rds.DeploymentName))
 		return nil
 	}
-	deploymentName = fmt.Sprintf("deployment-%s", rds.DeploymentName)
+	deploymentName = fmt.Sprintf(DeploymentNameTemplate, rds.DeploymentName)
 	// Get the deployment with the name specified in RedisOperator.spec
 	deployment, err := c.deploymentsLister.Deployments(foo.Namespace).Get(deploymentName)
 	// If the resource doesn't exist, we'll create it
@@ -84,6 +70,35 @@ func (c *Controller) createDeployment(foo *redisoperatorv1.RedisOperator, rds *r
 	return nil
 }
 
+func (c *Controller) deleteDeployment(foo *redisoperatorv1.RedisOperator, rds *redisoperatorv1.RedisDeploymentSpec, isMaster bool) error {
+	var deploymentName string
+	if rds.DeploymentName == "" {
+		// We choose to absorb the error here as the worker would requeue the
+		// resource otherwise. Instead, the next time the resource is updated
+		// the resource will be queued again.
+		utilruntime.HandleError(fmt.Errorf("%s: DeploymentName must be specified", rds.DeploymentName))
+		return nil
+	}
+	deploymentName = fmt.Sprintf(DeploymentNameTemplate, rds.DeploymentName)
+	// Get the deployment with the name specified in RedisOperator.spec
+	deployment, err := c.deploymentsLister.Deployments(foo.Namespace).Get(deploymentName)
+	// If the resource doesn't exist, we'll create it
+	if errors.IsNotFound(err) {
+		return nil
+	} else {
+		_ = deployment
+		opts := &metav1.DeleteOptions{
+			//GracePeriodSeconds: int64ToPointer(30),
+		}
+		err = c.kubeclientset.AppsV1().Deployments(foo.Namespace).Delete(deploymentName, opts)
+		if err != nil {
+			klog.V(2).Info(err)
+			return err
+		}
+	}
+	return nil
+}
+
 // newDeployment creates a new Deployment for a RedisOperator resource. It also sets
 // the appropriate OwnerReferences on the resource so handleObject can discover
 // the RedisOperator resource that 'owns' it, and sets the deploymentName with the
@@ -100,8 +115,8 @@ func (c *Controller) newDeployment(foo *redisoperatorv1.RedisOperator, rds *redi
 		Path: "/mnt/ssd1",
 	}
 
-	objectName := fmt.Sprintf("deployment-%s", rds.DeploymentName)
-	containerName := fmt.Sprintf("container-%s", rds.DeploymentName)
+	objectName := fmt.Sprintf(DeploymentNameTemplate, rds.DeploymentName)
+	containerName := fmt.Sprintf(ContainerNameTemplate, rds.DeploymentName)
 
 	standard := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -144,7 +159,7 @@ func (c *Controller) newDeployment(foo *redisoperatorv1.RedisOperator, rds *redi
 							Env: []corev1.EnvVar{
 								{
 									Name:  EnvRedisConf,
-									Value: fmt.Sprintf("redis-%s.conf", rds.DeploymentName),
+									Value: fmt.Sprintf(EnvRedisConfTemplate, rds.DeploymentName),
 								},
 								{
 									Name:  EnvRedisDir,
@@ -152,7 +167,7 @@ func (c *Controller) newDeployment(foo *redisoperatorv1.RedisOperator, rds *redi
 								},
 								{
 									Name:  EnvRedisDbFileName,
-									Value: fmt.Sprintf("redis-%s.rdb", rds.DeploymentName),
+									Value: fmt.Sprintf(EnvRedisDbFileNameTemplate, rds.DeploymentName),
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
@@ -182,6 +197,7 @@ func (c *Controller) newDeployment(foo *redisoperatorv1.RedisOperator, rds *redi
 	}
 
 	labels["role"] = SlaveName
+	masterName := fmt.Sprintf("%s-%s", foo.Spec.MasterSpec.DeploymentName, MasterName)
 	standard.Spec.Selector.MatchLabels = labels
 	standard.Spec.Template.ObjectMeta.Labels = labels
 	standard.Spec.Template.Spec.Containers = []corev1.Container{
@@ -196,7 +212,7 @@ func (c *Controller) newDeployment(foo *redisoperatorv1.RedisOperator, rds *redi
 			Env: []corev1.EnvVar{
 				{
 					Name:  EnvRedisConf,
-					Value: fmt.Sprintf("redis-%s.conf", rds.DeploymentName),
+					Value: fmt.Sprintf(EnvRedisConfTemplate, rds.DeploymentName),
 				},
 				{
 					Name:  EnvRedisDir,
@@ -204,7 +220,7 @@ func (c *Controller) newDeployment(foo *redisoperatorv1.RedisOperator, rds *redi
 				},
 				{
 					Name:  EnvRedisDbFileName,
-					Value: fmt.Sprintf("redis-%s.rdb", rds.DeploymentName),
+					Value: fmt.Sprintf(EnvRedisDbFileNameTemplate, rds.DeploymentName),
 				},
 				{
 					Name:  "GET_HOSTS_FROM",
@@ -212,7 +228,7 @@ func (c *Controller) newDeployment(foo *redisoperatorv1.RedisOperator, rds *redi
 				},
 				{
 					Name:  EnvRedisMaster,
-					Value: fmt.Sprintf("service-%s-%s", foo.Spec.MasterSpec.DeploymentName, MasterName),
+					Value: fmt.Sprintf(ServiceNameTemplate, masterName),
 				},
 				{
 					Name:  EnvRedisMasterPort,
