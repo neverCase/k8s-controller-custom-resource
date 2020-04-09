@@ -38,6 +38,7 @@ import (
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog"
 
+	k8scorev1 "github.com/nevercase/k8s-controller-custom-resource/core/v1"
 	redisoperatorv1 "github.com/nevercase/k8s-controller-custom-resource/pkg/apis/redisoperator/v1"
 	clientset "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/redisoperator/clientset/versioned"
 	redisoperatorscheme "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/redisoperator/clientset/versioned/scheme"
@@ -478,3 +479,98 @@ func (c *Controller) handleObject(obj interface{}) {
 func int32ToPointer(i int32) *int32 { return &i }
 
 func int64ToPointer(i int64) *int64 { return &i }
+
+func NewController2(
+	kubeclientset kubernetes.Interface,
+	sampleclientset clientset.Interface,
+	deploymentInformer appsinformersv1.DeploymentInformer,
+	serviceInformer coreinformersv1.ServiceInformer,
+	pvcInformer coreinformersv1.PersistentVolumeClaimInformer,
+	fooInformer informers.RedisOperatorInformer) k8scorev1.KubernetesControllerV1 {
+
+	op := k8scorev1.NewKubernetesOperator(kubeclientset,
+		controllerAgentName,
+		"RedisOperator",
+		fooInformer,
+		fooInformer.Informer().HasSynced,
+		fooInformer.Informer().AddEventHandler,
+		CompareResourceVersion,
+		Get,
+		Sync)
+	kc := k8scorev1.NewKubernetesController(op)
+	return kc
+}
+
+func CompareResourceVersion(old, new interface{}) bool {
+	newDepl := new.(*redisoperatorv1.RedisOperator)
+	oldDepl := old.(*redisoperatorv1.RedisOperator)
+	if newDepl.ResourceVersion == oldDepl.ResourceVersion {
+		// Periodic resync will send update events for all known Deployments.
+		// Two different versions of the same Deployment will always have different RVs.
+		return true
+	}
+	return false
+}
+
+func Get(foo interface{}, nameSpace, ownerRefName string) (obj interface{}, err error) {
+	kc := foo.(informers.RedisOperatorInformer)
+	return kc.Lister().RedisOperators(nameSpace).Get(ownerRefName)
+}
+
+func Sync(obj interface{}) error {
+	name, key := "", ""
+	foo := obj.(*redisoperatorv1.RedisOperator)
+	// Create the Deployment of master with MasterSpec
+	err := createRedisDeploymentAndService(foo, name, key, true)
+	if err != nil {
+		return err
+	}
+
+	// Create the Deployment of slave with SlaveSpec
+	err = createRedisDeploymentAndService(foo, name, key, false)
+	if err != nil {
+		return err
+	}
+}
+
+func createRedisDeploymentAndService(foo *redisoperatorv1.RedisOperator, name, key string, isMaster bool) (err error) {
+	//klog.Info("createRedisDeploymentAndService2:")
+	if isMaster == true {
+		rds := foo.Spec.MasterSpec
+		rds.DeploymentName = fmt.Sprintf("%s-%s", rds.DeploymentName, MasterName)
+		//klog.Info("rds:", rds)
+		if err = c.createDeployment(foo, &rds, isMaster); err != nil {
+			return err
+		}
+		if err = c.createService(foo, &rds, isMaster); err != nil {
+			return err
+		}
+		return nil
+	}
+
+	for i := 0; i < int(*foo.Spec.SlaveSpec.Replicas); i++ {
+		rds := foo.Spec.SlaveSpec
+		rds.DeploymentName = fmt.Sprintf("%s-%s-%d", rds.DeploymentName, SlaveName, i)
+		//klog.Info("rds:", rds)
+		if err = c.createDeployment(foo, &rds, isMaster); err != nil {
+			return err
+		}
+		if err = c.createService(foo, &rds, isMaster); err != nil {
+			return err
+		}
+	}
+
+	for i := int(*foo.Spec.SlaveSpec.Replicas); i < 10; i++ {
+		rds := foo.Spec.SlaveSpec
+		rds.DeploymentName = fmt.Sprintf("%s-%s-%d", rds.DeploymentName, SlaveName, i)
+		//klog.Info("rds:", rds)
+		if err = c.deleteDeployment(foo, &rds, isMaster); err != nil {
+			return err
+		}
+		if err = c.deleteService(foo, &rds, isMaster); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}

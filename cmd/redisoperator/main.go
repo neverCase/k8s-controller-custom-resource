@@ -47,7 +47,7 @@ func main() {
 	kubeInformerFactory := kubeinformers.NewSharedInformerFactory(kubeClient, time.Second*30)
 	exampleInformerFactory := informers.NewSharedInformerFactory(exampleClient, time.Second*30)
 
-	controller := crd.NewController(kubeClient, exampleClient,
+	controller := crd.NewController2(kubeClient, exampleClient,
 		kubeInformerFactory.Apps().V1().Deployments(),
 		kubeInformerFactory.Core().V1().Services(),
 		kubeInformerFactory.Core().V1().PersistentVolumeClaims(),
