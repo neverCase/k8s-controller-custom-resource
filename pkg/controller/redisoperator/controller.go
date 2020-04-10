@@ -483,13 +483,8 @@ func int64ToPointer(i int64) *int64 { return &i }
 
 func NewController2(
 	kubeclientset kubernetes.Interface,
-	stopCh <-chan struct{},
 	sampleclientset clientset.Interface,
-	//deploymentInformer appsinformersv1.DeploymentInformer,
-	//serviceInformer coreinformersv1.ServiceInformer,
-	//pvcInformer coreinformersv1.PersistentVolumeClaimInformer,
-	//fooInformer informers.RedisOperatorInformer
-) k8scorev1.KubernetesControllerV1 {
+	stopCh <-chan struct{}) k8scorev1.KubernetesControllerV1 {
 
 	exampleInformerFactory := informersv2.NewSharedInformerFactory(sampleclientset, time.Second*30)
 	fooInformer := exampleInformerFactory.Redisoperator().V1().RedisOperators()
@@ -500,6 +495,7 @@ func NewController2(
 		stopCh,
 		controllerAgentName,
 		"RedisOperator",
+		sampleclientset,
 		fooInformer,
 		fooInformer.Informer().HasSynced,
 		fooInformer.Informer().AddEventHandler,
@@ -528,15 +524,17 @@ func Get(foo interface{}, nameSpace, ownerRefName string) (obj interface{}, err 
 	return kc.Lister().RedisOperators(nameSpace).Get(ownerRefName)
 }
 
-func Sync(obj interface{}, ks k8scorev1.KubernetesResource, recorder record.EventRecorder) error {
+func Sync(obj interface{}, clientObj interface{}, ks k8scorev1.KubernetesResource, recorder record.EventRecorder) error {
 	foo := obj.(*redisoperatorv1.RedisOperator)
+	clientSet := clientObj.(clientset.Interface)
+	//defer recorder.Event(foo, corev1.EventTypeNormal, SuccessSynced, MessageResourceSynced)
 	// Create the Deployment of master with MasterSpec
-	err := createRedisDeploymentAndService(ks, foo, true)
+	err := createRedisDeploymentAndService(ks, foo, clientSet, true)
 	if err != nil {
 		return err
 	}
 	// Create the Deployment of slave with SlaveSpec
-	err = createRedisDeploymentAndService(ks, foo, false)
+	err = createRedisDeploymentAndService(ks, foo, clientSet, false)
 	if err != nil {
 		return err
 	}
@@ -544,18 +542,20 @@ func Sync(obj interface{}, ks k8scorev1.KubernetesResource, recorder record.Even
 	return nil
 }
 
-func createRedisDeploymentAndService(ks k8scorev1.KubernetesResource, foo *redisoperatorv1.RedisOperator, isMaster bool) (err error) {
+func createRedisDeploymentAndService(ks k8scorev1.KubernetesResource, foo *redisoperatorv1.RedisOperator, clientSet clientset.Interface, isMaster bool) (err error) {
 	//klog.Info("createRedisDeploymentAndService2:")
 	if isMaster == true {
 		rds := foo.Spec.MasterSpec
 		rds.DeploymentName = fmt.Sprintf("%s-%s", rds.DeploymentName, MasterName)
 		//klog.Info("rds:", rds)
-		d := newDeployment(foo, &rds)
-		if err = ks.Deployment().Create(foo.Namespace, foo.Spec.MasterSpec.DeploymentName, d); err != nil {
+		if err = deployment(ks, foo, &rds, clientSet, isMaster); err != nil {
 			return err
 		}
+		//if err = updateFooStatus(foo, clientSet, d, isMaster); err != nil {
+		//	return err
+		//}
 		s := newService(foo, &rds)
-		if err = ks.Service().Create(foo.Namespace, foo.Spec.MasterSpec.DeploymentName, s); err != nil {
+		if err = ks.Service().Create(foo.Namespace, rds.DeploymentName, s); err != nil {
 			return err
 		}
 		return nil
@@ -565,12 +565,14 @@ func createRedisDeploymentAndService(ks k8scorev1.KubernetesResource, foo *redis
 		rds := foo.Spec.SlaveSpec
 		rds.DeploymentName = fmt.Sprintf("%s-%s-%d", rds.DeploymentName, SlaveName, i)
 		//klog.Info("rds:", rds)
-		d := newDeployment(foo, &rds)
-		if err = ks.Deployment().Create(foo.Namespace, foo.Spec.SlaveSpec.DeploymentName, d); err != nil {
+		if err = deployment(ks, foo, &rds, clientSet, isMaster); err != nil {
 			return err
 		}
+		//if err = updateFooStatus(foo, clientSet, d, isMaster); err != nil {
+		//	return err
+		//}
 		s := newService(foo, &rds)
-		if err = ks.Service().Create(foo.Namespace, foo.Spec.SlaveSpec.DeploymentName, s); err != nil {
+		if err = ks.Service().Create(foo.Namespace, rds.DeploymentName, s); err != nil {
 			return err
 		}
 	}
@@ -587,4 +589,55 @@ func createRedisDeploymentAndService(ks k8scorev1.KubernetesResource, foo *redis
 		}
 	}
 	return nil
+}
+
+func deployment(ks k8scorev1.KubernetesResource,
+	foo *redisoperatorv1.RedisOperator,
+	rds *redisoperatorv1.RedisDeploymentSpec,
+	clientSet clientset.Interface,
+	isMaster bool) error {
+	d, err := ks.Deployment().Get(foo.Namespace, rds.DeploymentName)
+	if err != nil {
+		klog.Info("deployment err:", err)
+		if !errors.IsNotFound(err) {
+			return err
+		}
+		klog.Info("new deployment")
+		if d, err = ks.Deployment().Create(foo.Namespace, foo.Spec.MasterSpec.DeploymentName, newDeployment(foo, rds)); err != nil {
+			return err
+		}
+	}
+	if rds.Replicas != nil && *rds.Replicas != *d.Spec.Replicas {
+		klog.V(4).Infof("MasterSpec %s replicas: %d, deployment replicas: %d", rds.DeploymentName, *rds.Replicas, *d.Spec.Replicas)
+		klog.Info("update deployment")
+		// If an error occurs during Update, we'll requeue the item so we can
+		// attempt processing again later. THis could have been caused by a
+		// temporary network failure, or any other transient reason.
+		if d, err = ks.Deployment().Update(foo.Namespace, newDeployment(foo, rds)); err != nil {
+			klog.Info(err)
+			return err
+		}
+	}
+	//if err = updateFooStatus(foo, clientSet, d, isMaster); err != nil {
+	//	return err
+	//}
+	return nil
+}
+
+func updateFooStatus(foo *redisoperatorv1.RedisOperator, clientSet clientset.Interface, deployment *appsv1.Deployment, isMaster bool) error {
+	// NEVER modify objects from the store. It's a read-only, local cache.
+	// You can use DeepCopy() to make a deep copy of original object and modify this copy
+	// Or create a copy manually for better performance
+	fooCopy := foo.DeepCopy()
+	if isMaster == true {
+		fooCopy.Status.MasterStatus.AvailableReplicas = deployment.Status.AvailableReplicas
+	} else {
+		fooCopy.Status.SlaveStatus.AvailableReplicas = deployment.Status.AvailableReplicas
+	}
+	// If the CustomResourceSubResources feature gate is not enabled,
+	// we must use Update instead of UpdateStatus to update the Status block of the RedisOperator resource.
+	// UpdateStatus will not allow changes to the Spec of the resource,
+	// which is ideal for ensuring nothing other than resource status has been updated.
+	_, err := clientSet.RedisoperatorV1().RedisOperators(foo.Namespace).Update(fooCopy)
+	return err
 }

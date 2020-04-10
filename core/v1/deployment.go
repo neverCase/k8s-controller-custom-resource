@@ -16,7 +16,7 @@ import (
 
 type KubernetesDeployment interface {
 	Get(nameSpace, specDeploymentName string) (d *appsv1.Deployment, err error)
-	Create(nameSpace, specDeploymentName string, d *appsv1.Deployment) error
+	Create(nameSpace, specDeploymentName string, d *appsv1.Deployment) (*appsv1.Deployment, error)
 	Update(nameSpace string, d *appsv1.Deployment) (*appsv1.Deployment, error)
 	Delete(nameSpace, specDeploymentName string) error
 }
@@ -51,12 +51,12 @@ func (kd *kubernetesDeployment) Get(nameSpace, specDeploymentName string) (d *ap
 	return deployment, err
 }
 
-func (kd *kubernetesDeployment) Create(nameSpace, specDeploymentName string, d *appsv1.Deployment) error {
+func (kd *kubernetesDeployment) Create(nameSpace, specDeploymentName string, d *appsv1.Deployment) (*appsv1.Deployment, error) {
 	_, err := kd.kubeClientSet.AppsV1().Deployments(nameSpace).Create(d)
 	if err != nil {
 		klog.V(2).Info(err)
 	}
-	return err
+	return d, err
 }
 
 func (kd *kubernetesDeployment) Update(nameSpace string, d *appsv1.Deployment) (*appsv1.Deployment, error) {
@@ -70,7 +70,7 @@ func (kd *kubernetesDeployment) Update(nameSpace string, d *appsv1.Deployment) (
 func (kd *kubernetesDeployment) Delete(nameSpace, specDeploymentName string) error {
 	// Get the deployment with the name specified in RedisOperator.spec
 	_, err := kd.Get(nameSpace, specDeploymentName)
-	// If the resource doesn't exist, we'll create it
+	// If the resource doesn't exist, we'll return nil
 	if errors.IsNotFound(err) {
 		return nil
 	}

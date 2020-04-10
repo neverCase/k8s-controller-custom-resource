@@ -47,7 +47,6 @@ func NewKubernetesController(operator KubernetesOperator) KubernetesControllerV1
 
 	kubeInformerFactory := operator.GetInformerFactory()
 	deploymentInformer := kubeInformerFactory.Apps().V1().Deployments()
-	//deploymentInformer := operator.GetResource().Deployment().Informer()
 	serviceInformer := kubeInformerFactory.Core().V1().Services()
 	pvcInformer := kubeInformerFactory.Core().V1().PersistentVolumeClaims()
 
@@ -60,7 +59,6 @@ func NewKubernetesController(operator KubernetesOperator) KubernetesControllerV1
 
 	var kc KubernetesControllerV1 = &kubernetesController{
 		kubeclientset: operator.GetClientSet(),
-		//sampleclientset:     sampleclientset,
 		deploymentsLister: deploymentInformer.Lister(),
 		deploymentsSynced: deploymentInformer.Informer().HasSynced,
 		pvcLister:         pvcInformer.Lister(),
@@ -68,11 +66,8 @@ func NewKubernetesController(operator KubernetesOperator) KubernetesControllerV1
 		servicesLister:    serviceInformer.Lister(),
 		servicesSynced:    serviceInformer.Informer().HasSynced,
 
-		operator: operator,
-		//operatorHandle: operator.HandleObject,
-		//redisOperatorLister: fooInformer.Lister(),
+		operator:       operator,
 		operatorSynced: operator.HasSyncedFunc(),
-		//operatorSynced: fooInformer.Informer().HasSynced,
 
 		workqueue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), operator.GetAgentName()),
 		recorder:  operator.GetRecorder(),
@@ -147,8 +142,6 @@ func NewKubernetesController(operator KubernetesOperator) KubernetesControllerV1
 type kubernetesController struct {
 	// kubeclientset is a standard kubernetes clientset
 	kubeclientset kubernetes.Interface
-	// sampleclientset is a clientset for our own API group
-	//sampleclientset clientset.Interface
 
 	deploymentsLister appslistersv1.DeploymentLister
 	deploymentsSynced cache.InformerSynced
@@ -157,10 +150,7 @@ type kubernetesController struct {
 	servicesLister    corelistersv1.ServiceLister
 	servicesSynced    cache.InformerSynced
 
-	operator KubernetesOperator
-	//operatorHandle     func(obj interface{})
-	operatorSyncHandle func(obj interface{}) error
-	//operatorLister     listers.RedisOperatorLister
+	operator       KubernetesOperator
 	operatorSynced cache.InformerSynced
 
 	// workqueue is a rate limited work queue. This is used to queue work to be

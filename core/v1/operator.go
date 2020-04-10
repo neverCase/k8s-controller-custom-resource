@@ -22,7 +22,6 @@ type KubernetesOperator interface {
 	GetKindName() string
 	GetAgentName() string
 	SyncHandleObject(obj interface{}) error
-	HandleObject(obj interface{})
 	HasSyncedFunc() func() bool
 	AddEventHandler(handler cache.ResourceEventHandler)
 	CompareResourceVersion(old, new interface{}) bool
@@ -32,12 +31,13 @@ type KubernetesOperator interface {
 func NewKubernetesOperator(kubeClientset kubernetes.Interface,
 	stopCh <-chan struct{},
 	agentName, kindName string,
+	agentClientSet interface{},
 	foo interface{},
 	hasSynced func() bool,
 	addEvent func(handler cache.ResourceEventHandler),
 	compareResourceVersionFunc func(old, new interface{}) bool,
 	getFunc func(informer interface{}, nameSpace, ownerRefName string) (obj interface{}, err error),
-	syncFunc func(obj interface{}, ks KubernetesResource, ko record.EventRecorder) error) KubernetesOperator {
+	syncFunc func(obj interface{}, agentClientSet interface{}, ks KubernetesResource, ko record.EventRecorder) error) KubernetesOperator {
 
 	//utilruntime.Must(redisoperatorscheme.AddToScheme(scheme.Scheme))
 	klog.V(4).Info("Creating event broadcaster")
@@ -54,6 +54,7 @@ func NewKubernetesOperator(kubeClientset kubernetes.Interface,
 		recorder:                   recorder,
 		kubernetesResource:         NewKubernetesResource(kubeClientset, kubeInformerFactory, recorder),
 		kindName:                   kindName,
+		agentClientSet:             agentClientSet,
 		agent:                      foo,
 		agentName:                  agentName,
 		agentType:                  reflect.TypeOf(foo),
@@ -63,6 +64,9 @@ func NewKubernetesOperator(kubeClientset kubernetes.Interface,
 		getFunc:                    getFunc,
 		syncFunc:                   syncFunc,
 	}
+
+	// notice that there is no need to run Start methods in a separate goroutine. (i.e. go kubeInformerFactory.Start(stopCh)
+	// Start method is non-blocking and runs all registered informers in a dedicated goroutine
 	kubeInformerFactory.Start(stopCh)
 	return ko
 }
@@ -73,6 +77,7 @@ type kubernetesOperator struct {
 	kubeInformerFactory        kubeinformers.SharedInformerFactory
 	recorder                   record.EventRecorder
 	kindName                   string
+	agentClientSet             interface{}
 	agent                      interface{}
 	agentName                  string
 	agentType                  reflect.Type
@@ -80,7 +85,7 @@ type kubernetesOperator struct {
 	addEvent                   func(handler cache.ResourceEventHandler)
 	compareResourceVersionFunc func(old, new interface{}) bool
 	getFunc                    func(informer interface{}, nameSpace, ownerRefName string) (obj interface{}, err error)
-	syncFunc                   func(obj interface{}, ks KubernetesResource, ko record.EventRecorder) error
+	syncFunc                   func(obj interface{}, agentClientSet interface{}, ks KubernetesResource, ko record.EventRecorder) error
 }
 
 func (ko *kubernetesOperator) GetClientSet() kubernetes.Interface {
@@ -115,12 +120,8 @@ func (ko *kubernetesOperator) AddEventHandler(handler cache.ResourceEventHandler
 	ko.addEvent(handler)
 }
 
-func (ko *kubernetesOperator) HandleObject(obj interface{}) {
-
-}
-
 func (ko *kubernetesOperator) SyncHandleObject(obj interface{}) error {
-	return ko.syncFunc(obj, ko.kubernetesResource, ko.recorder)
+	return ko.syncFunc(obj, ko.agentClientSet, ko.kubernetesResource, ko.recorder)
 }
 
 func (ko *kubernetesOperator) CompareResourceVersion(old, new interface{}) bool {
