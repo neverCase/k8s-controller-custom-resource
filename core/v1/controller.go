@@ -10,23 +10,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
-	//kubeinformers "k8s.io/client-go/informers"
-	//appsinformersv1 "k8s.io/client-go/informers/apps/v1"
-	//coreinformersv1 "k8s.io/client-go/informers/core/v1"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/kubernetes/scheme"
-	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	appslistersv1 "k8s.io/client-go/listers/apps/v1"
 	corelistersv1 "k8s.io/client-go/listers/core/v1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog"
-	//redisoperatorv1 "github.com/nevercase/k8s-controller-custom-resource/pkg/apis/redisoperator/v1"
-	//clientset "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/redisoperator/clientset/versioned"
-	//redisoperatorscheme "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/redisoperator/clientset/versioned/scheme"
-	//informers "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/redisoperator/informers/externalversions/redisoperator/v1"
-	//listers "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/redisoperator/listers/redisoperator/v1"
 )
 
 const (
@@ -57,15 +47,16 @@ func NewKubernetesController(operator KubernetesOperator) KubernetesControllerV1
 
 	kubeInformerFactory := operator.GetInformerFactory()
 	deploymentInformer := kubeInformerFactory.Apps().V1().Deployments()
+	//deploymentInformer := operator.GetResource().Deployment().Informer()
 	serviceInformer := kubeInformerFactory.Core().V1().Services()
 	pvcInformer := kubeInformerFactory.Core().V1().PersistentVolumeClaims()
 
 	//utilruntime.Must(redisoperatorscheme.AddToScheme(scheme.Scheme))
-	klog.V(4).Info("Creating event broadcaster")
-	eventBroadcaster := record.NewBroadcaster()
-	eventBroadcaster.StartLogging(klog.Infof)
-	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: operator.GetClientSet().CoreV1().Events("")})
-	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, corev1.EventSource{Component: operator.GetAgentName()})
+	//klog.V(4).Info("Creating event broadcaster")
+	//eventBroadcaster := record.NewBroadcaster()
+	//eventBroadcaster.StartLogging(klog.Infof)
+	//eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: operator.GetClientSet().CoreV1().Events("")})
+	//recorder := eventBroadcaster.NewRecorder(scheme.Scheme, corev1.EventSource{Component: operator.GetAgentName()})
 
 	var kc KubernetesControllerV1 = &kubernetesController{
 		kubeclientset: operator.GetClientSet(),
@@ -84,7 +75,7 @@ func NewKubernetesController(operator KubernetesOperator) KubernetesControllerV1
 		//operatorSynced: fooInformer.Informer().HasSynced,
 
 		workqueue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), operator.GetAgentName()),
-		recorder:  recorder,
+		recorder:  operator.GetRecorder(),
 	}
 
 	klog.Info("Setting up event handlers")
@@ -196,9 +187,12 @@ func (kc *kubernetesController) Run(threadiness int, stopCh <-chan struct{}) err
 
 	// Wait for the caches to be synced before starting workers
 	klog.Info("Waiting for informer caches to sync")
-	if ok := cache.WaitForCacheSync(stopCh, kc.deploymentsSynced, kc.servicesSynced, kc.pvcSynced, kc.operatorSynced); !ok {
+	if ok := cache.WaitForCacheSync(stopCh, kc.deploymentsSynced, kc.servicesSynced, kc.operatorSynced); !ok {
 		return fmt.Errorf("failed to wait for caches to sync")
 	}
+	//if ok := cache.WaitForCacheSync(stopCh, kc.deploymentsSynced, kc.servicesSynced, kc.pvcSynced, kc.operatorSynced); !ok {
+	//	return fmt.Errorf("failed to wait for caches to sync")
+	//}
 
 	klog.Info("Starting workers")
 	// Launch two workers to process Operator resources
@@ -306,7 +300,6 @@ func (kc *kubernetesController) SyncHandler(key string) error {
 		return err
 	}
 
-	kc.recorder.Event(foo, corev1.EventTypeNormal, SuccessSynced, MessageResourceSynced)
 	return nil
 }
 
@@ -316,10 +309,12 @@ func (kc *kubernetesController) SyncHandler(key string) error {
 func (kc *kubernetesController) EnqueueFoo(obj interface{}) {
 	var key string
 	var err error
+	klog.Info("EnqueueFoo:", obj)
 	if key, err = cache.MetaNamespaceKeyFunc(obj); err != nil {
 		utilruntime.HandleError(err)
 		return
 	}
+	klog.Info("EnqueueFoo workqueue key:", key)
 	kc.workqueue.Add(key)
 }
 

@@ -42,6 +42,7 @@ import (
 	redisoperatorv1 "github.com/nevercase/k8s-controller-custom-resource/pkg/apis/redisoperator/v1"
 	clientset "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/redisoperator/clientset/versioned"
 	redisoperatorscheme "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/redisoperator/clientset/versioned/scheme"
+	informersv2 "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/redisoperator/informers/externalversions"
 	informers "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/redisoperator/informers/externalversions/redisoperator/v1"
 	listers "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/redisoperator/listers/redisoperator/v1"
 )
@@ -482,13 +483,21 @@ func int64ToPointer(i int64) *int64 { return &i }
 
 func NewController2(
 	kubeclientset kubernetes.Interface,
+	stopCh <-chan struct{},
 	sampleclientset clientset.Interface,
-	deploymentInformer appsinformersv1.DeploymentInformer,
-	serviceInformer coreinformersv1.ServiceInformer,
-	pvcInformer coreinformersv1.PersistentVolumeClaimInformer,
-	fooInformer informers.RedisOperatorInformer) k8scorev1.KubernetesControllerV1 {
+	//deploymentInformer appsinformersv1.DeploymentInformer,
+	//serviceInformer coreinformersv1.ServiceInformer,
+	//pvcInformer coreinformersv1.PersistentVolumeClaimInformer,
+	//fooInformer informers.RedisOperatorInformer
+) k8scorev1.KubernetesControllerV1 {
+
+	exampleInformerFactory := informersv2.NewSharedInformerFactory(sampleclientset, time.Second*30)
+	fooInformer := exampleInformerFactory.Redisoperator().V1().RedisOperators()
+
+	//roInformerFactory := informersv2.NewSharedInformerFactory(sampleclientset, time.Second*30)
 
 	op := k8scorev1.NewKubernetesOperator(kubeclientset,
+		stopCh,
 		controllerAgentName,
 		"RedisOperator",
 		fooInformer,
@@ -498,6 +507,8 @@ func NewController2(
 		Get,
 		Sync)
 	kc := k8scorev1.NewKubernetesController(op)
+	//roInformerFactory.Start(stopCh)
+	exampleInformerFactory.Start(stopCh)
 	return kc
 }
 
@@ -517,32 +528,34 @@ func Get(foo interface{}, nameSpace, ownerRefName string) (obj interface{}, err 
 	return kc.Lister().RedisOperators(nameSpace).Get(ownerRefName)
 }
 
-func Sync(obj interface{}) error {
-	name, key := "", ""
+func Sync(obj interface{}, ks k8scorev1.KubernetesResource, recorder record.EventRecorder) error {
 	foo := obj.(*redisoperatorv1.RedisOperator)
 	// Create the Deployment of master with MasterSpec
-	err := createRedisDeploymentAndService(foo, name, key, true)
+	err := createRedisDeploymentAndService(ks, foo, true)
 	if err != nil {
 		return err
 	}
-
 	// Create the Deployment of slave with SlaveSpec
-	err = createRedisDeploymentAndService(foo, name, key, false)
+	err = createRedisDeploymentAndService(ks, foo, false)
 	if err != nil {
 		return err
 	}
+	recorder.Event(foo, corev1.EventTypeNormal, SuccessSynced, MessageResourceSynced)
+	return nil
 }
 
-func createRedisDeploymentAndService(foo *redisoperatorv1.RedisOperator, name, key string, isMaster bool) (err error) {
+func createRedisDeploymentAndService(ks k8scorev1.KubernetesResource, foo *redisoperatorv1.RedisOperator, isMaster bool) (err error) {
 	//klog.Info("createRedisDeploymentAndService2:")
 	if isMaster == true {
 		rds := foo.Spec.MasterSpec
 		rds.DeploymentName = fmt.Sprintf("%s-%s", rds.DeploymentName, MasterName)
 		//klog.Info("rds:", rds)
-		if err = c.createDeployment(foo, &rds, isMaster); err != nil {
+		d := newDeployment(foo, &rds)
+		if err = ks.Deployment().Create(foo.Namespace, foo.Spec.MasterSpec.DeploymentName, d); err != nil {
 			return err
 		}
-		if err = c.createService(foo, &rds, isMaster); err != nil {
+		s := newService(foo, &rds)
+		if err = ks.Service().Create(foo.Namespace, foo.Spec.MasterSpec.DeploymentName, s); err != nil {
 			return err
 		}
 		return nil
@@ -552,10 +565,12 @@ func createRedisDeploymentAndService(foo *redisoperatorv1.RedisOperator, name, k
 		rds := foo.Spec.SlaveSpec
 		rds.DeploymentName = fmt.Sprintf("%s-%s-%d", rds.DeploymentName, SlaveName, i)
 		//klog.Info("rds:", rds)
-		if err = c.createDeployment(foo, &rds, isMaster); err != nil {
+		d := newDeployment(foo, &rds)
+		if err = ks.Deployment().Create(foo.Namespace, foo.Spec.SlaveSpec.DeploymentName, d); err != nil {
 			return err
 		}
-		if err = c.createService(foo, &rds, isMaster); err != nil {
+		s := newService(foo, &rds)
+		if err = ks.Service().Create(foo.Namespace, foo.Spec.SlaveSpec.DeploymentName, s); err != nil {
 			return err
 		}
 	}
@@ -564,13 +579,12 @@ func createRedisDeploymentAndService(foo *redisoperatorv1.RedisOperator, name, k
 		rds := foo.Spec.SlaveSpec
 		rds.DeploymentName = fmt.Sprintf("%s-%s-%d", rds.DeploymentName, SlaveName, i)
 		//klog.Info("rds:", rds)
-		if err = c.deleteDeployment(foo, &rds, isMaster); err != nil {
+		if err = ks.Deployment().Delete(foo.Namespace, foo.Spec.SlaveSpec.DeploymentName); err != nil {
 			return err
 		}
-		if err = c.deleteService(foo, &rds, isMaster); err != nil {
+		if err = ks.Service().Delete(foo.Namespace, foo.Spec.SlaveSpec.DeploymentName); err != nil {
 			return err
 		}
 	}
-
 	return nil
 }

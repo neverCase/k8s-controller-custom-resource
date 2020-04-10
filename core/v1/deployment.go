@@ -4,104 +4,84 @@ import (
 	"fmt"
 
 	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	kubeinformers "k8s.io/client-go/informers"
+	"k8s.io/client-go/kubernetes"
+	appslistersv1 "k8s.io/client-go/listers/apps/v1"
+	"k8s.io/client-go/tools/record"
 	"k8s.io/klog"
-
-	redisoperatorv1 "github.com/nevercase/k8s-controller-custom-resource/pkg/apis/redisoperator/v1"
 )
 
 type KubernetesDeployment interface {
+	Get(nameSpace, specDeploymentName string) (d *appsv1.Deployment, err error)
+	Create(nameSpace, specDeploymentName string, d *appsv1.Deployment) error
+	Update(nameSpace string, d *appsv1.Deployment) (*appsv1.Deployment, error)
+	Delete(nameSpace, specDeploymentName string) error
+}
 
+func NewKubernetesDeployment(kubeClientSet kubernetes.Interface, kubeInformerFactory kubeinformers.SharedInformerFactory, recorder record.EventRecorder) KubernetesDeployment {
+	var kd KubernetesDeployment = &kubernetesDeployment{
+		kubeClientSet:     kubeClientSet,
+		deploymentsLister: kubeInformerFactory.Apps().V1().Deployments().Lister(),
+		recorder:          recorder,
+	}
+	return kd
 }
 
 type kubernetesDeployment struct {
-
+	kubeClientSet     kubernetes.Interface
+	deploymentsLister appslistersv1.DeploymentLister
+	recorder          record.EventRecorder
 }
 
-
-func CreateDeployment(foo *redisoperatorv1.RedisOperator, rds *redisoperatorv1.RedisDeploymentSpec, isMaster bool) error {
+func (kd *kubernetesDeployment) Get(nameSpace, specDeploymentName string) (d *appsv1.Deployment, err error) {
 	var deploymentName string
-	if rds.DeploymentName == "" {
+	if specDeploymentName == "" {
 		// We choose to absorb the error here as the worker would requeue the
 		// resource otherwise. Instead, the next time the resource is updated
 		// the resource will be queued again.
-		utilruntime.HandleError(fmt.Errorf("%s: DeploymentName must be specified", rds.DeploymentName))
-		return nil
+		utilruntime.HandleError(fmt.Errorf("%s: DeploymentName must be specified", specDeploymentName))
+		return d, fmt.Errorf("%s: DeploymentName must be specified", specDeploymentName)
 	}
-	deploymentName = fmt.Sprintf(DeploymentNameTemplate, rds.DeploymentName)
+	deploymentName = fmt.Sprintf(DeploymentNameTemplate, specDeploymentName)
 	// Get the deployment with the name specified in RedisOperator.spec
-	deployment, err := c.deploymentsLister.Deployments(foo.Namespace).Get(deploymentName)
-	// If the resource doesn't exist, we'll create it
-	if errors.IsNotFound(err) {
-		deployment, err = c.kubeclientset.AppsV1().Deployments(foo.Namespace).Create(c.newDeployment(foo, rds))
-		// If an error occurs during Get/Create, we'll requeue the item so we can
-		// attempt processing again later. This could have been caused by a
-		// temporary network failure, or any other transient reason.
-		if err != nil {
-			klog.Info(err)
-			return err
-		}
-	}
+	deployment, err := kd.deploymentsLister.Deployments(nameSpace).Get(deploymentName)
+	return deployment, err
+}
 
-	// If the Deployment is not controlled by this RedisOperator resource, we should log
-	// a warning to the event recorder and return error msg.
-	if !metav1.IsControlledBy(deployment, foo) {
-		msg := fmt.Sprintf(MessageResourceExists, deployment.Name)
-		c.recorder.Event(foo, corev1.EventTypeWarning, ErrResourceExists, msg)
-		klog.Info(fmt.Errorf(msg))
-		return fmt.Errorf(msg)
-	}
-
-	if rds.Replicas != nil && *rds.Replicas != *deployment.Spec.Replicas {
-		klog.V(4).Infof("MasterSpec %s replicas: %d, deployment replicas: %d", rds.DeploymentName, *rds.Replicas, *deployment.Spec.Replicas)
-
-		// If an error occurs during Update, we'll requeue the item so we can
-		// attempt processing again later. THis could have been caused by a
-		// temporary network failure, or any other transient reason.
-		if deployment, err = c.kubeclientset.AppsV1().Deployments(foo.Namespace).Update(c.newDeployment(foo, rds)); err != nil {
-			klog.Info(err)
-			return err
-		}
-	}
-
-	// Finally, we update the status block of the RedisOperator resource to reflect the
-	// current state of the world
-	err = c.updateFooStatus(foo, deployment, isMaster)
+func (kd *kubernetesDeployment) Create(nameSpace, specDeploymentName string, d *appsv1.Deployment) error {
+	_, err := kd.kubeClientSet.AppsV1().Deployments(nameSpace).Create(d)
 	if err != nil {
-		klog.Info(err)
-		return err
+		klog.V(2).Info(err)
 	}
-	return nil
+	return err
 }
 
-func DeleteDeployment(foo *redisoperatorv1.RedisOperator, rds *redisoperatorv1.RedisDeploymentSpec, isMaster bool) error {
-	var deploymentName string
-	if rds.DeploymentName == "" {
-		// We choose to absorb the error here as the worker would requeue the
-		// resource otherwise. Instead, the next time the resource is updated
-		// the resource will be queued again.
-		utilruntime.HandleError(fmt.Errorf("%s: DeploymentName must be specified", rds.DeploymentName))
-		return nil
+func (kd *kubernetesDeployment) Update(nameSpace string, d *appsv1.Deployment) (*appsv1.Deployment, error) {
+	deployment, err := kd.kubeClientSet.AppsV1().Deployments(nameSpace).Update(d)
+	if err != nil {
+		klog.V(2).Info(err)
 	}
-	deploymentName = fmt.Sprintf(DeploymentNameTemplate, rds.DeploymentName)
+	return deployment, err
+}
+
+func (kd *kubernetesDeployment) Delete(nameSpace, specDeploymentName string) error {
 	// Get the deployment with the name specified in RedisOperator.spec
-	deployment, err := c.deploymentsLister.Deployments(foo.Namespace).Get(deploymentName)
+	_, err := kd.Get(nameSpace, specDeploymentName)
 	// If the resource doesn't exist, we'll create it
 	if errors.IsNotFound(err) {
 		return nil
-	} else {
-		_ = deployment
-		opts := &metav1.DeleteOptions{
-			//GracePeriodSeconds: int64ToPointer(30),
-		}
-		err = c.kubeclientset.AppsV1().Deployments(foo.Namespace).Delete(deploymentName, opts)
-		if err != nil {
-			klog.V(2).Info(err)
-			return err
-		}
+	}
+	opts := &metav1.DeleteOptions{
+		//GracePeriodSeconds: int64ToPointer(30),
+	}
+	deploymentName := fmt.Sprintf(DeploymentNameTemplate, specDeploymentName)
+	err = kd.kubeClientSet.AppsV1().Deployments(nameSpace).Delete(deploymentName, opts)
+	if err != nil {
+		klog.V(2).Info(err)
+		return err
 	}
 	return nil
 }
