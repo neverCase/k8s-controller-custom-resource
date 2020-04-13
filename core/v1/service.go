@@ -16,7 +16,7 @@ import (
 
 type KubernetesService interface {
 	Get(nameSpace, specDeploymentName string) (d *corev1.Service, err error)
-	Create(nameSpace, specDeploymentName string, d *corev1.Service) error
+	Create(nameSpace, specDeploymentName string, d *corev1.Service) (*corev1.Service, error)
 	Update(nameSpace string, d *corev1.Service) (*corev1.Service, error)
 	Delete(nameSpace, specDeploymentName string) error
 }
@@ -51,12 +51,12 @@ func (kd *kubernetesService) Get(nameSpace, specDeploymentName string) (d *corev
 	return service, err
 }
 
-func (kd *kubernetesService) Create(nameSpace, specDeploymentName string, d *corev1.Service) error {
-	_, err := kd.kubeClientSet.CoreV1().Services(nameSpace).Create(d)
+func (kd *kubernetesService) Create(nameSpace, specDeploymentName string, d *corev1.Service) (*corev1.Service, error) {
+	service, err := kd.kubeClientSet.CoreV1().Services(nameSpace).Create(d)
 	if err != nil {
 		klog.V(2).Info(err)
 	}
-	return err
+	return service, err
 }
 
 func (kd *kubernetesService) Update(nameSpace string, d *corev1.Service) (*corev1.Service, error) {

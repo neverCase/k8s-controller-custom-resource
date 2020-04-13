@@ -5,6 +5,7 @@ import (
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -30,6 +31,7 @@ type KubernetesOperator interface {
 
 func NewKubernetesOperator(kubeClientset kubernetes.Interface,
 	stopCh <-chan struct{},
+	err error,
 	agentName, kindName string,
 	agentClientSet interface{},
 	foo interface{},
@@ -39,7 +41,7 @@ func NewKubernetesOperator(kubeClientset kubernetes.Interface,
 	getFunc func(informer interface{}, nameSpace, ownerRefName string) (obj interface{}, err error),
 	syncFunc func(obj interface{}, agentClientSet interface{}, ks KubernetesResource, ko record.EventRecorder) error) KubernetesOperator {
 
-	//utilruntime.Must(redisoperatorscheme.AddToScheme(scheme.Scheme))
+	utilruntime.Must(err)
 	klog.V(4).Info("Creating event broadcaster")
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartLogging(klog.Infof)

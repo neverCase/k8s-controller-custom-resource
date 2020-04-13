@@ -52,11 +52,11 @@ func (kd *kubernetesDeployment) Get(nameSpace, specDeploymentName string) (d *ap
 }
 
 func (kd *kubernetesDeployment) Create(nameSpace, specDeploymentName string, d *appsv1.Deployment) (*appsv1.Deployment, error) {
-	_, err := kd.kubeClientSet.AppsV1().Deployments(nameSpace).Create(d)
+	deployment, err := kd.kubeClientSet.AppsV1().Deployments(nameSpace).Create(d)
 	if err != nil {
 		klog.V(2).Info(err)
 	}
-	return d, err
+	return deployment, err
 }
 
 func (kd *kubernetesDeployment) Update(nameSpace string, d *appsv1.Deployment) (*appsv1.Deployment, error) {
