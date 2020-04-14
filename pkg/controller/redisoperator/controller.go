@@ -37,6 +37,7 @@ import (
 )
 
 const controllerAgentName = "redis-operator-controller"
+const operatorKindName = "RedisOperator"
 
 const (
 	// SuccessSynced is used as part of the Event 'reason' when a Foo is synced
@@ -77,7 +78,7 @@ const (
 	EnvRedisDbFileNameTemplate = "redis-%s.rdb"
 )
 
-func NewController2(
+func NewController(
 	kubeclientset kubernetes.Interface,
 	sampleclientset clientset.Interface,
 	stopCh <-chan struct{}) k8scorev1.KubernetesControllerV1 {
@@ -91,7 +92,7 @@ func NewController2(
 		stopCh,
 		redisoperatorscheme.AddToScheme(scheme.Scheme),
 		controllerAgentName,
-		"RedisOperator",
+		operatorKindName,
 		sampleclientset,
 		fooInformer,
 		fooInformer.Informer().HasSynced,

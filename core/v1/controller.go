@@ -50,15 +50,8 @@ func NewKubernetesController(operator KubernetesOperator) KubernetesControllerV1
 	serviceInformer := kubeInformerFactory.Core().V1().Services()
 	pvcInformer := kubeInformerFactory.Core().V1().PersistentVolumeClaims()
 
-	//utilruntime.Must(redisoperatorscheme.AddToScheme(scheme.Scheme))
-	//klog.V(4).Info("Creating event broadcaster")
-	//eventBroadcaster := record.NewBroadcaster()
-	//eventBroadcaster.StartLogging(klog.Infof)
-	//eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: operator.GetClientSet().CoreV1().Events("")})
-	//recorder := eventBroadcaster.NewRecorder(scheme.Scheme, corev1.EventSource{Component: operator.GetAgentName()})
-
 	var kc KubernetesControllerV1 = &kubernetesController{
-		kubeclientset: operator.GetClientSet(),
+		kubeclientset:     operator.GetClientSet(),
 		deploymentsLister: deploymentInformer.Lister(),
 		deploymentsSynced: deploymentInformer.Informer().HasSynced,
 		pvcLister:         pvcInformer.Lister(),

@@ -19,6 +19,7 @@ type KubernetesDeployment interface {
 	Create(nameSpace, specDeploymentName string, d *appsv1.Deployment) (*appsv1.Deployment, error)
 	Update(nameSpace string, d *appsv1.Deployment) (*appsv1.Deployment, error)
 	Delete(nameSpace, specDeploymentName string) error
+	List(nameSpace, filterName string) (dl *appsv1.DeploymentList, err error)
 }
 
 func NewKubernetesDeployment(kubeClientSet kubernetes.Interface, kubeInformerFactory kubeinformers.SharedInformerFactory, recorder record.EventRecorder) KubernetesDeployment {
@@ -84,4 +85,15 @@ func (kd *kubernetesDeployment) Delete(nameSpace, specDeploymentName string) err
 		return err
 	}
 	return nil
+}
+
+func (kd *kubernetesDeployment) List(nameSpace, filterName string) (dl *appsv1.DeploymentList, err error) {
+	opts := metav1.ListOptions{
+		LabelSelector: filterName,
+	}
+	dl, err = kd.kubeClientSet.AppsV1().Deployments(nameSpace).List(opts)
+	if err != nil {
+		klog.V(2).Info(err)
+	}
+	return dl, err
 }

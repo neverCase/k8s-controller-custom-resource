@@ -40,7 +40,7 @@ func main() {
 		klog.Fatalf("Error building example clientset: %s", err.Error())
 	}
 
-	controller := crd.NewController2(kubeClient, exampleClient, stopCh)
+	controller := crd.NewController(kubeClient, exampleClient, stopCh)
 
 	if err = controller.Run(2, stopCh); err != nil {
 		klog.Fatalf("Error running controller: %s", err.Error())

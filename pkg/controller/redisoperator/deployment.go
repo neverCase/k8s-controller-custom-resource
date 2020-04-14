@@ -15,7 +15,7 @@ import (
 
 func newDeployment(foo *redisoperatorv1.RedisOperator, rds *redisoperatorv1.RedisDeploymentSpec) *appsv1.Deployment {
 	labels := map[string]string{
-		"app":        "redis-operator",
+		"app":        operatorKindName,
 		"controller": foo.Name,
 		"role":       MasterName,
 	}
@@ -33,8 +33,9 @@ func newDeployment(foo *redisoperatorv1.RedisOperator, rds *redisoperatorv1.Redi
 			Name:      objectName,
 			Namespace: foo.Namespace,
 			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(foo, redisoperatorv1.SchemeGroupVersion.WithKind("RedisOperator")),
+				*metav1.NewControllerRef(foo, redisoperatorv1.SchemeGroupVersion.WithKind(operatorKindName)),
 			},
+			Labels: labels,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: foo.Spec.MasterSpec.Replicas,

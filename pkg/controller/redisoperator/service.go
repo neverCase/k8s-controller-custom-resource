@@ -23,7 +23,7 @@ func newService(foo *redisoperatorv1.RedisOperator, rds *redisoperatorv1.RedisDe
 		role = SlaveName
 	}
 	var labels = map[string]string{
-		"app":        "redis-operator",
+		"app":        operatorKindName,
 		"controller": foo.Name,
 		"role":       role,
 	}
@@ -33,7 +33,7 @@ func newService(foo *redisoperatorv1.RedisOperator, rds *redisoperatorv1.RedisDe
 			Name:      serviceName,
 			Namespace: foo.Namespace,
 			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(foo, redisoperatorv1.SchemeGroupVersion.WithKind("RedisOperator")),
+				*metav1.NewControllerRef(foo, redisoperatorv1.SchemeGroupVersion.WithKind(operatorKindName)),
 			},
 			Labels: labels,
 		},
