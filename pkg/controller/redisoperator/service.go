@@ -11,7 +11,7 @@ import (
 	redisoperatorv1 "github.com/nevercase/k8s-controller-custom-resource/pkg/apis/redisoperator/v1"
 )
 
-func newService(foo *redisoperatorv1.RedisOperator, rds *redisoperatorv1.RedisDeploymentSpec) *corev1.Service {
+func NewService(foo *redisoperatorv1.RedisOperator, rds *redisoperatorv1.RedisDeploymentSpec) *corev1.Service {
 	var serviceName, role string
 	res, err := regexp.Match(`master`, []byte(rds.DeploymentName))
 	if err != nil {

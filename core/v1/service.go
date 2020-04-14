@@ -19,6 +19,7 @@ type KubernetesService interface {
 	Create(nameSpace, specDeploymentName string, d *corev1.Service) (*corev1.Service, error)
 	Update(nameSpace string, d *corev1.Service) (*corev1.Service, error)
 	Delete(nameSpace, specDeploymentName string) error
+	List(nameSpace, filterName string) (sl *corev1.ServiceList, err error)
 }
 
 func NewKubernetesService(kubeClientSet kubernetes.Interface, kubeInformerFactory kubeinformers.SharedInformerFactory, recorder record.EventRecorder) KubernetesService {
@@ -84,4 +85,15 @@ func (kd *kubernetesService) Delete(nameSpace, specDeploymentName string) error 
 		return err
 	}
 	return nil
+}
+
+func (kd *kubernetesService) List(nameSpace, filterName string) (sl *corev1.ServiceList, err error) {
+	opts := metav1.ListOptions{
+		LabelSelector: filterName,
+	}
+	sl, err = kd.kubeClientSet.CoreV1().Services(nameSpace).List(opts)
+	if err != nil {
+		klog.V(2).Info(err)
+	}
+	return sl, err
 }

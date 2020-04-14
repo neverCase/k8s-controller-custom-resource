@@ -13,7 +13,7 @@ import (
 	redisoperatorv1 "github.com/nevercase/k8s-controller-custom-resource/pkg/apis/redisoperator/v1"
 )
 
-func newDeployment(foo *redisoperatorv1.RedisOperator, rds *redisoperatorv1.RedisDeploymentSpec) *appsv1.Deployment {
+func NewDeployment(foo *redisoperatorv1.RedisOperator, rds *redisoperatorv1.RedisDeploymentSpec) *appsv1.Deployment {
 	labels := map[string]string{
 		"app":        operatorKindName,
 		"controller": foo.Name,

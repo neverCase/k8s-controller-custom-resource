@@ -199,7 +199,7 @@ func deployment(ks k8scorev1.KubernetesResource,
 			return err
 		}
 		klog.Info("new deployment")
-		if d, err = ks.Deployment().Create(foo.Namespace, foo.Spec.MasterSpec.DeploymentName, newDeployment(foo, rds)); err != nil {
+		if d, err = ks.Deployment().Create(foo.Namespace, foo.Spec.MasterSpec.DeploymentName, NewDeployment(foo, rds)); err != nil {
 			return err
 		}
 	}
@@ -252,7 +252,7 @@ func service(ks k8scorev1.KubernetesResource,
 			return err
 		}
 		klog.Info("new service")
-		if _, err = ks.Service().Create(foo.Namespace, foo.Spec.MasterSpec.DeploymentName, newService(foo, rds)); err != nil {
+		if _, err = ks.Service().Create(foo.Namespace, foo.Spec.MasterSpec.DeploymentName, NewService(foo, rds)); err != nil {
 			return err
 		}
 	} else {
