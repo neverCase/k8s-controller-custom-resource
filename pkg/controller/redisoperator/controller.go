@@ -88,11 +88,10 @@ func NewController(
 
 	//roInformerFactory := informersv2.NewSharedInformerFactory(sampleclientset, time.Second*30)
 
-	op := k8scorev1.NewKubernetesOperator(kubeclientset,
-		stopCh,
-		redisoperatorscheme.AddToScheme(scheme.Scheme),
+	opt := k8scorev1.NewOption(&redisoperatorv1.RedisOperator{},
 		controllerAgentName,
 		operatorKindName,
+		redisoperatorscheme.AddToScheme(scheme.Scheme),
 		sampleclientset,
 		fooInformer,
 		fooInformer.Informer().HasSynced,
@@ -100,6 +99,11 @@ func NewController(
 		CompareResourceVersion,
 		Get,
 		Sync)
+	opts := k8scorev1.NewOptions()
+	if err := opts.Add(opt); err != nil {
+		klog.Fatal(err)
+	}
+	op := k8scorev1.NewKubernetesOperator(kubeclientset, stopCh, controllerAgentName, opts)
 	kc := k8scorev1.NewKubernetesController(op)
 	//roInformerFactory.Start(stopCh)
 	exampleInformerFactory.Start(stopCh)
