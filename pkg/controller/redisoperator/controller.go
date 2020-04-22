@@ -153,9 +153,6 @@ func createRedisDeploymentAndService(ks k8scorev1.KubernetesResource, foo *redis
 		if err = deployment(ks, foo, &rds, clientSet, isMaster); err != nil {
 			return err
 		}
-		//if err = updateFooStatus(foo, clientSet, d, isMaster); err != nil {
-		//	return err
-		//}
 		if err = service(ks, foo, &rds, clientSet, isMaster); err != nil {
 			return err
 		}
@@ -169,9 +166,6 @@ func createRedisDeploymentAndService(ks k8scorev1.KubernetesResource, foo *redis
 		if err = deployment(ks, foo, &rds, clientSet, isMaster); err != nil {
 			return err
 		}
-		//if err = updateFooStatus(foo, clientSet, d, isMaster); err != nil {
-		//	return err
-		//}
 		if err = service(ks, foo, &rds, clientSet, isMaster); err != nil {
 			return err
 		}

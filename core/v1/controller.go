@@ -349,7 +349,7 @@ func (kc *kubernetesController) HandleObject(obj interface{}) {
 		// with it.
 		opt, err := kc.operator.Options().GetWithKindName(ownerRef.Kind)
 		if err != nil {
-			klog.V(2).Info(opt)
+			klog.V(2).Info(err)
 			return
 		}
 
