@@ -1,11 +1,12 @@
 package v1
 
 const (
-	DeploymentNameTemplate = "deployment-%s"
-	ServiceNameTemplate    = "service-%s"
-	PVNameTemplate         = "pv-%s"
-	PVCNameTemplate        = "pvc-%s"
-	ContainerNameTemplate  = "container-%s"
+	DeploymentNameTemplate  = "deployment-%s"
+	StatefulSetNameTemplate = "statefulset-%s"
+	ServiceNameTemplate     = "service-%s"
+	PVNameTemplate          = "pv-%s"
+	PVCNameTemplate         = "pvc-%s"
+	ContainerNameTemplate   = "container-%s"
 
 	MasterName = "master"
 	SlaveName  = "slave"
