@@ -2,11 +2,11 @@ package redisoperator
 
 import (
 	"fmt"
-	"k8s.io/klog"
 	"regexp"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/klog"
 
 	redisoperatorv1 "github.com/nevercase/k8s-controller-custom-resource/pkg/apis/redisoperator/v1"
 )

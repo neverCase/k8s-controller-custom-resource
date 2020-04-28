@@ -19,8 +19,6 @@ limitations under the License.
 package fake
 
 import (
-	"context"
-
 	mysqloperatorv1 "github.com/nevercase/k8s-controller-custom-resource/pkg/apis/mysqloperator/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
@@ -41,7 +39,7 @@ var mysqloperatorsResource = schema.GroupVersionResource{Group: "mysqloperator.n
 var mysqloperatorsKind = schema.GroupVersionKind{Group: "mysqloperator.nevercase.io", Version: "v1", Kind: "MysqlOperator"}
 
 // Get takes name of the mysqlOperator, and returns the corresponding mysqlOperator object, and an error if there is any.
-func (c *FakeMysqlOperators) Get(ctx context.Context, name string, options v1.GetOptions) (result *mysqloperatorv1.MysqlOperator, err error) {
+func (c *FakeMysqlOperators) Get(name string, options v1.GetOptions) (result *mysqloperatorv1.MysqlOperator, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewGetAction(mysqloperatorsResource, c.ns, name), &mysqloperatorv1.MysqlOperator{})
 
@@ -52,7 +50,7 @@ func (c *FakeMysqlOperators) Get(ctx context.Context, name string, options v1.Ge
 }
 
 // List takes label and field selectors, and returns the list of MysqlOperators that match those selectors.
-func (c *FakeMysqlOperators) List(ctx context.Context, opts v1.ListOptions) (result *mysqloperatorv1.MysqlOperatorList, err error) {
+func (c *FakeMysqlOperators) List(opts v1.ListOptions) (result *mysqloperatorv1.MysqlOperatorList, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewListAction(mysqloperatorsResource, mysqloperatorsKind, c.ns, opts), &mysqloperatorv1.MysqlOperatorList{})
 
@@ -74,14 +72,14 @@ func (c *FakeMysqlOperators) List(ctx context.Context, opts v1.ListOptions) (res
 }
 
 // Watch returns a watch.Interface that watches the requested mysqlOperators.
-func (c *FakeMysqlOperators) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
+func (c *FakeMysqlOperators) Watch(opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
 		InvokesWatch(testing.NewWatchAction(mysqloperatorsResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a mysqlOperator and creates it.  Returns the server's representation of the mysqlOperator, and an error, if there is any.
-func (c *FakeMysqlOperators) Create(ctx context.Context, mysqlOperator *mysqloperatorv1.MysqlOperator, opts v1.CreateOptions) (result *mysqloperatorv1.MysqlOperator, err error) {
+func (c *FakeMysqlOperators) Create(mysqlOperator *mysqloperatorv1.MysqlOperator) (result *mysqloperatorv1.MysqlOperator, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewCreateAction(mysqloperatorsResource, c.ns, mysqlOperator), &mysqloperatorv1.MysqlOperator{})
 
@@ -92,7 +90,7 @@ func (c *FakeMysqlOperators) Create(ctx context.Context, mysqlOperator *mysqlope
 }
 
 // Update takes the representation of a mysqlOperator and updates it. Returns the server's representation of the mysqlOperator, and an error, if there is any.
-func (c *FakeMysqlOperators) Update(ctx context.Context, mysqlOperator *mysqloperatorv1.MysqlOperator, opts v1.UpdateOptions) (result *mysqloperatorv1.MysqlOperator, err error) {
+func (c *FakeMysqlOperators) Update(mysqlOperator *mysqloperatorv1.MysqlOperator) (result *mysqloperatorv1.MysqlOperator, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewUpdateAction(mysqloperatorsResource, c.ns, mysqlOperator), &mysqloperatorv1.MysqlOperator{})
 
@@ -103,7 +101,7 @@ func (c *FakeMysqlOperators) Update(ctx context.Context, mysqlOperator *mysqlope
 }
 
 // Delete takes name of the mysqlOperator and deletes it. Returns an error if one occurs.
-func (c *FakeMysqlOperators) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
+func (c *FakeMysqlOperators) Delete(name string, options *v1.DeleteOptions) error {
 	_, err := c.Fake.
 		Invokes(testing.NewDeleteAction(mysqloperatorsResource, c.ns, name), &mysqloperatorv1.MysqlOperator{})
 
@@ -111,15 +109,15 @@ func (c *FakeMysqlOperators) Delete(ctx context.Context, name string, opts v1.De
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *FakeMysqlOperators) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(mysqloperatorsResource, c.ns, listOpts)
+func (c *FakeMysqlOperators) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
+	action := testing.NewDeleteCollectionAction(mysqloperatorsResource, c.ns, listOptions)
 
 	_, err := c.Fake.Invokes(action, &mysqloperatorv1.MysqlOperatorList{})
 	return err
 }
 
 // Patch applies the patch and returns the patched mysqlOperator.
-func (c *FakeMysqlOperators) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *mysqloperatorv1.MysqlOperator, err error) {
+func (c *FakeMysqlOperators) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *mysqloperatorv1.MysqlOperator, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewPatchSubresourceAction(mysqloperatorsResource, c.ns, name, pt, data, subresources...), &mysqloperatorv1.MysqlOperator{})
 

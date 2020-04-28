@@ -1,0 +1,15 @@
+apiVersion: mysqloperator.nevercase.io/v1
+kind: MysqlOperator
+metadata:
+  name: example-mysql
+spec:
+  master_spec:
+    deploymentName: "test-mysql-operator"
+    replicas: 1
+    image: domain.com/mysql-slave:1.0
+    imagePullSecrets: self-secret
+  slave_spec:
+    deploymentName: "test-mysql-operator"
+    replicas: 4
+    image: domain.com/mysql-slave:1.0
+    imagePullSecrets: self-secret

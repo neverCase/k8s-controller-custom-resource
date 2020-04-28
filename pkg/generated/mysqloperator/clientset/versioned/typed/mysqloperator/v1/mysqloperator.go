@@ -19,7 +19,6 @@ limitations under the License.
 package v1
 
 import (
-	"context"
 	"time"
 
 	v1 "github.com/nevercase/k8s-controller-custom-resource/pkg/apis/mysqloperator/v1"
@@ -38,14 +37,14 @@ type MysqlOperatorsGetter interface {
 
 // MysqlOperatorInterface has methods to work with MysqlOperator resources.
 type MysqlOperatorInterface interface {
-	Create(ctx context.Context, mysqlOperator *v1.MysqlOperator, opts metav1.CreateOptions) (*v1.MysqlOperator, error)
-	Update(ctx context.Context, mysqlOperator *v1.MysqlOperator, opts metav1.UpdateOptions) (*v1.MysqlOperator, error)
-	Delete(ctx context.Context, name string, opts metav1.DeleteOptions) error
-	DeleteCollection(ctx context.Context, opts metav1.DeleteOptions, listOpts metav1.ListOptions) error
-	Get(ctx context.Context, name string, opts metav1.GetOptions) (*v1.MysqlOperator, error)
-	List(ctx context.Context, opts metav1.ListOptions) (*v1.MysqlOperatorList, error)
-	Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts metav1.PatchOptions, subresources ...string) (result *v1.MysqlOperator, err error)
+	Create(*v1.MysqlOperator) (*v1.MysqlOperator, error)
+	Update(*v1.MysqlOperator) (*v1.MysqlOperator, error)
+	Delete(name string, options *metav1.DeleteOptions) error
+	DeleteCollection(options *metav1.DeleteOptions, listOptions metav1.ListOptions) error
+	Get(name string, options metav1.GetOptions) (*v1.MysqlOperator, error)
+	List(opts metav1.ListOptions) (*v1.MysqlOperatorList, error)
+	Watch(opts metav1.ListOptions) (watch.Interface, error)
+	Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1.MysqlOperator, err error)
 	MysqlOperatorExpansion
 }
 
@@ -64,20 +63,20 @@ func newMysqlOperators(c *MysqloperatorV1Client, namespace string) *mysqlOperato
 }
 
 // Get takes name of the mysqlOperator, and returns the corresponding mysqlOperator object, and an error if there is any.
-func (c *mysqlOperators) Get(ctx context.Context, name string, options metav1.GetOptions) (result *v1.MysqlOperator, err error) {
+func (c *mysqlOperators) Get(name string, options metav1.GetOptions) (result *v1.MysqlOperator, err error) {
 	result = &v1.MysqlOperator{}
 	err = c.client.Get().
 		Namespace(c.ns).
 		Resource("mysqloperators").
 		Name(name).
 		VersionedParams(&options, scheme.ParameterCodec).
-		Do(ctx).
+		Do().
 		Into(result)
 	return
 }
 
 // List takes label and field selectors, and returns the list of MysqlOperators that match those selectors.
-func (c *mysqlOperators) List(ctx context.Context, opts metav1.ListOptions) (result *v1.MysqlOperatorList, err error) {
+func (c *mysqlOperators) List(opts metav1.ListOptions) (result *v1.MysqlOperatorList, err error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
@@ -88,13 +87,13 @@ func (c *mysqlOperators) List(ctx context.Context, opts metav1.ListOptions) (res
 		Resource("mysqloperators").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Do(ctx).
+		Do().
 		Into(result)
 	return
 }
 
 // Watch returns a watch.Interface that watches the requested mysqlOperators.
-func (c *mysqlOperators) Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error) {
+func (c *mysqlOperators) Watch(opts metav1.ListOptions) (watch.Interface, error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
@@ -105,74 +104,71 @@ func (c *mysqlOperators) Watch(ctx context.Context, opts metav1.ListOptions) (wa
 		Resource("mysqloperators").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Watch(ctx)
+		Watch()
 }
 
 // Create takes the representation of a mysqlOperator and creates it.  Returns the server's representation of the mysqlOperator, and an error, if there is any.
-func (c *mysqlOperators) Create(ctx context.Context, mysqlOperator *v1.MysqlOperator, opts metav1.CreateOptions) (result *v1.MysqlOperator, err error) {
+func (c *mysqlOperators) Create(mysqlOperator *v1.MysqlOperator) (result *v1.MysqlOperator, err error) {
 	result = &v1.MysqlOperator{}
 	err = c.client.Post().
 		Namespace(c.ns).
 		Resource("mysqloperators").
-		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(mysqlOperator).
-		Do(ctx).
+		Do().
 		Into(result)
 	return
 }
 
 // Update takes the representation of a mysqlOperator and updates it. Returns the server's representation of the mysqlOperator, and an error, if there is any.
-func (c *mysqlOperators) Update(ctx context.Context, mysqlOperator *v1.MysqlOperator, opts metav1.UpdateOptions) (result *v1.MysqlOperator, err error) {
+func (c *mysqlOperators) Update(mysqlOperator *v1.MysqlOperator) (result *v1.MysqlOperator, err error) {
 	result = &v1.MysqlOperator{}
 	err = c.client.Put().
 		Namespace(c.ns).
 		Resource("mysqloperators").
 		Name(mysqlOperator.Name).
-		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(mysqlOperator).
-		Do(ctx).
+		Do().
 		Into(result)
 	return
 }
 
 // Delete takes name of the mysqlOperator and deletes it. Returns an error if one occurs.
-func (c *mysqlOperators) Delete(ctx context.Context, name string, opts metav1.DeleteOptions) error {
+func (c *mysqlOperators) Delete(name string, options *metav1.DeleteOptions) error {
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("mysqloperators").
 		Name(name).
-		Body(&opts).
-		Do(ctx).
+		Body(options).
+		Do().
 		Error()
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *mysqlOperators) DeleteCollection(ctx context.Context, opts metav1.DeleteOptions, listOpts metav1.ListOptions) error {
+func (c *mysqlOperators) DeleteCollection(options *metav1.DeleteOptions, listOptions metav1.ListOptions) error {
 	var timeout time.Duration
-	if listOpts.TimeoutSeconds != nil {
-		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
+	if listOptions.TimeoutSeconds != nil {
+		timeout = time.Duration(*listOptions.TimeoutSeconds) * time.Second
 	}
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("mysqloperators").
-		VersionedParams(&listOpts, scheme.ParameterCodec).
+		VersionedParams(&listOptions, scheme.ParameterCodec).
 		Timeout(timeout).
-		Body(&opts).
-		Do(ctx).
+		Body(options).
+		Do().
 		Error()
 }
 
 // Patch applies the patch and returns the patched mysqlOperator.
-func (c *mysqlOperators) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts metav1.PatchOptions, subresources ...string) (result *v1.MysqlOperator, err error) {
+func (c *mysqlOperators) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1.MysqlOperator, err error) {
 	result = &v1.MysqlOperator{}
 	err = c.client.Patch(pt).
 		Namespace(c.ns).
 		Resource("mysqloperators").
-		Name(name).
 		SubResource(subresources...).
-		VersionedParams(&opts, scheme.ParameterCodec).
+		Name(name).
 		Body(data).
-		Do(ctx).
+		Do().
 		Into(result)
 	return
 }

@@ -44,6 +44,7 @@ type MysqlDeploymentSpec struct {
 
 // MysqlConfig is the configuration for a MysqlDeploymentSpec of a MysqlOperator resource
 type MysqlConfig struct {
+	ServerId    *int32 `json:"server_id"`
 	Host        string `json:"host"`
 	User        string `json:"user"`
 	Password    string `json:"password"`

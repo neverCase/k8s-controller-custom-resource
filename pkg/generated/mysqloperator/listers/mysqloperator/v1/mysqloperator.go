@@ -26,10 +26,8 @@ import (
 )
 
 // MysqlOperatorLister helps list MysqlOperators.
-// All objects returned here must be treated as read-only.
 type MysqlOperatorLister interface {
 	// List lists all MysqlOperators in the indexer.
-	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1.MysqlOperator, err error)
 	// MysqlOperators returns an object that can list and get MysqlOperators.
 	MysqlOperators(namespace string) MysqlOperatorNamespaceLister
@@ -60,13 +58,10 @@ func (s *mysqlOperatorLister) MysqlOperators(namespace string) MysqlOperatorName
 }
 
 // MysqlOperatorNamespaceLister helps list and get MysqlOperators.
-// All objects returned here must be treated as read-only.
 type MysqlOperatorNamespaceLister interface {
 	// List lists all MysqlOperators in the indexer for a given namespace.
-	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1.MysqlOperator, err error)
 	// Get retrieves the MysqlOperator from the indexer for a given namespace and name.
-	// Objects returned here must be treated as read-only.
 	Get(name string) (*v1.MysqlOperator, error)
 	MysqlOperatorNamespaceListerExpansion
 }
