@@ -53,8 +53,8 @@ func NewController(
 }
 
 func CompareResourceVersion(old, new interface{}) bool {
-	newDepl := new.( *mysqlOperatorV1.MysqlOperator)
-	oldDepl := old.( *mysqlOperatorV1.MysqlOperator)
+	newDepl := new.(*mysqlOperatorV1.MysqlOperator)
+	oldDepl := old.(*mysqlOperatorV1.MysqlOperator)
 	if newDepl.ResourceVersion == oldDepl.ResourceVersion {
 		// Periodic resync will send update events for all known Deployments.
 		// Two different versions of the same Deployment will always have different RVs.
@@ -69,7 +69,7 @@ func Get(foo interface{}, nameSpace, ownerRefName string) (obj interface{}, err 
 }
 
 func Sync(obj interface{}, clientObj interface{}, ks k8sCoreV1.KubernetesResource, recorder record.EventRecorder) error {
-	foo := obj.( *mysqlOperatorV1.MysqlOperator)
+	foo := obj.(*mysqlOperatorV1.MysqlOperator)
 	clientSet := clientObj.(clientSet.Interface)
 	//defer recorder.Event(foo, coreV1.EventTypeNormal, SuccessSynced, MessageResourceSynced)
 	// Create the Deployment of master with MasterSpec
@@ -88,9 +88,13 @@ func Sync(obj interface{}, clientObj interface{}, ks k8sCoreV1.KubernetesResourc
 
 func createMysqlDeploymentAndService(ks k8sCoreV1.KubernetesResource, foo *mysqlOperatorV1.MysqlOperator, clientSet clientSet.Interface, isMaster bool) (err error) {
 	//klog.Info("createMysqlDeploymentAndService2:")
+	a := int32(0)
 	if isMaster == true {
 		rds := foo.Spec.MasterSpec
 		rds.DeploymentName = fmt.Sprintf("%s-%s", rds.DeploymentName, k8sCoreV1.MasterName)
+		rds.Configuration = mysqlOperatorV1.MysqlConfig{
+			ServerId: &a,
+		}
 		//klog.Info("rds:", rds)
 		if err = deployment(ks, foo, &rds, clientSet, isMaster); err != nil {
 			return err
@@ -129,7 +133,7 @@ func createMysqlDeploymentAndService(ks k8sCoreV1.KubernetesResource, foo *mysql
 
 func deployment(ks k8sCoreV1.KubernetesResource,
 	foo *mysqlOperatorV1.MysqlOperator,
-	rds  *mysqlOperatorV1.MysqlDeploymentSpec,
+	rds *mysqlOperatorV1.MysqlDeploymentSpec,
 	clientSet clientSet.Interface,
 	isMaster bool) error {
 	d, err := ks.Deployment().Get(foo.Namespace, rds.DeploymentName)
@@ -182,7 +186,7 @@ func updateFooStatus(foo *mysqlOperatorV1.MysqlOperator, clientSet clientSet.Int
 
 func service(ks k8sCoreV1.KubernetesResource,
 	foo *mysqlOperatorV1.MysqlOperator,
-	rds  *mysqlOperatorV1.MysqlDeploymentSpec,
+	rds *mysqlOperatorV1.MysqlDeploymentSpec,
 	clientSet clientSet.Interface,
 	isMaster bool) error {
 	_, err := ks.Service().Get(foo.Namespace, rds.DeploymentName)

@@ -123,16 +123,16 @@ func NewDeployment(foo *mysqlOperatorV1.MysqlOperator, rds *mysqlOperatorV1.Mysq
 			},
 			Env: []coreV1.EnvVar{
 				{
-					Name:  EnvRedisConf,
-					Value: fmt.Sprintf(EnvRedisConfTemplate, rds.DeploymentName),
+					Name:  MysqlServerId,
+					Value: strconv.Itoa(int(*rds.Configuration.ServerId)),
 				},
 				{
-					Name:  EnvRedisDir,
+					Name:  MysqlRootPassword,
+					Value: MysqlDefaultRootPassword,
+				},
+				{
+					Name:  MysqlDataDir,
 					Value: "",
-				},
-				{
-					Name:  EnvRedisDbFileName,
-					Value: fmt.Sprintf(EnvRedisDbFileNameTemplate, rds.DeploymentName),
 				},
 				{
 					Name:  "GET_HOSTS_FROM",

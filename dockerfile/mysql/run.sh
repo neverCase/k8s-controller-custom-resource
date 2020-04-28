@@ -4,7 +4,7 @@ defaultConf="/etc/mysql/mysql.conf.d/mysqld.cnf"
 
 if [[ "$MYSQL_SERVER_ID" ]]
 then
-	sed -i "s#server-id   = 0/#server-id   = ${$MYSQL_SERVER_ID}#g"  ${defaultConf}
+	echo  -e "\nserver-id   = "${MYSQL_SERVER_ID} >> ${defaultConf}
 fi
 
 if [[ "$MYSQL_DATA_DIR" ]]
@@ -15,7 +15,6 @@ fi
 mysql -uroot -proot -e "show databases;"
 
 shutdownSave() {
-   echo "hello world!"
    mysqladmin  -uroot -proot shutdown
 }
 

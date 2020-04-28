@@ -24,16 +24,10 @@ const (
 )
 
 const (
-	MysqlServerId     = "MSQL_SERVER_ID"
+	MysqlServerId     = "MYSQL_SERVER_ID"
 	MysqlRootPassword = "MYSQL_ROOT_PASSWORD"
 	MysqlDataDir      = "MYSQL_DATA_DIR"
 
 	EnvRedisMaster     = "ENV_REDIS_MASTER"
 	EnvRedisMasterPort = "ENV_REDIS_MASTER_PORT"
-	EnvRedisDir        = "ENV_REDIS_DIR"
-	EnvRedisDbFileName = "ENV_REDIS_DBFILENAME"
-	EnvRedisConf       = "ENV_REDIS_CONF"
-
-	EnvRedisConfTemplate       = "redis-%s.conf"
-	EnvRedisDbFileNameTemplate = "redis-%s.rdb"
 )

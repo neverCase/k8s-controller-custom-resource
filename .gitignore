@@ -3,8 +3,8 @@
 vendor
 
 make.sh
-*/*/makefile.sh
 
 # bin files
 crd
 redisoperatorcrd
+mysqloperatorcrd
