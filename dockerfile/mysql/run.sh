@@ -2,18 +2,23 @@
 
 defaultConf="/etc/mysql/mysql.conf.d/mysqld.cnf"
 
-env
-pwd
+if [[ "$MysqlServerId" ]]
+then
+	sed -i "s#server-id   = 0/#server-id   = ${MysqlServerId}#g"  ${defaultConf}
+fi
 
-which mysqld
-which mysql
+mysql -uroot -proot -e "show databases;"
 
-echo "[mysqld]" >> "my.cnf"
-echo "user=mysql" >> "my.cnf"
+shutdownSave() {
+   echo "hello world!"
+   mysqladmin  -uroot -proot shutdown
+}
 
-#./entrypoint.sh
-#./usr/local/bin/docker-entrypoint.sh
-#mysqld --user=root
-#mysqld --initialize --console
-#mysqld --user=mysql
-mysqld --initialize-insecure
+trap "echo 'get the signal,mysqld would shut down and take some actions before releasing container'; shutdownSave" SIGHUP SIGINT SIGQUIT SIGTERM
+
+
+until mysql -uroot -proot -h 127.0.0.1 -e "SELECT 1"; do sleep 1; done
+docker-entrypoint.sh mysqld &
+mysql -uroot -proot -e "show databases;"
+
+wait
