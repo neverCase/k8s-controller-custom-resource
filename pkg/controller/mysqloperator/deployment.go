@@ -79,7 +79,7 @@ func NewDeployment(foo *mysqlOperatorV1.MysqlOperator, rds *mysqlOperatorV1.Mysq
 								},
 								{
 									Name:  MysqlDataDir,
-									Value: "",
+									Value: "/data",
 								},
 							},
 							VolumeMounts: []coreV1.VolumeMount{
@@ -132,7 +132,7 @@ func NewDeployment(foo *mysqlOperatorV1.MysqlOperator, rds *mysqlOperatorV1.Mysq
 				},
 				{
 					Name:  MysqlDataDir,
-					Value: "",
+					Value: "/data",
 				},
 				{
 					Name:  "GET_HOSTS_FROM",

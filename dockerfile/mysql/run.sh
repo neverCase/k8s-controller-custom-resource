@@ -9,7 +9,7 @@ fi
 
 if [[ "$MYSQL_DATA_DIR" ]]
 then
-	sed -i "s#datadir		= /var/lib/mysql/#datadir		= ${$MYSQL_DATA_DIR}#g"  ${defaultConf}
+	sed -i "s#datadir		= /var/lib/mysql#datadir		= ${MYSQL_DATA_DIR}#g"  ${defaultConf}
 fi
 
 mysql -uroot -proot -e "show databases;"
