@@ -19,7 +19,7 @@ const (
 )
 
 const (
-	MysqlDefaultPort         = 3600
+	MysqlDefaultPort         = 3306
 	MysqlDefaultRootPassword = "root"
 )
 
@@ -28,6 +28,9 @@ const (
 	MysqlRootPassword = "MYSQL_ROOT_PASSWORD"
 	MysqlDataDir      = "MYSQL_DATA_DIR"
 
-	EnvRedisMaster     = "ENV_REDIS_MASTER"
-	EnvRedisMasterPort = "ENV_REDIS_MASTER_PORT"
+	MysqlMasterHost        = "MYSQL_MASTER_HOST"
+	MysqlMasterUser        = "MYSQL_MASTER_USER"
+	MysqlMasterPassword    = "MYSQL_MASTER_USER"
+	MysqlMasterLogFile     = "MYSQL_MASTER_LOG_FILE"
+	MysqlMasterLogPosition = "MYSQL_MASTER_LOG_POS"
 )

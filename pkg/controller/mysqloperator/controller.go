@@ -14,7 +14,7 @@ import (
 
 	k8sCoreV1 "github.com/nevercase/k8s-controller-custom-resource/core/v1"
 	mysqlOperatorV1 "github.com/nevercase/k8s-controller-custom-resource/pkg/apis/mysqloperator/v1"
-	clientSet "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/mysqloperator/clientset/versioned"
+	mysqlOperatorClientSet "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/mysqloperator/clientset/versioned"
 	mysqlOperatorScheme "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/mysqloperator/clientset/versioned/scheme"
 	informersext "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/mysqloperator/informers/externalversions"
 	informers "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/mysqloperator/informers/externalversions/mysqloperator/v1"
@@ -22,7 +22,7 @@ import (
 
 func NewController(
 	kubeclientset kubernetes.Interface,
-	sampleclientset clientSet.Interface,
+	sampleclientset mysqlOperatorClientSet.Interface,
 	stopCh <-chan struct{}) k8sCoreV1.KubernetesControllerV1 {
 
 	exampleInformerFactory := informersext.NewSharedInformerFactory(sampleclientset, time.Second*30)
@@ -70,7 +70,7 @@ func Get(foo interface{}, nameSpace, ownerRefName string) (obj interface{}, err 
 
 func Sync(obj interface{}, clientObj interface{}, ks k8sCoreV1.KubernetesResource, recorder record.EventRecorder) error {
 	foo := obj.(*mysqlOperatorV1.MysqlOperator)
-	clientSet := clientObj.(clientSet.Interface)
+	clientSet := clientObj.(mysqlOperatorClientSet.Interface)
 	//defer recorder.Event(foo, coreV1.EventTypeNormal, SuccessSynced, MessageResourceSynced)
 	// Create the Deployment of master with MasterSpec
 	err := createMysqlDeploymentAndService(ks, foo, clientSet, true)
@@ -86,9 +86,9 @@ func Sync(obj interface{}, clientObj interface{}, ks k8sCoreV1.KubernetesResourc
 	return nil
 }
 
-func createMysqlDeploymentAndService(ks k8sCoreV1.KubernetesResource, foo *mysqlOperatorV1.MysqlOperator, clientSet clientSet.Interface, isMaster bool) (err error) {
+func createMysqlDeploymentAndService(ks k8sCoreV1.KubernetesResource, foo *mysqlOperatorV1.MysqlOperator, clientSet mysqlOperatorClientSet.Interface, isMaster bool) (err error) {
 	//klog.Info("createMysqlDeploymentAndService2:")
-	a := int32(0)
+	a := int32(1)
 	if isMaster == true {
 		rds := foo.Spec.MasterSpec
 		rds.DeploymentName = fmt.Sprintf("%s-%s", rds.DeploymentName, k8sCoreV1.MasterName)
@@ -108,6 +108,10 @@ func createMysqlDeploymentAndService(ks k8sCoreV1.KubernetesResource, foo *mysql
 	for i := 0; i < int(*foo.Spec.SlaveSpec.Replicas); i++ {
 		rds := foo.Spec.SlaveSpec
 		rds.DeploymentName = fmt.Sprintf("%s-%s-%d", rds.DeploymentName, k8sCoreV1.SlaveName, i)
+		b := int32(2 + i)
+		rds.Configuration = mysqlOperatorV1.MysqlConfig{
+			ServerId: &b,
+		}
 		//klog.Info("rds:", rds)
 		if err = deployment(ks, foo, &rds, clientSet, isMaster); err != nil {
 			return err
@@ -134,7 +138,7 @@ func createMysqlDeploymentAndService(ks k8sCoreV1.KubernetesResource, foo *mysql
 func deployment(ks k8sCoreV1.KubernetesResource,
 	foo *mysqlOperatorV1.MysqlOperator,
 	rds *mysqlOperatorV1.MysqlDeploymentSpec,
-	clientSet clientSet.Interface,
+	clientSet mysqlOperatorClientSet.Interface,
 	isMaster bool) error {
 	d, err := ks.Deployment().Get(foo.Namespace, rds.DeploymentName)
 	if err != nil {
@@ -166,7 +170,7 @@ func deployment(ks k8sCoreV1.KubernetesResource,
 	return nil
 }
 
-func updateFooStatus(foo *mysqlOperatorV1.MysqlOperator, clientSet clientSet.Interface, deployment *appsV1.Deployment, isMaster bool) error {
+func updateFooStatus(foo *mysqlOperatorV1.MysqlOperator, clientSet mysqlOperatorClientSet.Interface, deployment *appsV1.Deployment, isMaster bool) error {
 	// NEVER modify objects from the store. It's a read-only, local cache.
 	// You can use DeepCopy() to make a deep copy of original object and modify this copy
 	// Or create a copy manually for better performance
@@ -187,7 +191,7 @@ func updateFooStatus(foo *mysqlOperatorV1.MysqlOperator, clientSet clientSet.Int
 func service(ks k8sCoreV1.KubernetesResource,
 	foo *mysqlOperatorV1.MysqlOperator,
 	rds *mysqlOperatorV1.MysqlDeploymentSpec,
-	clientSet clientSet.Interface,
+	clientSet mysqlOperatorClientSet.Interface,
 	isMaster bool) error {
 	_, err := ks.Service().Get(foo.Namespace, rds.DeploymentName)
 	if err != nil {

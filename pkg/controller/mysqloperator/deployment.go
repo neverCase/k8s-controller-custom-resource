@@ -139,12 +139,24 @@ func NewDeployment(foo *mysqlOperatorV1.MysqlOperator, rds *mysqlOperatorV1.Mysq
 					Value: "dns",
 				},
 				{
-					Name:  EnvRedisMaster,
+					Name:  MysqlMasterHost,
 					Value: fmt.Sprintf(k8sCoreV1.ServiceNameTemplate, masterName),
 				},
 				{
-					Name:  EnvRedisMasterPort,
-					Value: strconv.Itoa(MysqlDefaultPort),
+					Name:  MysqlMasterUser,
+					Value: "root",
+				},
+				{
+					Name:  MysqlMasterPassword,
+					Value: "root",
+				},
+				{
+					Name:  MysqlMasterLogFile,
+					Value: "",
+				},
+				{
+					Name:  MysqlMasterLogPosition,
+					Value: "0",
 				},
 			},
 			VolumeMounts: []coreV1.VolumeMount{
