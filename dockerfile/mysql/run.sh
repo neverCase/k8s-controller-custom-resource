@@ -22,13 +22,14 @@ then
         echo -e "\n"
         echo -e "sync_binlog = 1" >> ${defaultConf}
     else
+
+        echo -e "\n"
+        echo -e "relay-log = mysql-bin" >> ${defaultConf}
+        echo -e "\n"
+        echo -e "relay-log-index  = 1" >> ${defaultConf}
         echo ${MYSQL_SERVER_ID}
     fi
 fi
-
-
-
-mysql -uroot -proot -e "show databases;"
 
 shutdownSave() {
    mysqladmin  -uroot -proot shutdown
@@ -46,12 +47,14 @@ do
         if [[ "$MYSQL_SERVER_ID" == "1" ]]
         then
             echo "**********master************"
-            mysql -uroot -proot -e "CREATE USER 'repl'@'%.example.com' IDENTIFIED BY 'password';"
-            mysql -uroot -proot -e "GRANT REPLICATION SLAVE ON *.* TO 'repl'@'%.example.com';"
+#            mysql -uroot -proot -e "CREATE USER 'repl'@'%.example.com' IDENTIFIED BY 'password';"
+#            mysql -uroot -proot -e "GRANT REPLICATION SLAVE ON *.* TO 'repl'@'%.example.com';"
+            mysql -uroot -proot -e "CREATE USER IF NOT EXISTS 'repl' IDENTIFIED BY 'root';"
+            mysql -uroot -proot -e "GRANT REPLICATION SLAVE ON *.* TO 'repl';"
         else
             echo ${MYSQL_SERVER_ID}
-             echo "**********salve************"
-            mysql -uroot -proot -e "CHANGE MASTER TO MASTER_HOST='mysql-0.mysql', MASTER_USER='root', MASTER_PASSWORD='root', MASTER_CONNECT_RETRY=10, MASTER_LOG_FILE='recorded_log_file_name', MASTER_LOG_POS=0;"
+            echo "**********salve************"
+            mysql -uroot -proot -e "CHANGE MASTER TO MASTER_HOST='${MYSQL_MASTER_HOST}', MASTER_USER='repl', MASTER_PASSWORD='root', MASTER_CONNECT_RETRY=10, MASTER_LOG_FILE='', MASTER_LOG_POS=0;"
             mysql -uroot -proot -e "START SLAVE;"
         fi
     fi

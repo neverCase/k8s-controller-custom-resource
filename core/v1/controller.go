@@ -48,16 +48,19 @@ func NewKubernetesController(operator KubernetesOperator) KubernetesControllerV1
 
 	kubeInformerFactory := operator.InformerFactory()
 	deploymentInformer := kubeInformerFactory.Apps().V1().Deployments()
+	statefulSetInformer := kubeInformerFactory.Apps().V1().StatefulSets()
 	serviceInformer := kubeInformerFactory.Core().V1().Services()
 	pvcInformer := kubeInformerFactory.Core().V1().PersistentVolumeClaims()
 
 	var kc KubernetesControllerV1 = &kubernetesController{
-		deploymentsLister: deploymentInformer.Lister(),
-		deploymentsSynced: deploymentInformer.Informer().HasSynced,
-		pvcLister:         pvcInformer.Lister(),
-		pvcSynced:         pvcInformer.Informer().HasSynced,
-		servicesLister:    serviceInformer.Lister(),
-		servicesSynced:    serviceInformer.Informer().HasSynced,
+		deploymentsLister:   deploymentInformer.Lister(),
+		deploymentsSynced:   deploymentInformer.Informer().HasSynced,
+		statefulSetInformer: statefulSetInformer.Lister(),
+		statefulSetSynced:   statefulSetInformer.Informer().HasSynced,
+		pvcLister:           pvcInformer.Lister(),
+		pvcSynced:           pvcInformer.Informer().HasSynced,
+		servicesLister:      serviceInformer.Lister(),
+		servicesSynced:      serviceInformer.Informer().HasSynced,
 
 		operator: operator,
 		//operatorSynced: operator.HasSyncedFunc(),
@@ -91,6 +94,21 @@ func NewKubernetesController(operator KubernetesOperator) KubernetesControllerV1
 		UpdateFunc: func(old, new interface{}) {
 			newDepl := new.(*appsv1.Deployment)
 			oldDepl := old.(*appsv1.Deployment)
+			if newDepl.ResourceVersion == oldDepl.ResourceVersion {
+				// Periodic resync will send update events for all known Deployments.
+				// Two different versions of the same Deployment will always have different RVs.
+				return
+			}
+			kc.HandleObject(new)
+		},
+		DeleteFunc: kc.HandleObject,
+	})
+
+	statefulSetInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: kc.HandleObject,
+		UpdateFunc: func(old, new interface{}) {
+			newDepl := new.(*appsv1.StatefulSet)
+			oldDepl := old.(*appsv1.StatefulSet)
 			if newDepl.ResourceVersion == oldDepl.ResourceVersion {
 				// Periodic resync will send update events for all known Deployments.
 				// Two different versions of the same Deployment will always have different RVs.
@@ -142,12 +160,14 @@ type kubernetesController struct {
 	// kubeclientset is a standard kubernetes clientset
 	kubeclientset kubernetes.Interface
 
-	deploymentsLister appslistersv1.DeploymentLister
-	deploymentsSynced cache.InformerSynced
-	pvcLister         corelistersv1.PersistentVolumeClaimLister
-	pvcSynced         cache.InformerSynced
-	servicesLister    corelistersv1.ServiceLister
-	servicesSynced    cache.InformerSynced
+	deploymentsLister   appslistersv1.DeploymentLister
+	deploymentsSynced   cache.InformerSynced
+	statefulSetInformer appslistersv1.StatefulSetLister
+	statefulSetSynced   cache.InformerSynced
+	pvcLister           corelistersv1.PersistentVolumeClaimLister
+	pvcSynced           cache.InformerSynced
+	servicesLister      corelistersv1.ServiceLister
+	servicesSynced      cache.InformerSynced
 
 	operator       KubernetesOperator
 	operatorSynced cache.InformerSynced
@@ -178,6 +198,7 @@ func (kc *kubernetesController) Run(threadiness int, stopCh <-chan struct{}) err
 	klog.Info("Waiting for informer caches to sync")
 	cacheSyncs := make([]cache.InformerSynced, 0)
 	cacheSyncs = append(cacheSyncs, kc.deploymentsSynced)
+	cacheSyncs = append(cacheSyncs, kc.statefulSetSynced)
 	cacheSyncs = append(cacheSyncs, kc.servicesSynced)
 	for _, v := range kc.operator.Options().HasSyncedFunc() {
 		cacheSyncs = append(cacheSyncs, v)

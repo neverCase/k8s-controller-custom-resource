@@ -3,9 +3,9 @@ package v1
 import (
 	"fmt"
 
-	appsv1 "k8s.io/api/apps/v1"
+	appsV1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
@@ -15,11 +15,11 @@ import (
 )
 
 type KubernetesStatefulSet interface {
-	Get(nameSpace, specDeploymentName string) (d *appsv1.StatefulSet, err error)
-	Create(nameSpace, specDeploymentName string, d *appsv1.StatefulSet) (*appsv1.StatefulSet, error)
-	Update(nameSpace string, d *appsv1.StatefulSet) (*appsv1.StatefulSet, error)
+	Get(nameSpace, specDeploymentName string) (d *appsV1.StatefulSet, err error)
+	Create(nameSpace, specDeploymentName string, d *appsV1.StatefulSet) (*appsV1.StatefulSet, error)
+	Update(nameSpace string, d *appsV1.StatefulSet) (*appsV1.StatefulSet, error)
 	Delete(nameSpace, specDeploymentName string) error
-	List(nameSpace, filterName string) (dl *appsv1.StatefulSetList, err error)
+	List(nameSpace, filterName string) (dl *appsV1.StatefulSetList, err error)
 }
 
 func NewKubernetesStatefulSet(kubeClientSet kubernetes.Interface, kubeInformerFactory kubeinformers.SharedInformerFactory, recorder record.EventRecorder) KubernetesStatefulSet {
@@ -37,14 +37,14 @@ type kubernetesStatefulSet struct {
 	recorder          record.EventRecorder
 }
 
-func (kd *kubernetesStatefulSet) Get(nameSpace, specDeploymentName string) (d *appsv1.StatefulSet, err error) {
+func (kd *kubernetesStatefulSet) Get(nameSpace, specDeploymentName string) (ss *appsV1.StatefulSet, err error) {
 	var deploymentName string
 	if specDeploymentName == "" {
 		// We choose to absorb the error here as the worker would requeue the
 		// resource otherwise. Instead, the next time the resource is updated
 		// the resource will be queued again.
 		utilruntime.HandleError(fmt.Errorf("%s: DeploymentName must be specified", specDeploymentName))
-		return d, fmt.Errorf("%s: DeploymentName must be specified", specDeploymentName)
+		return ss, fmt.Errorf("%s: DeploymentName must be specified", specDeploymentName)
 	}
 	deploymentName = fmt.Sprintf(StatefulSetNameTemplate, specDeploymentName)
 	// Get the statefulSet with the name specified in RedisOperator.spec
@@ -52,16 +52,16 @@ func (kd *kubernetesStatefulSet) Get(nameSpace, specDeploymentName string) (d *a
 	return statefulSet, err
 }
 
-func (kd *kubernetesStatefulSet) Create(nameSpace, specDeploymentName string, d *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
-	statefulSet, err := kd.kubeClientSet.AppsV1().StatefulSets(nameSpace).Create(d)
+func (kd *kubernetesStatefulSet) Create(nameSpace, specDeploymentName string, ss *appsV1.StatefulSet) (*appsV1.StatefulSet, error) {
+	statefulSet, err := kd.kubeClientSet.AppsV1().StatefulSets(nameSpace).Create(ss)
 	if err != nil {
 		klog.V(2).Info(err)
 	}
 	return statefulSet, err
 }
 
-func (kd *kubernetesStatefulSet) Update(nameSpace string, d *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
-	statefulSet, err := kd.kubeClientSet.AppsV1().StatefulSets(nameSpace).Update(d)
+func (kd *kubernetesStatefulSet) Update(nameSpace string, ss *appsV1.StatefulSet) (*appsV1.StatefulSet, error) {
+	statefulSet, err := kd.kubeClientSet.AppsV1().StatefulSets(nameSpace).Update(ss)
 	if err != nil {
 		klog.V(2).Info(err)
 	}
@@ -75,7 +75,7 @@ func (kd *kubernetesStatefulSet) Delete(nameSpace, specDeploymentName string) er
 	if errors.IsNotFound(err) {
 		return nil
 	}
-	opts := &metav1.DeleteOptions{
+	opts := &metaV1.DeleteOptions{
 		//GracePeriodSeconds: int64ToPointer(30),
 	}
 	deploymentName := fmt.Sprintf(StatefulSetNameTemplate, specDeploymentName)
@@ -87,13 +87,13 @@ func (kd *kubernetesStatefulSet) Delete(nameSpace, specDeploymentName string) er
 	return nil
 }
 
-func (kd *kubernetesStatefulSet) List(nameSpace, filterName string) (dl *appsv1.StatefulSetList, err error) {
-	opts := metav1.ListOptions{
+func (kd *kubernetesStatefulSet) List(nameSpace, filterName string) (ssl *appsV1.StatefulSetList, err error) {
+	opts := metaV1.ListOptions{
 		LabelSelector: filterName,
 	}
-	dl, err = kd.kubeClientSet.AppsV1().StatefulSets(nameSpace).List(opts)
+	ssl, err = kd.kubeClientSet.AppsV1().StatefulSets(nameSpace).List(opts)
 	if err != nil {
 		klog.V(2).Info(err)
 	}
-	return dl, err
+	return ssl, err
 }
