@@ -217,10 +217,11 @@ func service(ks k8sCoreV1.KubernetesResource,
 
 func createMysqlStatefulSetAndService(ks k8sCoreV1.KubernetesResource, foo *mysqlOperatorV1.MysqlOperator, clientSet mysqlOperatorClientSet.Interface, isMaster bool) (err error) {
 	//klog.Info("createMysqlDeploymentAndService2:")
-	a := int32(1)
 	if isMaster == true {
+		a := int32(1)
 		rds := foo.Spec.MasterSpec
 		rds.DeploymentName = fmt.Sprintf("%s-%s", rds.DeploymentName, k8sCoreV1.MasterName)
+		klog.Info("master-rds:", rds)
 		rds.Configuration = mysqlOperatorV1.MysqlConfig{
 			ServerId: &a,
 		}
@@ -235,55 +236,18 @@ func createMysqlStatefulSetAndService(ks k8sCoreV1.KubernetesResource, foo *mysq
 	}
 
 	// slave
-	//rds := foo.Spec.SlaveSpec
-	//rds.DeploymentName = fmt.Sprintf("%s-%s-%d", rds.DeploymentName, k8sCoreV1.SlaveName, i)
-	//b := int32(2 + i)
-	//rds.Configuration = mysqlOperatorV1.MysqlConfig{
-	//	ServerId: &b,
-	//}
-	////klog.Info("rds:", rds)
-	//if err = statefulSet(ks, foo, &rds, clientSet, isMaster); err != nil {
-	//	return err
-	//}
-	//if err = service(ks, foo, &rds, clientSet, isMaster); err != nil {
-	//	return err
-	//}
-	for i := 0; i < int(*foo.Spec.SlaveSpec.Replicas); i++ {
-		rds := foo.Spec.SlaveSpec
-		rds.DeploymentName = fmt.Sprintf("%s-%s-%d", rds.DeploymentName, k8sCoreV1.SlaveName, i)
-		b := int32(2 + i)
-		rds.Configuration = mysqlOperatorV1.MysqlConfig{
-			ServerId: &b,
-		}
-		//klog.Info("rds:", rds)
-		if err = statefulSet(ks, foo, &rds, clientSet, isMaster); err != nil {
-			return err
-		}
-		if err = service(ks, foo, &rds, clientSet, isMaster); err != nil {
-			return err
-		}
+	rds := foo.Spec.SlaveSpec
+	rds.DeploymentName = fmt.Sprintf("%s-%s", rds.DeploymentName, k8sCoreV1.SlaveName)
+	b := int32(0)
+	rds.Configuration = mysqlOperatorV1.MysqlConfig{
+		ServerId: &b,
 	}
-
-	// change slave
-	//rds = foo.Spec.SlaveSpec
-	//rds.DeploymentName = fmt.Sprintf("%s-%s-%d", rds.DeploymentName, k8sCoreV1.SlaveName, i)
-	////klog.Info("rds:", rds)
-	//if err = ks.StatefulSet().Delete(foo.Namespace, rds.DeploymentName); err != nil {
-	//	return err
-	//}
-	//if err = ks.Service().Delete(foo.Namespace, rds.DeploymentName); err != nil {
-	//	return err
-	//}
-	for i := int(*foo.Spec.SlaveSpec.Replicas); i < 10; i++ {
-		rds := foo.Spec.SlaveSpec
-		rds.DeploymentName = fmt.Sprintf("%s-%s-%d", rds.DeploymentName, k8sCoreV1.SlaveName, i)
-		//klog.Info("rds:", rds)
-		if err = ks.StatefulSet().Delete(foo.Namespace, rds.DeploymentName); err != nil {
-			return err
-		}
-		if err = ks.Service().Delete(foo.Namespace, rds.DeploymentName); err != nil {
-			return err
-		}
+	klog.Info("slave-rds:", rds)
+	if err = statefulSet(ks, foo, &rds, clientSet, isMaster); err != nil {
+		return err
+	}
+	if err = service(ks, foo, &rds, clientSet, isMaster); err != nil {
+		return err
 	}
 	return nil
 }
@@ -304,19 +268,14 @@ func statefulSet(ks k8sCoreV1.KubernetesResource,
 			return err
 		}
 	}
-	//klog.Info("rds:", *rds.Replicas)
-	//klog.Info("deployment:", *d.Spec.Replicas)
-	//if rds.Replicas != nil && *rds.Replicas != *d.Spec.Replicas {
-	//	klog.V(4).Infof("MasterSpec %s replicas: %d, deployment replicas: %d", rds.DeploymentName, *rds.Replicas, *d.Spec.Replicas)
-	//	klog.Info("update deployment")
-	//	// If an error occurs during Update, we'll requeue the item so we can
-	//	// attempt processing again later. THis could have been caused by a
-	//	// temporary network failure, or any other transient reason.
-	//	if d, err = ks.Deployment().Update(foo.Namespace, newDeployment(foo, rds)); err != nil {
-	//		klog.Info(err)
-	//		return err
-	//	}
-	//}
+	klog.Info("rds:", *rds.Replicas)
+	klog.Info("statefulSet:", *ss.Spec.Replicas)
+	if rds.Replicas != nil && *rds.Replicas != *ss.Spec.Replicas {
+		if ss, err = ks.StatefulSet().Update(foo.Namespace, NewStatefulSet(foo, rds)); err != nil {
+			klog.Info(err)
+			return err
+		}
+	}
 	if err = updateFooStatus2(foo, clientSet, ss, isMaster); err != nil {
 		return err
 	}

@@ -39,7 +39,8 @@ func NewStatefulSet(foo *mysqlOperatorV1.MysqlOperator, rds *mysqlOperatorV1.Mys
 			Labels: labels,
 		},
 		Spec: appsV1.StatefulSetSpec{
-			Replicas: foo.Spec.MasterSpec.Replicas,
+			Replicas: rds.Replicas,
+			//Replicas: foo.Spec.MasterSpec.Replicas,
 			Selector: &metaV1.LabelSelector{
 				MatchLabels: labels,
 			},
