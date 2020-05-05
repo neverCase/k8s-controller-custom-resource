@@ -10,6 +10,7 @@ type KubernetesResource interface {
 	Deployment() KubernetesDeployment
 	Service() KubernetesService
 	StatefulSet() KubernetesStatefulSet
+	ConfigMap() KubernetesConfigMap
 }
 
 type kubernetesResource struct {
@@ -20,6 +21,7 @@ type kubernetesResource struct {
 	deployment  KubernetesDeployment
 	service     KubernetesService
 	statefulSet KubernetesStatefulSet
+	configMap   KubernetesConfigMap
 }
 
 func NewKubernetesResource(kubeClientSet kubernetes.Interface, kubeInformerFactory kubeinformers.SharedInformerFactory, recorder record.EventRecorder) KubernetesResource {
@@ -30,6 +32,7 @@ func NewKubernetesResource(kubeClientSet kubernetes.Interface, kubeInformerFacto
 		deployment:          NewKubernetesDeployment(kubeClientSet, kubeInformerFactory, recorder),
 		service:             NewKubernetesService(kubeClientSet, kubeInformerFactory, recorder),
 		statefulSet:         NewKubernetesStatefulSet(kubeClientSet, kubeInformerFactory, recorder),
+		configMap:           NewKubernetesConfigMap(kubeClientSet, kubeInformerFactory, recorder),
 	}
 	return kd
 }
@@ -44,4 +47,8 @@ func (kr *kubernetesResource) Service() KubernetesService {
 
 func (kr *kubernetesResource) StatefulSet() KubernetesStatefulSet {
 	return kr.statefulSet
+}
+
+func (kr *kubernetesResource) ConfigMap() KubernetesConfigMap {
+	return kr.configMap
 }

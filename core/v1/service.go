@@ -47,7 +47,7 @@ func (kd *kubernetesService) Get(nameSpace, specDeploymentName string) (d *corev
 		return d, fmt.Errorf("%s: DeploymentName must be specified", specDeploymentName)
 	}
 	serviceName = fmt.Sprintf(ServiceNameTemplate, specDeploymentName)
-	// Get the service with the name specified in RedisOperator.spec
+	// Get the service with the name specified in spec
 	service, err := kd.servicesLister.Services(nameSpace).Get(serviceName)
 	return service, err
 }
@@ -69,7 +69,7 @@ func (kd *kubernetesService) Update(nameSpace string, d *corev1.Service) (*corev
 }
 
 func (kd *kubernetesService) Delete(nameSpace, specDeploymentName string) error {
-	// Get the service with the name specified in RedisOperator.spec
+	// Get the service with the name specified in spec
 	_, err := kd.Get(nameSpace, specDeploymentName)
 	// If the resource doesn't exist, we'll return nil
 	if errors.IsNotFound(err) {

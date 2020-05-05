@@ -47,7 +47,7 @@ func (kd *kubernetesStatefulSet) Get(nameSpace, specDeploymentName string) (ss *
 		return ss, fmt.Errorf("%s: DeploymentName must be specified", specDeploymentName)
 	}
 	deploymentName = fmt.Sprintf(StatefulSetNameTemplate, specDeploymentName)
-	// Get the statefulSet with the name specified in RedisOperator.spec
+	// Get the statefulSet with the name specified in spec
 	statefulSet, err := kd.statefulSetLister.StatefulSets(nameSpace).Get(deploymentName)
 	return statefulSet, err
 }
@@ -69,7 +69,7 @@ func (kd *kubernetesStatefulSet) Update(nameSpace string, ss *appsV1.StatefulSet
 }
 
 func (kd *kubernetesStatefulSet) Delete(nameSpace, specDeploymentName string) error {
-	// Get the statefulSet with the name specified in RedisOperator.spec
+	// Get the statefulSet with the name specified in spec
 	_, err := kd.Get(nameSpace, specDeploymentName)
 	// If the resource doesn't exist, we'll return nil
 	if errors.IsNotFound(err) {
