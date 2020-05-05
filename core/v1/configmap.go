@@ -23,12 +23,12 @@ type KubernetesConfigMap interface {
 }
 
 func NewKubernetesConfigMap(kubeClientSet kubernetes.Interface, kubeInformerFactory kubeInformers.SharedInformerFactory, recorder record.EventRecorder) KubernetesConfigMap {
-	var kcf KubernetesConfigMap = &kubernetesConfigMap{
+	var kcm KubernetesConfigMap = &kubernetesConfigMap{
 		kubeClientSet:   kubeClientSet,
 		configMapLister: kubeInformerFactory.Core().V1().ConfigMaps().Lister(),
 		recorder:        recorder,
 	}
-	return kcf
+	return kcm
 }
 
 type kubernetesConfigMap struct {
@@ -37,7 +37,7 @@ type kubernetesConfigMap struct {
 	recorder        record.EventRecorder
 }
 
-func (kcf *kubernetesConfigMap) Get(nameSpace, specDeploymentName string) (d *coreV1.ConfigMap, err error) {
+func (kcm *kubernetesConfigMap) Get(nameSpace, specDeploymentName string) (d *coreV1.ConfigMap, err error) {
 	var configMapName string
 	if specDeploymentName == "" {
 		// We choose to absorb the error here as the worker would requeue the
@@ -48,29 +48,29 @@ func (kcf *kubernetesConfigMap) Get(nameSpace, specDeploymentName string) (d *co
 	}
 	configMapName = fmt.Sprintf(ConfigMapTemplate, specDeploymentName)
 	// Get the configMap with the name specified in spec
-	configMap, err := kcf.configMapLister.ConfigMaps(nameSpace).Get(configMapName)
+	configMap, err := kcm.configMapLister.ConfigMaps(nameSpace).Get(configMapName)
 	return configMap, err
 }
 
-func (kcf *kubernetesConfigMap) Create(nameSpace, specDeploymentName string, d *coreV1.ConfigMap) (*coreV1.ConfigMap, error) {
-	configMap, err := kcf.kubeClientSet.CoreV1().ConfigMaps(nameSpace).Create(d)
+func (kcm *kubernetesConfigMap) Create(nameSpace, specDeploymentName string, d *coreV1.ConfigMap) (*coreV1.ConfigMap, error) {
+	configMap, err := kcm.kubeClientSet.CoreV1().ConfigMaps(nameSpace).Create(d)
 	if err != nil {
 		klog.V(2).Info(err)
 	}
 	return configMap, err
 }
 
-func (kcf *kubernetesConfigMap) Update(nameSpace string, d *coreV1.ConfigMap) (*coreV1.ConfigMap, error) {
-	configMap, err := kcf.kubeClientSet.CoreV1().ConfigMaps(nameSpace).Update(d)
+func (kcm *kubernetesConfigMap) Update(nameSpace string, d *coreV1.ConfigMap) (*coreV1.ConfigMap, error) {
+	configMap, err := kcm.kubeClientSet.CoreV1().ConfigMaps(nameSpace).Update(d)
 	if err != nil {
 		klog.V(2).Info(err)
 	}
 	return configMap, err
 }
 
-func (kcf *kubernetesConfigMap) Delete(nameSpace, specDeploymentName string) error {
+func (kcm *kubernetesConfigMap) Delete(nameSpace, specDeploymentName string) error {
 	// Get the configMap with the name specified in spec
-	_, err := kcf.Get(nameSpace, specDeploymentName)
+	_, err := kcm.Get(nameSpace, specDeploymentName)
 	// If the resource doesn't exist, we'll return nil
 	if errors.IsNotFound(err) {
 		return nil
@@ -79,7 +79,7 @@ func (kcf *kubernetesConfigMap) Delete(nameSpace, specDeploymentName string) err
 		//GracePeriodSeconds: int64ToPointer(30),
 	}
 	configMapName := fmt.Sprintf(ConfigMapTemplate, specDeploymentName)
-	err = kcf.kubeClientSet.CoreV1().ConfigMaps(nameSpace).Delete(configMapName, opts)
+	err = kcm.kubeClientSet.CoreV1().ConfigMaps(nameSpace).Delete(configMapName, opts)
 	if err != nil {
 		klog.V(2).Info(err)
 		return err
@@ -87,11 +87,11 @@ func (kcf *kubernetesConfigMap) Delete(nameSpace, specDeploymentName string) err
 	return nil
 }
 
-func (kcf *kubernetesConfigMap) List(nameSpace, filterName string) (sl *coreV1.ConfigMapList, err error) {
+func (kcm *kubernetesConfigMap) List(nameSpace, filterName string) (sl *coreV1.ConfigMapList, err error) {
 	opts := metaV1.ListOptions{
 		LabelSelector: filterName,
 	}
-	sl, err = kcf.kubeClientSet.CoreV1().ConfigMaps(nameSpace).List(opts)
+	sl, err = kcm.kubeClientSet.CoreV1().ConfigMaps(nameSpace).List(opts)
 	if err != nil {
 		klog.V(2).Info(err)
 	}

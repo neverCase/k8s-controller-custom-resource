@@ -23,12 +23,12 @@ type KubernetesStatefulSet interface {
 }
 
 func NewKubernetesStatefulSet(kubeClientSet kubernetes.Interface, kubeInformerFactory kubeinformers.SharedInformerFactory, recorder record.EventRecorder) KubernetesStatefulSet {
-	var kd KubernetesStatefulSet = &kubernetesStatefulSet{
+	var kss KubernetesStatefulSet = &kubernetesStatefulSet{
 		kubeClientSet:     kubeClientSet,
 		statefulSetLister: kubeInformerFactory.Apps().V1().StatefulSets().Lister(),
 		recorder:          recorder,
 	}
-	return kd
+	return kss
 }
 
 type kubernetesStatefulSet struct {
@@ -37,7 +37,7 @@ type kubernetesStatefulSet struct {
 	recorder          record.EventRecorder
 }
 
-func (kd *kubernetesStatefulSet) Get(nameSpace, specDeploymentName string) (ss *appsV1.StatefulSet, err error) {
+func (kss *kubernetesStatefulSet) Get(nameSpace, specDeploymentName string) (ss *appsV1.StatefulSet, err error) {
 	var deploymentName string
 	if specDeploymentName == "" {
 		// We choose to absorb the error here as the worker would requeue the
@@ -48,29 +48,29 @@ func (kd *kubernetesStatefulSet) Get(nameSpace, specDeploymentName string) (ss *
 	}
 	deploymentName = fmt.Sprintf(StatefulSetNameTemplate, specDeploymentName)
 	// Get the statefulSet with the name specified in spec
-	statefulSet, err := kd.statefulSetLister.StatefulSets(nameSpace).Get(deploymentName)
+	statefulSet, err := kss.statefulSetLister.StatefulSets(nameSpace).Get(deploymentName)
 	return statefulSet, err
 }
 
-func (kd *kubernetesStatefulSet) Create(nameSpace, specDeploymentName string, ss *appsV1.StatefulSet) (*appsV1.StatefulSet, error) {
-	statefulSet, err := kd.kubeClientSet.AppsV1().StatefulSets(nameSpace).Create(ss)
+func (kss *kubernetesStatefulSet) Create(nameSpace, specDeploymentName string, ss *appsV1.StatefulSet) (*appsV1.StatefulSet, error) {
+	statefulSet, err := kss.kubeClientSet.AppsV1().StatefulSets(nameSpace).Create(ss)
 	if err != nil {
 		klog.V(2).Info(err)
 	}
 	return statefulSet, err
 }
 
-func (kd *kubernetesStatefulSet) Update(nameSpace string, ss *appsV1.StatefulSet) (*appsV1.StatefulSet, error) {
-	statefulSet, err := kd.kubeClientSet.AppsV1().StatefulSets(nameSpace).Update(ss)
+func (kss *kubernetesStatefulSet) Update(nameSpace string, ss *appsV1.StatefulSet) (*appsV1.StatefulSet, error) {
+	statefulSet, err := kss.kubeClientSet.AppsV1().StatefulSets(nameSpace).Update(ss)
 	if err != nil {
 		klog.V(2).Info(err)
 	}
 	return statefulSet, err
 }
 
-func (kd *kubernetesStatefulSet) Delete(nameSpace, specDeploymentName string) error {
+func (kss *kubernetesStatefulSet) Delete(nameSpace, specDeploymentName string) error {
 	// Get the statefulSet with the name specified in spec
-	_, err := kd.Get(nameSpace, specDeploymentName)
+	_, err := kss.Get(nameSpace, specDeploymentName)
 	// If the resource doesn't exist, we'll return nil
 	if errors.IsNotFound(err) {
 		return nil
@@ -79,7 +79,7 @@ func (kd *kubernetesStatefulSet) Delete(nameSpace, specDeploymentName string) er
 		//GracePeriodSeconds: int64ToPointer(30),
 	}
 	deploymentName := fmt.Sprintf(StatefulSetNameTemplate, specDeploymentName)
-	err = kd.kubeClientSet.AppsV1().StatefulSets(nameSpace).Delete(deploymentName, opts)
+	err = kss.kubeClientSet.AppsV1().StatefulSets(nameSpace).Delete(deploymentName, opts)
 	if err != nil {
 		klog.V(2).Info(err)
 		return err
@@ -87,11 +87,11 @@ func (kd *kubernetesStatefulSet) Delete(nameSpace, specDeploymentName string) er
 	return nil
 }
 
-func (kd *kubernetesStatefulSet) List(nameSpace, filterName string) (ssl *appsV1.StatefulSetList, err error) {
+func (kss *kubernetesStatefulSet) List(nameSpace, filterName string) (ssl *appsV1.StatefulSetList, err error) {
 	opts := metaV1.ListOptions{
 		LabelSelector: filterName,
 	}
-	ssl, err = kd.kubeClientSet.AppsV1().StatefulSets(nameSpace).List(opts)
+	ssl, err = kss.kubeClientSet.AppsV1().StatefulSets(nameSpace).List(opts)
 	if err != nil {
 		klog.V(2).Info(err)
 	}
