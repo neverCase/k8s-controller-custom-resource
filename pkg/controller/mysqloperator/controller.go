@@ -21,6 +21,7 @@ import (
 )
 
 func NewController(
+	controllerName string,
 	kubeclientset kubernetes.Interface,
 	sampleclientset mysqlOperatorClientSet.Interface,
 	stopCh <-chan struct{}) k8sCoreV1.KubernetesControllerV1 {
@@ -31,7 +32,7 @@ func NewController(
 	//roInformerFactory := informersv2.NewSharedInformerFactory(sampleclientset, time.Second*30)
 
 	opt := k8sCoreV1.NewOption(&mysqlOperatorV1.MysqlOperator{},
-		controllerAgentName,
+		controllerName,
 		operatorKindName,
 		mysqlOperatorScheme.AddToScheme(scheme.Scheme),
 		sampleclientset,
@@ -45,7 +46,7 @@ func NewController(
 	if err := opts.Add(opt); err != nil {
 		klog.Fatal(err)
 	}
-	op := k8sCoreV1.NewKubernetesOperator(kubeclientset, stopCh, controllerAgentName, opts)
+	op := k8sCoreV1.NewKubernetesOperator(kubeclientset, stopCh, controllerName, opts)
 	kc := k8sCoreV1.NewKubernetesController(op)
 	//roInformerFactory.Start(stopCh)
 	exampleInformerFactory.Start(stopCh)

@@ -40,7 +40,7 @@ func main() {
 		klog.Fatalf("Error building example clientset: %s", err.Error())
 	}
 
-	controller := crd.NewController(kubeClient, exampleClient, stopCh)
+	controller := crd.NewController("mysql-operator-controller", kubeClient, exampleClient, stopCh)
 
 	if err = controller.Run(2, stopCh); err != nil {
 		klog.Fatalf("Error running controller: %s", err.Error())
