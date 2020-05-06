@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-slave-1
+  labels:
+    app: redis
+spec:
+  selector:
+    matchLabels:
+      app: redis
+      role: slave
+      tier: backend
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: redis
+        role: slave
+        tier: backend
+    spec:
+      containers:
+        - name: slave-1
+          image: domain.com/redis-slave:1.0
+          resources:
+            requests:
+              cpu: 100m
+              memory: 100Mi
+          ports:
+            - containerPort: 6379
+          env:
+            - name: GET_HOSTS_FROM
+              value: "dns"
+            - name: ENV_REDIS_MASTER
+              value: "redis-master"
+            - name: ENV_REDIS_MASTER_PORT
+              value: "6379"
+      imagePullSecrets:
+        - name: self-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-slave-1
+  labels:
+    app: redis
+    role: slave
+    tier: backend
+spec:
+  ports:
+    - port: 6379
+      targetPort: 6379
+  selector:
+    app: redis
+    role: slave
+    tier: backend
