@@ -25,7 +25,7 @@ type kubernetesResource struct {
 }
 
 func NewKubernetesResource(kubeClientSet kubernetes.Interface, kubeInformerFactory kubeinformers.SharedInformerFactory, recorder record.EventRecorder) KubernetesResource {
-	var kd KubernetesResource = &kubernetesResource{
+	var kr KubernetesResource = &kubernetesResource{
 		kubeClientSet:       kubeClientSet,
 		kubeInformerFactory: kubeInformerFactory,
 		recorder:            recorder,
@@ -34,7 +34,7 @@ func NewKubernetesResource(kubeClientSet kubernetes.Interface, kubeInformerFacto
 		statefulSet:         NewKubernetesStatefulSet(kubeClientSet, kubeInformerFactory, recorder),
 		configMap:           NewKubernetesConfigMap(kubeClientSet, kubeInformerFactory, recorder),
 	}
-	return kd
+	return kr
 }
 
 func (kr *kubernetesResource) Deployment() KubernetesDeployment {
