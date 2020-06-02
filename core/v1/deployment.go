@@ -15,10 +15,10 @@ import (
 )
 
 type KubernetesDeployment interface {
-	Get(nameSpace, specDeploymentName string) (d *appsv1.Deployment, err error)
-	Create(nameSpace, specDeploymentName string, d *appsv1.Deployment) (*appsv1.Deployment, error)
+	Get(nameSpace, specName string) (d *appsv1.Deployment, err error)
+	Create(nameSpace string, d *appsv1.Deployment) (*appsv1.Deployment, error)
 	Update(nameSpace string, d *appsv1.Deployment) (*appsv1.Deployment, error)
-	Delete(nameSpace, specDeploymentName string) error
+	Delete(nameSpace, specName string) error
 	List(nameSpace, filterName string) (dl *appsv1.DeploymentList, err error)
 }
 
@@ -37,22 +37,22 @@ type kubernetesDeployment struct {
 	recorder          record.EventRecorder
 }
 
-func (kd *kubernetesDeployment) Get(nameSpace, specDeploymentName string) (d *appsv1.Deployment, err error) {
-	var deploymentName string
-	if specDeploymentName == "" {
+func (kd *kubernetesDeployment) Get(nameSpace, specName string) (d *appsv1.Deployment, err error) {
+	var name string
+	if specName == "" {
 		// We choose to absorb the error here as the worker would requeue the
 		// resource otherwise. Instead, the next time the resource is updated
 		// the resource will be queued again.
-		utilruntime.HandleError(fmt.Errorf("%s: DeploymentName must be specified", specDeploymentName))
-		return d, fmt.Errorf("%s: DeploymentName must be specified", specDeploymentName)
+		utilruntime.HandleError(fmt.Errorf("%s: name must be specified", specName))
+		return d, fmt.Errorf("%s: name must be specified", specName)
 	}
-	deploymentName = fmt.Sprintf(DeploymentNameTemplate, specDeploymentName)
+	name = fmt.Sprintf(DeploymentNameTemplate, specName)
 	// Get the deployment with the name specified in spec
-	deployment, err := kd.deploymentsLister.Deployments(nameSpace).Get(deploymentName)
+	deployment, err := kd.deploymentsLister.Deployments(nameSpace).Get(name)
 	return deployment, err
 }
 
-func (kd *kubernetesDeployment) Create(nameSpace, specDeploymentName string, d *appsv1.Deployment) (*appsv1.Deployment, error) {
+func (kd *kubernetesDeployment) Create(nameSpace string, d *appsv1.Deployment) (*appsv1.Deployment, error) {
 	deployment, err := kd.kubeClientSet.AppsV1().Deployments(nameSpace).Create(d)
 	if err != nil {
 		klog.V(2).Info(err)
@@ -68,9 +68,9 @@ func (kd *kubernetesDeployment) Update(nameSpace string, d *appsv1.Deployment) (
 	return deployment, err
 }
 
-func (kd *kubernetesDeployment) Delete(nameSpace, specDeploymentName string) error {
+func (kd *kubernetesDeployment) Delete(nameSpace, specName string) error {
 	// Get the deployment with the name specified in spec
-	_, err := kd.Get(nameSpace, specDeploymentName)
+	_, err := kd.Get(nameSpace, specName)
 	// If the resource doesn't exist, we'll return nil
 	if errors.IsNotFound(err) {
 		return nil
@@ -78,8 +78,8 @@ func (kd *kubernetesDeployment) Delete(nameSpace, specDeploymentName string) err
 	opts := &metav1.DeleteOptions{
 		//GracePeriodSeconds: int64ToPointer(30),
 	}
-	deploymentName := fmt.Sprintf(DeploymentNameTemplate, specDeploymentName)
-	err = kd.kubeClientSet.AppsV1().Deployments(nameSpace).Delete(deploymentName, opts)
+	name := fmt.Sprintf(DeploymentNameTemplate, specName)
+	err = kd.kubeClientSet.AppsV1().Deployments(nameSpace).Delete(name, opts)
 	if err != nil {
 		klog.V(2).Info(err)
 		return err

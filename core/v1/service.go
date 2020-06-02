@@ -15,10 +15,10 @@ import (
 )
 
 type KubernetesService interface {
-	Get(nameSpace, specDeploymentName string) (d *corev1.Service, err error)
-	Create(nameSpace, specDeploymentName string, d *corev1.Service) (*corev1.Service, error)
+	Get(nameSpace, specName string) (d *corev1.Service, err error)
+	Create(nameSpace string, d *corev1.Service) (*corev1.Service, error)
 	Update(nameSpace string, d *corev1.Service) (*corev1.Service, error)
-	Delete(nameSpace, specDeploymentName string) error
+	Delete(nameSpace, specName string) error
 	List(nameSpace, filterName string) (sl *corev1.ServiceList, err error)
 }
 
@@ -37,22 +37,22 @@ type kubernetesService struct {
 	recorder       record.EventRecorder
 }
 
-func (kd *kubernetesService) Get(nameSpace, specDeploymentName string) (d *corev1.Service, err error) {
-	var serviceName string
-	if specDeploymentName == "" {
+func (kd *kubernetesService) Get(nameSpace, specName string) (d *corev1.Service, err error) {
+	var name string
+	if specName == "" {
 		// We choose to absorb the error here as the worker would requeue the
 		// resource otherwise. Instead, the next time the resource is updated
 		// the resource will be queued again.
-		utilruntime.HandleError(fmt.Errorf("%s: DeploymentName must be specified", specDeploymentName))
-		return d, fmt.Errorf("%s: DeploymentName must be specified", specDeploymentName)
+		utilruntime.HandleError(fmt.Errorf("%s: DeploymentName must be specified", specName))
+		return d, fmt.Errorf("%s: DeploymentName must be specified", specName)
 	}
-	serviceName = fmt.Sprintf(ServiceNameTemplate, specDeploymentName)
+	name = fmt.Sprintf(ServiceNameTemplate, specName)
 	// Get the service with the name specified in spec
-	service, err := kd.servicesLister.Services(nameSpace).Get(serviceName)
+	service, err := kd.servicesLister.Services(nameSpace).Get(name)
 	return service, err
 }
 
-func (kd *kubernetesService) Create(nameSpace, specDeploymentName string, d *corev1.Service) (*corev1.Service, error) {
+func (kd *kubernetesService) Create(nameSpace string, d *corev1.Service) (*corev1.Service, error) {
 	service, err := kd.kubeClientSet.CoreV1().Services(nameSpace).Create(d)
 	if err != nil {
 		klog.V(2).Info(err)
@@ -68,9 +68,9 @@ func (kd *kubernetesService) Update(nameSpace string, d *corev1.Service) (*corev
 	return service, err
 }
 
-func (kd *kubernetesService) Delete(nameSpace, specDeploymentName string) error {
+func (kd *kubernetesService) Delete(nameSpace, specName string) error {
 	// Get the service with the name specified in spec
-	_, err := kd.Get(nameSpace, specDeploymentName)
+	_, err := kd.Get(nameSpace, specName)
 	// If the resource doesn't exist, we'll return nil
 	if errors.IsNotFound(err) {
 		return nil
@@ -78,8 +78,8 @@ func (kd *kubernetesService) Delete(nameSpace, specDeploymentName string) error 
 	opts := &metav1.DeleteOptions{
 		//GracePeriodSeconds: int64ToPointer(30),
 	}
-	serviceName := fmt.Sprintf(ServiceNameTemplate, specDeploymentName)
-	err = kd.kubeClientSet.CoreV1().Services(nameSpace).Delete(serviceName, opts)
+	name := fmt.Sprintf(ServiceNameTemplate, specName)
+	err = kd.kubeClientSet.CoreV1().Services(nameSpace).Delete(name, opts)
 	if err != nil {
 		klog.V(2).Info(err)
 		return err
