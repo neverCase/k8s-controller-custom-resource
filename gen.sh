@@ -5,7 +5,7 @@ export GOPATH="/Users/nevermore/go"
 # 代码生成的工作目录，也就是我们的项目路径
 ROOT_PACKAGE="github.com/nevercase/k8s-controller-custom-resource"
 # API Group
-CUSTOM_RESOURCE_NAME="redisoperator"
+CUSTOM_RESOURCE_NAME="mysqloperator"
 # API Version
 CUSTOM_RESOURCE_VERSION="v1"
 

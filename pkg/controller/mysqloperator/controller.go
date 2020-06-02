@@ -89,143 +89,15 @@ func Sync(obj interface{}, clientObj interface{}, ks k8sCoreV1.KubernetesResourc
 	return nil
 }
 
-func createMysqlDeploymentAndService(ks k8sCoreV1.KubernetesResource, foo *mysqlOperatorV1.MysqlOperator, clientSet mysqlOperatorClientSet.Interface, isMaster bool) (err error) {
-	//klog.Info("createMysqlDeploymentAndService2:")
-	a := int32(1)
-	if isMaster == true {
-		rds := foo.Spec.MasterSpec
-		rds.DeploymentName = fmt.Sprintf("%s-%s", rds.DeploymentName, k8sCoreV1.MasterName)
-		rds.Configuration = mysqlOperatorV1.MysqlConfig{
-			ServerId: &a,
-		}
-		//klog.Info("rds:", rds)
-		if err = deployment(ks, foo, &rds, clientSet, isMaster); err != nil {
-			return err
-		}
-		if err = service(ks, foo, &rds, clientSet, isMaster); err != nil {
-			return err
-		}
-		return nil
-	}
-
-	for i := 0; i < int(*foo.Spec.SlaveSpec.Replicas); i++ {
-		rds := foo.Spec.SlaveSpec
-		rds.DeploymentName = fmt.Sprintf("%s-%s-%d", rds.DeploymentName, k8sCoreV1.SlaveName, i)
-		b := int32(2 + i)
-		rds.Configuration = mysqlOperatorV1.MysqlConfig{
-			ServerId: &b,
-		}
-		//klog.Info("rds:", rds)
-		if err = deployment(ks, foo, &rds, clientSet, isMaster); err != nil {
-			return err
-		}
-		if err = service(ks, foo, &rds, clientSet, isMaster); err != nil {
-			return err
-		}
-	}
-
-	for i := int(*foo.Spec.SlaveSpec.Replicas); i < 10; i++ {
-		rds := foo.Spec.SlaveSpec
-		rds.DeploymentName = fmt.Sprintf("%s-%s-%d", rds.DeploymentName, k8sCoreV1.SlaveName, i)
-		//klog.Info("rds:", rds)
-		if err = ks.Deployment().Delete(foo.Namespace, rds.DeploymentName); err != nil {
-			return err
-		}
-		if err = ks.Service().Delete(foo.Namespace, rds.DeploymentName); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func deployment(ks k8sCoreV1.KubernetesResource,
-	foo *mysqlOperatorV1.MysqlOperator,
-	rds *mysqlOperatorV1.MysqlDeploymentSpec,
-	clientSet mysqlOperatorClientSet.Interface,
-	isMaster bool) error {
-	d, err := ks.Deployment().Get(foo.Namespace, rds.DeploymentName)
-	if err != nil {
-		klog.Info("deployment err:", err)
-		if !errors.IsNotFound(err) {
-			return err
-		}
-		klog.Info("new deployment")
-		if d, err = ks.Deployment().Create(foo.Namespace, foo.Spec.MasterSpec.DeploymentName, NewDeployment(foo, rds)); err != nil {
-			return err
-		}
-	}
-	//klog.Info("rds:", *rds.Replicas)
-	//klog.Info("deployment:", *d.Spec.Replicas)
-	//if rds.Replicas != nil && *rds.Replicas != *d.Spec.Replicas {
-	//	klog.V(4).Infof("MasterSpec %s replicas: %d, deployment replicas: %d", rds.DeploymentName, *rds.Replicas, *d.Spec.Replicas)
-	//	klog.Info("update deployment")
-	//	// If an error occurs during Update, we'll requeue the item so we can
-	//	// attempt processing again later. THis could have been caused by a
-	//	// temporary network failure, or any other transient reason.
-	//	if d, err = ks.Deployment().Update(foo.Namespace, newDeployment(foo, rds)); err != nil {
-	//		klog.Info(err)
-	//		return err
-	//	}
-	//}
-	if err = updateFooStatus(foo, clientSet, d, isMaster); err != nil {
-		return err
-	}
-	return nil
-}
-
-func updateFooStatus(foo *mysqlOperatorV1.MysqlOperator, clientSet mysqlOperatorClientSet.Interface, deployment *appsV1.Deployment, isMaster bool) error {
-	// NEVER modify objects from the store. It's a read-only, local cache.
-	// You can use DeepCopy() to make a deep copy of original object and modify this copy
-	// Or create a copy manually for better performance
-	fooCopy := foo.DeepCopy()
-	if isMaster == true {
-		fooCopy.Status.MasterStatus.AvailableReplicas = deployment.Status.AvailableReplicas
-	} else {
-		fooCopy.Status.SlaveStatus.AvailableReplicas = deployment.Status.AvailableReplicas
-	}
-	// If the CustomResourceSubResources feature gate is not enabled,
-	// we must use Update instead of UpdateStatus to update the Status block of the RedisOperator resource.
-	// UpdateStatus will not allow changes to the Spec of the resource,
-	// which is ideal for ensuring nothing other than resource status has been updated.
-	_, err := clientSet.MysqloperatorV1().MysqlOperators(foo.Namespace).Update(fooCopy)
-	return err
-}
-
-func service(ks k8sCoreV1.KubernetesResource,
-	foo *mysqlOperatorV1.MysqlOperator,
-	rds *mysqlOperatorV1.MysqlDeploymentSpec,
-	clientSet mysqlOperatorClientSet.Interface,
-	isMaster bool) error {
-	_, err := ks.Service().Get(foo.Namespace, rds.DeploymentName)
-	if err != nil {
-		klog.Info("service err:", err)
-		if !errors.IsNotFound(err) {
-			return err
-		}
-		klog.Info("new service")
-		if _, err = ks.Service().Create(foo.Namespace, foo.Spec.MasterSpec.DeploymentName, NewService(foo, rds)); err != nil {
-			return err
-		}
-	} else {
-		klog.Info("update service no action!")
-		//if _, err = ks.Service().Update(foo.Namespace, newService(foo, rds)); err != nil {
-		//	klog.Info(err)
-		//	return err
-		//}
-	}
-	return nil
-}
-
 func createMysqlStatefulSetAndService(ks k8sCoreV1.KubernetesResource, foo *mysqlOperatorV1.MysqlOperator, clientSet mysqlOperatorClientSet.Interface, isMaster bool) (err error) {
 	//klog.Info("createMysqlDeploymentAndService2:")
 	if isMaster == true {
 		a := int32(1)
-		rds := foo.Spec.MasterSpec
-		rds.DeploymentName = fmt.Sprintf("%s-%s", rds.DeploymentName, k8sCoreV1.MasterName)
+		rds := foo.Spec.MasterSpec.Spec
+		rds.Name = fmt.Sprintf("%s-%s", rds.Name, k8sCoreV1.MasterName)
+		rds.Role = k8sCoreV1.MasterName
 		klog.Info("master-rds:", rds)
-		rds.Configuration = mysqlOperatorV1.MysqlConfig{
-			ServerId: &a,
-		}
+		rds.Config.ServerId = &a
 		//klog.Info("rds:", rds)
 		if err = statefulSet(ks, foo, &rds, clientSet, isMaster); err != nil {
 			return err
@@ -237,12 +109,11 @@ func createMysqlStatefulSetAndService(ks k8sCoreV1.KubernetesResource, foo *mysq
 	}
 
 	// slave
-	rds := foo.Spec.SlaveSpec
-	rds.DeploymentName = fmt.Sprintf("%s-%s", rds.DeploymentName, k8sCoreV1.SlaveName)
+	rds := foo.Spec.SlaveSpec.Spec
+	rds.Name = fmt.Sprintf("%s-%s", rds.Name, k8sCoreV1.SlaveName)
+	rds.Role = k8sCoreV1.SlaveName
 	b := int32(0)
-	rds.Configuration = mysqlOperatorV1.MysqlConfig{
-		ServerId: &b,
-	}
+	rds.Config.ServerId = &b
 	klog.Info("slave-rds:", rds)
 	if err = statefulSet(ks, foo, &rds, clientSet, isMaster); err != nil {
 		return err
@@ -255,17 +126,17 @@ func createMysqlStatefulSetAndService(ks k8sCoreV1.KubernetesResource, foo *mysq
 
 func statefulSet(ks k8sCoreV1.KubernetesResource,
 	foo *mysqlOperatorV1.MysqlOperator,
-	rds *mysqlOperatorV1.MysqlDeploymentSpec,
+	rds *mysqlOperatorV1.MysqlSpec,
 	clientSet mysqlOperatorClientSet.Interface,
 	isMaster bool) error {
-	ss, err := ks.StatefulSet().Get(foo.Namespace, rds.DeploymentName)
+	ss, err := ks.StatefulSet().Get(foo.Namespace, rds.Name)
 	if err != nil {
 		klog.Info("statefulSet err:", err)
 		if !errors.IsNotFound(err) {
 			return err
 		}
 		klog.Info("new statefulSet")
-		if ss, err = ks.StatefulSet().Create(foo.Namespace, foo.Spec.MasterSpec.DeploymentName, NewStatefulSet(foo, rds)); err != nil {
+		if ss, err = ks.StatefulSet().Create(foo.Namespace, NewStatefulSet(foo, rds)); err != nil {
 			return err
 		}
 	}
@@ -277,21 +148,21 @@ func statefulSet(ks k8sCoreV1.KubernetesResource,
 			return err
 		}
 	}
-	if err = updateFooStatus2(foo, clientSet, ss, isMaster); err != nil {
+	if err = updateFooStatus(foo, clientSet, ss, isMaster); err != nil {
 		return err
 	}
 	return nil
 }
 
-func updateFooStatus2(foo *mysqlOperatorV1.MysqlOperator, clientSet mysqlOperatorClientSet.Interface, statefulSet *appsV1.StatefulSet, isMaster bool) error {
+func updateFooStatus(foo *mysqlOperatorV1.MysqlOperator, clientSet mysqlOperatorClientSet.Interface, statefulSet *appsV1.StatefulSet, isMaster bool) error {
 	// NEVER modify objects from the store. It's a read-only, local cache.
 	// You can use DeepCopy() to make a deep copy of original object and modify this copy
 	// Or create a copy manually for better performance
 	fooCopy := foo.DeepCopy()
 	if isMaster == true {
-		fooCopy.Status.MasterStatus.AvailableReplicas = statefulSet.Status.Replicas
+		fooCopy.Spec.MasterSpec.Status.AvailableReplicas = statefulSet.Status.Replicas
 	} else {
-		fooCopy.Status.SlaveStatus.AvailableReplicas = statefulSet.Status.Replicas
+		fooCopy.Spec.SlaveSpec.Status.AvailableReplicas = statefulSet.Status.Replicas
 	}
 	// If the CustomResourceSubResources feature gate is not enabled,
 	// we must use Update instead of UpdateStatus to update the Status block of the RedisOperator resource.
@@ -299,4 +170,29 @@ func updateFooStatus2(foo *mysqlOperatorV1.MysqlOperator, clientSet mysqlOperato
 	// which is ideal for ensuring nothing other than resource status has been updated.
 	_, err := clientSet.MysqloperatorV1().MysqlOperators(foo.Namespace).Update(fooCopy)
 	return err
+}
+
+func service(ks k8sCoreV1.KubernetesResource,
+	foo *mysqlOperatorV1.MysqlOperator,
+	rds *mysqlOperatorV1.MysqlSpec,
+	clientSet mysqlOperatorClientSet.Interface,
+	isMaster bool) error {
+	_, err := ks.Service().Get(foo.Namespace, rds.Name)
+	if err != nil {
+		klog.Info("service err:", err)
+		if !errors.IsNotFound(err) {
+			return err
+		}
+		klog.Info("new service")
+		if _, err = ks.Service().Create(foo.Namespace, NewService(foo, rds)); err != nil {
+			return err
+		}
+	} else {
+		klog.Info("update service no action!")
+		//if _, err = ks.Service().Update(foo.Namespace, newService(foo, rds)); err != nil {
+		//	klog.Info(err)
+		//	return err
+		//}
+	}
+	return nil
 }

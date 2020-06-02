@@ -2,32 +2,32 @@ package mysqloperator
 
 import (
 	"fmt"
-	"regexp"
 	"strconv"
 
 	appsV1 "k8s.io/api/apps/v1"
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/klog"
 
 	k8sCoreV1 "github.com/nevercase/k8s-controller-custom-resource/core/v1"
 	mysqlOperatorV1 "github.com/nevercase/k8s-controller-custom-resource/pkg/apis/mysqloperator/v1"
 )
 
-func NewStatefulSet(foo *mysqlOperatorV1.MysqlOperator, rds *mysqlOperatorV1.MysqlDeploymentSpec) *appsV1.StatefulSet {
+func NewStatefulSet(foo *mysqlOperatorV1.MysqlOperator, rds *mysqlOperatorV1.MysqlSpec) *appsV1.StatefulSet {
 	labels := map[string]string{
 		"app":        operatorKindName,
 		"controller": foo.Name,
-		"role":       k8sCoreV1.MasterName,
+		"role":       rds.Role,
 	}
 	t := coreV1.HostPathDirectoryOrCreate
 	hostPath := &coreV1.HostPathVolumeSource{
 		Type: &t,
-		Path: fmt.Sprintf("/mnt/ssd1/mysql/%s", rds.DeploymentName),
+		Path: fmt.Sprintf("/mnt/ssd1/mysql/%s", rds.Name),
 	}
 
-	objectName := fmt.Sprintf(k8sCoreV1.StatefulSetNameTemplate, rds.DeploymentName)
-	containerName := fmt.Sprintf(k8sCoreV1.ContainerNameTemplate, rds.DeploymentName)
+	objectName := fmt.Sprintf(k8sCoreV1.StatefulSetNameTemplate, rds.Name)
+	containerName := fmt.Sprintf(k8sCoreV1.ContainerNameTemplate, rds.Name)
+
+	masterName := fmt.Sprintf("%s-%s", foo.Spec.MasterSpec.Spec.Name, k8sCoreV1.MasterName)
 
 	standard := &appsV1.StatefulSet{
 		ObjectMeta: metaV1.ObjectMeta{
@@ -63,7 +63,7 @@ func NewStatefulSet(foo *mysqlOperatorV1.MysqlOperator, rds *mysqlOperatorV1.Mys
 					Containers: []coreV1.Container{
 						{
 							Name:  containerName,
-							Image: foo.Spec.MasterSpec.Image,
+							Image: rds.Image,
 							Ports: []coreV1.ContainerPort{
 								{
 									ContainerPort: MysqlDefaultPort,
@@ -72,7 +72,7 @@ func NewStatefulSet(foo *mysqlOperatorV1.MysqlOperator, rds *mysqlOperatorV1.Mys
 							Env: []coreV1.EnvVar{
 								{
 									Name:  MysqlServerId,
-									Value: strconv.Itoa(int(*rds.Configuration.ServerId)),
+									Value: strconv.Itoa(int(*rds.Config.ServerId)),
 								},
 								{
 									Name:  MysqlRootPassword,
@@ -81,6 +81,30 @@ func NewStatefulSet(foo *mysqlOperatorV1.MysqlOperator, rds *mysqlOperatorV1.Mys
 								{
 									Name:  MysqlDataDir,
 									Value: "/data",
+								},
+								{
+									Name:  "GET_HOSTS_FROM",
+									Value: "dns",
+								},
+								{
+									Name:  MysqlMasterHost,
+									Value: fmt.Sprintf(k8sCoreV1.ServiceNameTemplate, masterName),
+								},
+								{
+									Name:  MysqlMasterUser,
+									Value: "root",
+								},
+								{
+									Name:  MysqlMasterPassword,
+									Value: "root",
+								},
+								{
+									Name:  MysqlMasterLogFile,
+									Value: "",
+								},
+								{
+									Name:  MysqlMasterLogPosition,
+									Value: "0",
 								},
 							},
 							VolumeMounts: []coreV1.VolumeMount{
@@ -91,79 +115,7 @@ func NewStatefulSet(foo *mysqlOperatorV1.MysqlOperator, rds *mysqlOperatorV1.Mys
 							},
 						},
 					},
-					ImagePullSecrets: []coreV1.LocalObjectReference{
-						{
-							Name: foo.Spec.MasterSpec.ImagePullSecrets,
-						},
-					},
-				},
-			},
-		},
-	}
-	res, err := regexp.Match(`master`, []byte(rds.DeploymentName))
-	if err != nil {
-		klog.Info(err)
-		klog.V(2).Info(err)
-	}
-	if res {
-		return standard
-	}
-
-	labels["role"] = k8sCoreV1.SlaveName
-	masterName := fmt.Sprintf("%s-%s", foo.Spec.MasterSpec.DeploymentName, k8sCoreV1.MasterName)
-	standard.Spec.Selector.MatchLabels = labels
-	standard.Spec.Template.ObjectMeta.Labels = labels
-	standard.Spec.Template.Spec.Containers = []coreV1.Container{
-		{
-			Name:  containerName,
-			Image: foo.Spec.SlaveSpec.Image,
-			Ports: []coreV1.ContainerPort{
-				{
-					ContainerPort: MysqlDefaultPort,
-				},
-			},
-			Env: []coreV1.EnvVar{
-				{
-					Name:  MysqlServerId,
-					Value: strconv.Itoa(int(*rds.Configuration.ServerId)),
-				},
-				{
-					Name:  MysqlRootPassword,
-					Value: MysqlDefaultRootPassword,
-				},
-				{
-					Name:  MysqlDataDir,
-					Value: "/data",
-				},
-				{
-					Name:  "GET_HOSTS_FROM",
-					Value: "dns",
-				},
-				{
-					Name:  MysqlMasterHost,
-					Value: fmt.Sprintf(k8sCoreV1.ServiceNameTemplate, masterName),
-				},
-				{
-					Name:  MysqlMasterUser,
-					Value: "root",
-				},
-				{
-					Name:  MysqlMasterPassword,
-					Value: "root",
-				},
-				{
-					Name:  MysqlMasterLogFile,
-					Value: "",
-				},
-				{
-					Name:  MysqlMasterLogPosition,
-					Value: "0",
-				},
-			},
-			VolumeMounts: []coreV1.VolumeMount{
-				{
-					MountPath: "/data",
-					Name:      "task-pv-storage",
+					ImagePullSecrets: rds.ImagePullSecrets,
 				},
 			},
 		},

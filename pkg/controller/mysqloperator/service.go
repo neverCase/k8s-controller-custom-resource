@@ -2,33 +2,22 @@ package mysqloperator
 
 import (
 	"fmt"
-	"regexp"
 
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/klog"
 
 	k8sCoreV1 "github.com/nevercase/k8s-controller-custom-resource/core/v1"
 	mysqlOperatorV1 "github.com/nevercase/k8s-controller-custom-resource/pkg/apis/mysqloperator/v1"
 )
 
-func NewService(foo *mysqlOperatorV1.MysqlOperator, rds *mysqlOperatorV1.MysqlDeploymentSpec) *coreV1.Service {
-	var serviceName, role string
-	res, err := regexp.Match(`master`, []byte(rds.DeploymentName))
-	if err != nil {
-		klog.V(2).Info(err)
-	}
-	if res {
-		role = k8sCoreV1.MasterName
-	} else {
-		role = k8sCoreV1.SlaveName
-	}
+func NewService(foo *mysqlOperatorV1.MysqlOperator, rds *mysqlOperatorV1.MysqlSpec) *coreV1.Service {
+	var serviceName string
 	var labels = map[string]string{
 		"app":        operatorKindName,
 		"controller": foo.Name,
-		"role":       role,
+		"role":       rds.Role,
 	}
-	serviceName = fmt.Sprintf(k8sCoreV1.ServiceNameTemplate, rds.DeploymentName)
+	serviceName = fmt.Sprintf(k8sCoreV1.ServiceNameTemplate, rds.Name)
 	return &coreV1.Service{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      serviceName,

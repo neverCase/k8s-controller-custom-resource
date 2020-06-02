@@ -3,13 +3,17 @@ kind: MysqlOperator
 metadata:
   name: example-mysql
 spec:
-  master_spec:
-    deploymentName: "test-mysql-operator"
-    replicas: 1
-    image: domain.com/mysql-slave:1.0
-    imagePullSecrets: self-secret
-  slave_spec:
-    deploymentName: "test-mysql-operator"
-    replicas: 4
-    image: domain.com/mysql-slave:1.0
-    imagePullSecrets: self-secret
+  masterSpec:
+    spec:
+      name: "mysql-cn1"
+      replicas: 1
+      image: 39.99.229.222:37229/helix-saga/mysql-slave:1.0
+      imagePullSecrets:
+        - name: private-harbor
+  slaveSpec:
+    spec:
+      name: "mysql-cn1"
+      replicas: 4
+      image: 39.99.229.222:37229/helix-saga/mysql-slave:1.0
+      imagePullSecrets:
+        - name: private-harbor
