@@ -113,6 +113,7 @@ func createRedisStatefulSetAndService(ks k8sCoreV1.KubernetesResource, foo *redi
 		if err = service(ks, foo, &rds, clientSet, isMaster); err != nil {
 			return err
 		}
+		return nil
 	}
 	// slave
 	rds := foo.Spec.SlaveSpec.Spec
