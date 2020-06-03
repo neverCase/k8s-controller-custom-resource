@@ -1,12 +1,12 @@
 # k8s-controller-custom-resource
 
 ## features
-- redis-operator: including a simple master-slave mode which was main based on the resource of **k8s.Deployment** and **k8s.Service**
-- mysql-operator: including a simple master-slave mode which was main based on the resource of **k8s.StatefulSet** and **k8s.Service**
+- redis-operator: including a simple master-slave mode which was main based on the resources of **k8s.StatefulSet** and **k8s.Service**
+- mysql-operator: the same with the redis-operator
 
 ## core/v1
 1. core/v1/interfaces would add the storage plugins(e.g. nfs) later for dynamically creating pv and pvc
-2. core/v1/interfaces need to add api for creating instances instead of using yaml files and executing `kubectl apply -f *.yaml`
+2. core/v1/interfaces need to add api for creating instances instead of creating yaml files and executing `kubectl apply -f *.yaml`
 
 ## custom-controller
 ```go
