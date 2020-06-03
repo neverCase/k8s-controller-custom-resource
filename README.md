@@ -11,7 +11,21 @@
 
 ## RedisOperator
 
-### define resource
+### clone git, build docker image and compile controller
+```sh
+$ git clone https://github.com/neverCase/k8s-controller-custom-resource.git
+$ cd k8s-controller-custom-resource 
+
+# build image
+$ cd dockerfile/redis
+$ export CLOUD_REGISTRY="domain.harbor.com"
+$ bash makefile.sh
+
+# compile controller
+$ CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o redisoperatorcrd cmd/redisoperator/main.go
+```
+
+### define the resource of the `RedisOperator`
 ```sh
 $ cat > redis-resource.yaml <<EOF
 apiVersion: apiextensions.k8s.io/v1beta1
@@ -26,7 +40,9 @@ spec:
     plural: redisoperators
   scope: Namespaced
 EOF
+
 $ kubectl apply -f redis-resource.yaml
+customresourcedefinition.apiextensions.k8s.io/redisoperators.redisoperator.nevercase.io created
 ```
 
 ### define demo file
@@ -52,12 +68,13 @@ spec:
       imagePullSecrets:
         - name: private-secret
 EOF
+
 $ kubectl apply -f example-redis.yaml
+redisoperator.redisoperator.nevercase.io/example-redis created
 ```
 
-### run controller
+### run the controller
 ```sh
-CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o redisoperatorcrd cmd/redisoperator/main.go
 $ ./redisoperatorcrd -kubeconfig=$HOME/.kube/config -alsologtostderr=true
 I0603 14:48:38.844075   20412 controller.go:72] Setting up event handlers
 I0603 14:48:38.844243   20412 controller.go:195] Starting Foo controller
@@ -68,7 +85,28 @@ I0603 14:48:38.944366   20412 controller.go:215] Started workers
 I0603 14:48:47.721574   20412 event.go:255] Event(v1.ObjectReference{Kind:"RedisOperator", ... type: 'Normal' reason: 'Synced' Foo synced successfully
 ```
 
-## mysql-operator
+### watch status
+```sh
+$ kubectl get statefulset
+NAME                           READY   AGE
+statefulset-redis-demo-master   1/1     46s
+statefulset-redis-demo-slave    4/4     46s
+
+$ kubectl get pod
+NAME                                                    READY   STATUS      RESTARTS   AGE
+statefulset-redis-demo-master-0                          1/1     Running     0          101s
+statefulset-redis-demo-slave-0                           1/1     Running     0          101s
+statefulset-redis-demo-slave-1                           1/1     Running     0          99s
+statefulset-redis-demo-slave-2                           1/1     Running     0          98s
+statefulset-redis-demo-slave-3                           1/1     Running     0          97s
+
+$ kubectl get svc
+NAME                       TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)    AGE
+service-redis-demo-master  ClusterIP   10.96.110.148   <none>        6379/TCP   4m38s
+service-redis-demo-slave   ClusterIP   10.96.0.120     <none>        6379/TCP   4m38s
+```
+
+## MysqlOperator
 
 The usage was the same with the RedisOperator. 
 
