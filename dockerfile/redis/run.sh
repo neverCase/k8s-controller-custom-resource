@@ -7,6 +7,16 @@ then
     exit
 fi
 
+redisSerialNumber="0"
+if [[ `hostname` =~ -([0-9]+)$ ]]
+then
+    redisSerialNumber=${BASH_REMATCH[1]}
+    ENV_REDIS_CONF=${ENV_REDIS_CONF/./-${redisSerialNumber}.}
+    ENV_REDIS_DBFILENAME=${ENV_REDIS_DBFILENAME/./-${redisSerialNumber}.}
+else
+    echo "The hostname doesn't contain a server id"
+fi
+
 cp ${defaultConf} ${ENV_REDIS_CONF}
 
 if [[ "$ENV_REDIS_MASTER" ]] && [[ "$ENV_REDIS_MASTER_PORT" ]]; then
