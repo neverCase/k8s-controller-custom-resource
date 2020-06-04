@@ -46,7 +46,7 @@ func NewController(
 	fooInformer := informerFactory.Redisoperator().V1().RedisOperators()
 	opt := k8sCoreV1.NewOption(&redisOperatorV1.RedisOperator{},
 		controllerName,
-		operatorKindName,
+		OperatorKindName,
 		redisOperatorScheme.AddToScheme(scheme.Scheme),
 		clientSet,
 		fooInformer,
@@ -74,7 +74,7 @@ func NewOption(controllerName string, cfg *rest.Config, stopCh <-chan struct{}) 
 	fooInformer := informerFactory.Redisoperator().V1().RedisOperators()
 	opt := k8sCoreV1.NewOption(&redisOperatorV1.RedisOperator{},
 		controllerName,
-		operatorKindName,
+		OperatorKindName,
 		redisOperatorScheme.AddToScheme(scheme.Scheme),
 		c,
 		fooInformer,

@@ -1,7 +1,7 @@
 package redisoperator
 
 const controllerAgentName = "redis-operator-controller"
-const operatorKindName = "RedisOperator"
+const OperatorKindName = "RedisOperator"
 
 const (
 	// SuccessSynced is used as part of the Event 'reason' when a Foo is synced

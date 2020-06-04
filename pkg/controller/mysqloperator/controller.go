@@ -32,7 +32,7 @@ func NewController(
 
 	opt := k8sCoreV1.NewOption(&mysqlOperatorV1.MysqlOperator{},
 		controllerName,
-		operatorKindName,
+		OperatorKindName,
 		mysqlOperatorScheme.AddToScheme(scheme.Scheme),
 		clientSet,
 		fooInformer,
@@ -60,7 +60,7 @@ func NewOption(controllerName string, cfg *rest.Config, stopCh <-chan struct{}) 
 	fooInformer := informerFactory.Mysqloperator().V1().MysqlOperators()
 	opt := k8sCoreV1.NewOption(&mysqlOperatorV1.MysqlOperator{},
 		controllerName,
-		operatorKindName,
+		OperatorKindName,
 		mysqlOperatorScheme.AddToScheme(scheme.Scheme),
 		c,
 		fooInformer,

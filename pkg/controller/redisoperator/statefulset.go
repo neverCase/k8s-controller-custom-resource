@@ -14,7 +14,7 @@ import (
 
 func NewStatefulSet(foo *redisOperatorV1.RedisOperator, rds *redisOperatorV1.RedisSpec) *appsV1.StatefulSet {
 	labels := map[string]string{
-		"app":        operatorKindName,
+		"app":        OperatorKindName,
 		"controller": foo.Name,
 		"role":       rds.Role,
 	}
@@ -65,7 +65,7 @@ func NewStatefulSet(foo *redisOperatorV1.RedisOperator, rds *redisOperatorV1.Red
 			Name:      objectName,
 			Namespace: foo.Namespace,
 			OwnerReferences: []metaV1.OwnerReference{
-				*metaV1.NewControllerRef(foo, redisOperatorV1.SchemeGroupVersion.WithKind(operatorKindName)),
+				*metaV1.NewControllerRef(foo, redisOperatorV1.SchemeGroupVersion.WithKind(OperatorKindName)),
 			},
 			Labels: labels,
 		},

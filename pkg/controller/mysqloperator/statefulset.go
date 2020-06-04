@@ -14,7 +14,7 @@ import (
 
 func NewStatefulSet(foo *mysqlOperatorV1.MysqlOperator, rds *mysqlOperatorV1.MysqlSpec) *appsV1.StatefulSet {
 	labels := map[string]string{
-		"app":        operatorKindName,
+		"app":        OperatorKindName,
 		"controller": foo.Name,
 		"role":       rds.Role,
 	}
@@ -34,7 +34,7 @@ func NewStatefulSet(foo *mysqlOperatorV1.MysqlOperator, rds *mysqlOperatorV1.Mys
 			Name:      objectName,
 			Namespace: foo.Namespace,
 			OwnerReferences: []metaV1.OwnerReference{
-				*metaV1.NewControllerRef(foo, mysqlOperatorV1.SchemeGroupVersion.WithKind(operatorKindName)),
+				*metaV1.NewControllerRef(foo, mysqlOperatorV1.SchemeGroupVersion.WithKind(OperatorKindName)),
 			},
 			Labels: labels,
 		},

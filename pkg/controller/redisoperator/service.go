@@ -13,7 +13,7 @@ import (
 func NewService(foo *redisOperatorV1.RedisOperator, rds *redisOperatorV1.RedisSpec) *coreV1.Service {
 	var serviceName string
 	var labels = map[string]string{
-		"app":        operatorKindName,
+		"app":        OperatorKindName,
 		"controller": foo.Name,
 		"role":       rds.Role,
 	}
@@ -23,7 +23,7 @@ func NewService(foo *redisOperatorV1.RedisOperator, rds *redisOperatorV1.RedisSp
 			Name:      serviceName,
 			Namespace: foo.Namespace,
 			OwnerReferences: []metaV1.OwnerReference{
-				*metaV1.NewControllerRef(foo, redisOperatorV1.SchemeGroupVersion.WithKind(operatorKindName)),
+				*metaV1.NewControllerRef(foo, redisOperatorV1.SchemeGroupVersion.WithKind(OperatorKindName)),
 			},
 			Labels: labels,
 		},

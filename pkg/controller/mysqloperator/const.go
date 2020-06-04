@@ -1,7 +1,7 @@
 package mysqloperator
 
 const controllerAgentName = "mysql-operator-controller"
-const operatorKindName = "MysqlOperator"
+const OperatorKindName = "MysqlOperator"
 
 const (
 	// SuccessSynced is used as part of the Event 'reason' when a Foo is synced
