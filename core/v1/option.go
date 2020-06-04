@@ -2,7 +2,6 @@ package v1
 
 import (
 	"fmt"
-	"k8s.io/klog"
 	"reflect"
 	"sync"
 
@@ -20,7 +19,7 @@ const (
 )
 
 type Options interface {
-	Add(opt Option) error
+	Add(opt... Option) error
 	Get(objType reflect.Type) Option
 	GetWithKindName(kindName string) (opt Option, err error)
 	HasSyncedFunc() []func() bool
@@ -41,18 +40,17 @@ func NewOptions() Options {
 	return o
 }
 
-func (o *options) Add(opt Option) error {
+func (o *options) Add(opt... Option) error {
 	o.mu.Lock()
 	defer o.mu.Unlock()
-	t := opt.GetReflectType()
-	if _, ok := o.hub[t]; ok {
-		return fmt.Errorf("%s type:%v", ErrOptionExists, t)
+	for _, v := range opt {
+		t := v.GetReflectType()
+		if _, ok := o.hub[t]; ok {
+			return fmt.Errorf("%s type:%v", ErrOptionExists, t)
+		}
+		o.hub[t] = v
+		o.kinds[v.KindName()] = v.GetReflectType()
 	}
-	o.hub[t] = opt
-	o.kinds[opt.KindName()] = opt.GetReflectType()
-	klog.Info("opt:", opt)
-	klog.Info("opt.hub:", o.hub)
-	klog.Info("opt.kinds:", o.kinds)
 	return nil
 }
 

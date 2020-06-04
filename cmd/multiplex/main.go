@@ -2,13 +2,14 @@ package main
 
 import (
 	"flag"
-	k8sCoreV1 "github.com/nevercase/k8s-controller-custom-resource/core/v1"
+
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog"
 	// Uncomment the following line to load the gcp plugin (only required to authenticate against GKE clusters).
 	// _ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 
+	k8sCoreV1 "github.com/nevercase/k8s-controller-custom-resource/core/v1"
 	mysql "github.com/nevercase/k8s-controller-custom-resource/pkg/controller/mysqloperator"
 	redis "github.com/nevercase/k8s-controller-custom-resource/pkg/controller/redisoperator"
 	"github.com/nevercase/k8s-controller-custom-resource/pkg/signals"
@@ -44,11 +45,8 @@ func main() {
 	controllerName := "multiplex-controller"
 	opts := k8sCoreV1.NewOptions()
 	mysqlOpt := mysql.NewOption(controllerName, cfg, stopCh)
-	if err := opts.Add(mysqlOpt); err != nil {
-		klog.Fatal(err)
-	}
 	redisOpt := redis.NewOption(controllerName, cfg, stopCh)
-	if err := opts.Add(redisOpt); err != nil {
+	if err := opts.Add(mysqlOpt, redisOpt); err != nil {
 		klog.Fatal(err)
 	}
 
