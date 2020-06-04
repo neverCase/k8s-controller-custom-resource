@@ -27,7 +27,7 @@ func NewGroup(cfg *rest.Config) Group {
 	if err != nil {
 		klog.Fatalf("Error building example mysqlClientSet: %s", err.Error())
 	}
-	var g Group = &group{
+	var g = &group{
 		mysql: mysql,
 		redis: redis,
 	}

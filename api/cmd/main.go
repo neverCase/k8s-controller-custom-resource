@@ -3,11 +3,9 @@ package main
 import (
 	"flag"
 
+	"github.com/nevercase/k8s-controller-custom-resource/api/service"
 	v1 "github.com/nevercase/k8s-controller-custom-resource/api/v1"
-	mysqlOperatorV1 "github.com/nevercase/k8s-controller-custom-resource/pkg/apis/mysqloperator/v1"
 	"github.com/nevercase/k8s-controller-custom-resource/pkg/signals"
-	apiV1 "k8s.io/api/core/v1"
-	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog"
 )
@@ -35,44 +33,48 @@ func main() {
 	}
 
 	g := v1.NewGroup(cfg)
+	_ = g
 
-	m, err := g.Mysql().MysqloperatorV1().MysqlOperators(apiV1.NamespaceDefault).Create(newMysql())
-	if err != nil {
-		klog.V(2).Info(err)
-	}
-	klog.V(4).Info(m)
+	s := service.NewService()
+	s.Start()
+
+	//m, err := g.Mysql().MysqloperatorV1().MysqlOperators(apiV1.NamespaceDefault).Create(newMysql())
+	//if err != nil {
+	//	klog.V(2).Info(err)
+	//}
+	//klog.V(4).Info(m)
 
 	<-stopCh
 
-	err = g.Mysql().MysqloperatorV1().MysqlOperators(apiV1.NamespaceDefault).Delete("example-mysql", &metaV1.DeleteOptions{})
-	if err != nil {
-		klog.V(2).Info(err)
-	}
+	//err = g.Mysql().MysqloperatorV1().MysqlOperators(apiV1.NamespaceDefault).Delete("example-mysql", &metaV1.DeleteOptions{})
+	//if err != nil {
+	//	klog.V(2).Info(err)
+	//}
 }
 
-func newMysql() *mysqlOperatorV1.MysqlOperator {
-	var a int32 = 1
-	var b int32 = 4
-	return &mysqlOperatorV1.MysqlOperator{
-		ObjectMeta: metaV1.ObjectMeta{
-			Name:      "example-mysql",
-			Namespace: apiV1.NamespaceDefault,
-		},
-		Spec: mysqlOperatorV1.MysqlOperatorSpec{
-			MasterSpec: mysqlOperatorV1.MysqlDeploymentSpec{
-				DeploymentName:   "test-mysql",
-				Replicas:         &a,
-				Image:            "domain/mysql-slave:1.0",
-				ImagePullSecrets: "private-harbor",
-				Configuration:    mysqlOperatorV1.MysqlConfig{},
-			},
-			SlaveSpec: mysqlOperatorV1.MysqlDeploymentSpec{
-				DeploymentName:   "test-mysql",
-				Replicas:         &b,
-				Image:            "domain/mysql-slave:1.0",
-				ImagePullSecrets: "private-harbor",
-				Configuration:    mysqlOperatorV1.MysqlConfig{},
-			},
-		},
-	}
-}
+//func newMysql() *mysqlOperatorV1.MysqlOperator {
+//	var a int32 = 1
+//	var b int32 = 4
+//	return &mysqlOperatorV1.MysqlOperator{
+//		ObjectMeta: metaV1.ObjectMeta{
+//			Name:      "example-mysql",
+//			Namespace: apiV1.NamespaceDefault,
+//		},
+//		Spec: mysqlOperatorV1.MysqlOperatorSpec{
+//			MasterSpec: mysqlOperatorV1.MysqlDeploymentSpec{
+//				DeploymentName:   "test-mysql",
+//				Replicas:         &a,
+//				Image:            "domain/mysql-slave:1.0",
+//				ImagePullSecrets: "private-harbor",
+//				Configuration:    mysqlOperatorV1.MysqlConfig{},
+//			},
+//			SlaveSpec: mysqlOperatorV1.MysqlDeploymentSpec{
+//				DeploymentName:   "test-mysql",
+//				Replicas:         &b,
+//				Image:            "domain/mysql-slave:1.0",
+//				ImagePullSecrets: "private-harbor",
+//				Configuration:    mysqlOperatorV1.MysqlConfig{},
+//			},
+//		},
+//	}
+//}

@@ -4,6 +4,7 @@ go 1.14
 
 require (
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b // indirect
+	github.com/gorilla/websocket v1.4.2
 	github.com/imdario/mergo v0.3.8 // indirect
 	github.com/kubernetes/client-go v11.0.0+incompatible // indirect
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d // indirect
