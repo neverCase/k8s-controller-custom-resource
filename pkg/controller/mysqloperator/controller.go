@@ -9,6 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/klog"
 
@@ -22,20 +23,18 @@ import (
 
 func NewController(
 	controllerName string,
-	kubeclientset kubernetes.Interface,
-	sampleclientset mysqlOperatorClientSet.Interface,
+	k8sClientSet kubernetes.Interface,
+	clientSet mysqlOperatorClientSet.Interface,
 	stopCh <-chan struct{}) k8sCoreV1.KubernetesControllerV1 {
 
-	exampleInformerFactory := informersext.NewSharedInformerFactory(sampleclientset, time.Second*30)
-	fooInformer := exampleInformerFactory.Mysqloperator().V1().MysqlOperators()
-
-	//roInformerFactory := informersv2.NewSharedInformerFactory(sampleclientset, time.Second*30)
+	informerFactory := informersext.NewSharedInformerFactory(clientSet, time.Second*30)
+	fooInformer := informerFactory.Mysqloperator().V1().MysqlOperators()
 
 	opt := k8sCoreV1.NewOption(&mysqlOperatorV1.MysqlOperator{},
 		controllerName,
 		operatorKindName,
 		mysqlOperatorScheme.AddToScheme(scheme.Scheme),
-		sampleclientset,
+		clientSet,
 		fooInformer,
 		fooInformer.Informer().HasSynced,
 		fooInformer.Informer().AddEventHandler,
@@ -46,17 +45,38 @@ func NewController(
 	if err := opts.Add(opt); err != nil {
 		klog.Fatal(err)
 	}
-	op := k8sCoreV1.NewKubernetesOperator(kubeclientset, stopCh, controllerName, opts)
+	op := k8sCoreV1.NewKubernetesOperator(k8sClientSet, stopCh, controllerName, opts)
 	kc := k8sCoreV1.NewKubernetesController(op)
-	//roInformerFactory.Start(stopCh)
-	exampleInformerFactory.Start(stopCh)
+	informerFactory.Start(stopCh)
 	return kc
 }
 
+func NewOption(controllerName string, cfg *rest.Config, stopCh <-chan struct{}) k8sCoreV1.Option {
+	c, err := mysqlOperatorClientSet.NewForConfig(cfg)
+	if err != nil {
+		klog.Fatalf("Error building clientSet: %s", err.Error())
+	}
+	informerFactory := informersext.NewSharedInformerFactory(c, time.Second*30)
+	fooInformer := informerFactory.Mysqloperator().V1().MysqlOperators()
+	opt := k8sCoreV1.NewOption(&mysqlOperatorV1.MysqlOperator{},
+		controllerName,
+		operatorKindName,
+		mysqlOperatorScheme.AddToScheme(scheme.Scheme),
+		c,
+		fooInformer,
+		fooInformer.Informer().HasSynced,
+		fooInformer.Informer().AddEventHandler,
+		CompareResourceVersion,
+		Get,
+		Sync)
+	informerFactory.Start(stopCh)
+	return opt
+}
+
 func CompareResourceVersion(old, new interface{}) bool {
-	newDepl := new.(*mysqlOperatorV1.MysqlOperator)
-	oldDepl := old.(*mysqlOperatorV1.MysqlOperator)
-	if newDepl.ResourceVersion == oldDepl.ResourceVersion {
+	newResource := new.(*mysqlOperatorV1.MysqlOperator)
+	oldResource := old.(*mysqlOperatorV1.MysqlOperator)
+	if newResource.ResourceVersion == oldResource.ResourceVersion {
 		// Periodic resync will send update events for all known Deployments.
 		// Two different versions of the same Deployment will always have different RVs.
 		return true
@@ -74,13 +94,13 @@ func Sync(obj interface{}, clientObj interface{}, ks k8sCoreV1.KubernetesResourc
 	clientSet := clientObj.(mysqlOperatorClientSet.Interface)
 	//defer recorder.Event(foo, coreV1.EventTypeNormal, SuccessSynced, MessageResourceSynced)
 	// Create the Deployment of master with MasterSpec
-	err := createMysqlStatefulSetAndService(ks, foo, clientSet, true)
+	err := createStatefulSetAndService(ks, foo, clientSet, true)
 	//err := createMysqlDeploymentAndService(ks, foo, clientSet, true)
 	if err != nil {
 		return err
 	}
 	// Create the Deployment of slave with SlaveSpec
-	err = createMysqlStatefulSetAndService(ks, foo, clientSet, false)
+	err = createStatefulSetAndService(ks, foo, clientSet, false)
 	//err = createMysqlDeploymentAndService(ks, foo, clientSet, false)
 	if err != nil {
 		return err
@@ -89,7 +109,7 @@ func Sync(obj interface{}, clientObj interface{}, ks k8sCoreV1.KubernetesResourc
 	return nil
 }
 
-func createMysqlStatefulSetAndService(ks k8sCoreV1.KubernetesResource, foo *mysqlOperatorV1.MysqlOperator, clientSet mysqlOperatorClientSet.Interface, isMaster bool) (err error) {
+func createStatefulSetAndService(ks k8sCoreV1.KubernetesResource, foo *mysqlOperatorV1.MysqlOperator, clientSet mysqlOperatorClientSet.Interface, isMaster bool) (err error) {
 	//klog.Info("createMysqlDeploymentAndService2:")
 	if isMaster == true {
 		a := int32(1)

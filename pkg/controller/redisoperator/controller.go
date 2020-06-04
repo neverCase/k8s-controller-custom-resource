@@ -25,6 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/klog"
 
@@ -38,20 +39,16 @@ import (
 
 func NewController(
 	controllerName string,
-	kubeclientset kubernetes.Interface,
-	sampleclientset redisOperatorClientSet.Interface,
+	k8sClientSet kubernetes.Interface,
+	clientSet redisOperatorClientSet.Interface,
 	stopCh <-chan struct{}) k8sCoreV1.KubernetesControllerV1 {
-
-	exampleInformerFactory := informersext.NewSharedInformerFactory(sampleclientset, time.Second*30)
-	fooInformer := exampleInformerFactory.Redisoperator().V1().RedisOperators()
-
-	//roInformerFactory := informersv2.NewSharedInformerFactory(sampleclientset, time.Second*30)
-
+	informerFactory := informersext.NewSharedInformerFactory(clientSet, time.Second*30)
+	fooInformer := informerFactory.Redisoperator().V1().RedisOperators()
 	opt := k8sCoreV1.NewOption(&redisOperatorV1.RedisOperator{},
 		controllerName,
 		operatorKindName,
 		redisOperatorScheme.AddToScheme(scheme.Scheme),
-		sampleclientset,
+		clientSet,
 		fooInformer,
 		fooInformer.Informer().HasSynced,
 		fooInformer.Informer().AddEventHandler,
@@ -62,11 +59,32 @@ func NewController(
 	if err := opts.Add(opt); err != nil {
 		klog.Fatal(err)
 	}
-	op := k8sCoreV1.NewKubernetesOperator(kubeclientset, stopCh, controllerName, opts)
+	op := k8sCoreV1.NewKubernetesOperator(k8sClientSet, stopCh, controllerName, opts)
 	kc := k8sCoreV1.NewKubernetesController(op)
-	//roInformerFactory.Start(stopCh)
-	exampleInformerFactory.Start(stopCh)
+	informerFactory.Start(stopCh)
 	return kc
+}
+
+func NewOption(controllerName string, cfg *rest.Config, stopCh <-chan struct{}) k8sCoreV1.Option {
+	c, err := redisOperatorClientSet.NewForConfig(cfg)
+	if err != nil {
+		klog.Fatalf("Error building clientSet: %s", err.Error())
+	}
+	informerFactory := informersext.NewSharedInformerFactory(c, time.Second*30)
+	fooInformer := informerFactory.Redisoperator().V1().RedisOperators()
+	opt := k8sCoreV1.NewOption(&redisOperatorV1.RedisOperator{},
+		controllerName,
+		operatorKindName,
+		redisOperatorScheme.AddToScheme(scheme.Scheme),
+		c,
+		fooInformer,
+		fooInformer.Informer().HasSynced,
+		fooInformer.Informer().AddEventHandler,
+		CompareResourceVersion,
+		Get,
+		Sync)
+	informerFactory.Start(stopCh)
+	return opt
 }
 
 func CompareResourceVersion(old, new interface{}) bool {
@@ -90,12 +108,12 @@ func Sync(obj interface{}, clientObj interface{}, ks k8sCoreV1.KubernetesResourc
 	clientSet := clientObj.(redisOperatorClientSet.Interface)
 	//defer recorder.Event(foo, coreV1.EventTypeNormal, SuccessSynced, MessageResourceSynced)
 	// Create the Deployment of master with MasterSpec
-	err := createRedisStatefulSetAndService(ks, foo, clientSet, true)
+	err := createStatefulSetAndService(ks, foo, clientSet, true)
 	if err != nil {
 		return err
 	}
 	// Create the Deployment of slave with SlaveSpec
-	err = createRedisStatefulSetAndService(ks, foo, clientSet, false)
+	err = createStatefulSetAndService(ks, foo, clientSet, false)
 	if err != nil {
 		return err
 	}
@@ -103,7 +121,7 @@ func Sync(obj interface{}, clientObj interface{}, ks k8sCoreV1.KubernetesResourc
 	return nil
 }
 
-func createRedisStatefulSetAndService(ks k8sCoreV1.KubernetesResource, foo *redisOperatorV1.RedisOperator, clientSet redisOperatorClientSet.Interface, isMaster bool) (err error) {
+func createStatefulSetAndService(ks k8sCoreV1.KubernetesResource, foo *redisOperatorV1.RedisOperator, clientSet redisOperatorClientSet.Interface, isMaster bool) (err error) {
 	if isMaster == true {
 		rds := foo.Spec.MasterSpec.Spec
 		rds.Name = fmt.Sprintf("%s-%s", rds.Name, k8sCoreV1.MasterName)

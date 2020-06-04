@@ -2,6 +2,7 @@ package v1
 
 import (
 	"fmt"
+	"k8s.io/klog"
 	"reflect"
 	"sync"
 
@@ -49,6 +50,9 @@ func (o *options) Add(opt Option) error {
 	}
 	o.hub[t] = opt
 	o.kinds[opt.KindName()] = opt.GetReflectType()
+	klog.Info("opt:", opt)
+	klog.Info("opt.hub:", o.hub)
+	klog.Info("opt.kinds:", o.kinds)
 	return nil
 }
 

@@ -71,10 +71,13 @@ func NewKubernetesController(operator KubernetesOperator) KubernetesControllerV1
 
 	klog.Info("Setting up event handlers")
 	// Set up an event handler for when Operator resources change
-	for _, v := range operator.Options().List() {
+	for crdType, v := range operator.Options().List() {
 		v.AddEventHandler(cache.ResourceEventHandlerFuncs{
 			AddFunc: kc.EnqueueFoo,
 			UpdateFunc: func(old, new interface{}) {
+				if crdType != reflect.TypeOf(new) {
+					return
+				}
 				if match := v.CompareResourceVersion(old, new); match {
 					return
 				}
