@@ -45,6 +45,7 @@ func (ch *connHub) NewConn(conn *websocket.Conn) {
 			klog.V(2).Info(err)
 		}
 	}()
+	go ch.connections[id].KeepAlive()
 }
 
 func (ch *connHub) Close() {
@@ -60,6 +61,7 @@ func NewConnHub(ctx context.Context) ConnHub {
 
 type Conn interface {
 	Ping()
+	KeepAlive()
 	ReadPump() (err error)
 	SendToChannel(data interface{}) (err error)
 	WritePump() (err error)
@@ -103,6 +105,22 @@ func (c *conn) Ping() {
 	c.lastHeartBeatTime = time.Now()
 }
 
+func (c *conn) KeepAlive() {
+	defer c.Close()
+	for {
+		tick := time.NewTicker(10 * time.Second)
+		select {
+		case <-c.ctx.Done():
+			return
+		case <-tick.C:
+			if time.Now().Sub(c.lastHeartBeatTime) > 30 {
+				klog.Info("keepAlive timeout")
+				return
+			}
+		}
+	}
+}
+
 func (c *conn) ReadPump() (err error) {
 	defer c.Close()
 	for {
@@ -120,10 +138,14 @@ func (c *conn) ReadPump() (err error) {
 		klog.Info(msg.Service)
 		switch msg.Service {
 		case SvcPing:
+			c.Ping()
 			if err = c.SendToChannel(GetResponse(msg.Data)); err != nil {
 				return err
 			}
 		case SvcList:
+			if err = c.SendToChannel(GetResponse(msg.Data)); err != nil {
+				return err
+			}
 		case SvcWatch:
 		case SvcAdd:
 		case SvcUpdate:

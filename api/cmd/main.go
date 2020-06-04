@@ -3,22 +3,13 @@ package main
 import (
 	"flag"
 
+	"github.com/nevercase/k8s-controller-custom-resource/api/conf"
 	"github.com/nevercase/k8s-controller-custom-resource/api/service"
-	v1 "github.com/nevercase/k8s-controller-custom-resource/api/v1"
+	"github.com/nevercase/k8s-controller-custom-resource/api/v1"
 	"github.com/nevercase/k8s-controller-custom-resource/pkg/signals"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog"
 )
-
-var (
-	masterURL  string
-	kubeconfig string
-)
-
-func init() {
-	flag.StringVar(&kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required if out-of-cluster.")
-	flag.StringVar(&masterURL, "master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
-}
 
 func main() {
 	klog.InitFlags(nil)
@@ -27,7 +18,9 @@ func main() {
 	// set up signals so we handle the first shutdown signal gracefully
 	stopCh := signals.SetupSignalHandler()
 
-	cfg, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfig)
+	config := conf.Init()
+
+	cfg, err := clientcmd.BuildConfigFromFlags(config.MasterUrl, config.KubeConfig)
 	if err != nil {
 		klog.Fatalf("Error building kubeconfig: %s", err.Error())
 	}
@@ -35,8 +28,8 @@ func main() {
 	g := v1.NewGroup(cfg)
 	_ = g
 
-	s := service.NewService()
-	s.Start()
+	s := service.NewService(config)
+	s.Listen()
 
 	//m, err := g.Mysql().MysqloperatorV1().MysqlOperators(apiV1.NamespaceDefault).Create(newMysql())
 	//if err != nil {
