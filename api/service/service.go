@@ -12,21 +12,22 @@ type Service interface {
 }
 
 type service struct {
-	conf   *conf.Config
+	conf conf.Config
+
 	conn   ConnHub
 	ctx    context.Context
 	cancel context.CancelFunc
 }
 
 func (s *service) Listen() {
-	go s.initWSService(s.conf.ApiService)
+	go s.initWSService(s.conf.ApiService())
 }
 
 func (s *service) Close() {
 	s.cancel()
 }
 
-func NewService(c *conf.Config) Service {
+func NewService(c conf.Config) Service {
 	ctx, cancel := context.WithCancel(context.Background())
 	s := &service{
 		conf:   c,

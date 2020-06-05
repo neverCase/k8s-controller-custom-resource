@@ -20,7 +20,7 @@ func main() {
 
 	config := conf.Init()
 
-	cfg, err := clientcmd.BuildConfigFromFlags(config.MasterUrl, config.KubeConfig)
+	cfg, err := clientcmd.BuildConfigFromFlags(config.MasterUrl(), config.KubeConfig())
 	if err != nil {
 		klog.Fatalf("Error building kubeconfig: %s", err.Error())
 	}

@@ -16,16 +16,34 @@ func init() {
 	flag.StringVar(&apiservice, "apiservice", "0.0.0.0:9090", "The address of the api server.")
 }
 
-type Config struct {
-	MasterUrl   string
-	KubeConfig  string
-	ApiService string
+type Config interface {
+	MasterUrl() string
+	KubeConfig() string
+	ApiService() string
 }
 
-func Init() *Config {
-	return &Config{
-		MasterUrl:   masterUrl,
-		KubeConfig:  kubeconfig,
-		ApiService: apiservice,
+type config struct {
+	masterUrl  string
+	kubeConfig string
+	apiService string
+}
+
+func (c *config) MasterUrl() string {
+	return c.masterUrl
+}
+
+func (c *config) KubeConfig() string {
+	return c.kubeConfig
+}
+
+func (c *config) ApiService() string {
+	return c.apiService
+}
+
+func Init() Config {
+	return &config{
+		masterUrl:  masterUrl,
+		kubeConfig: kubeconfig,
+		apiService: apiservice,
 	}
 }
