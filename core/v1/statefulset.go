@@ -10,7 +10,6 @@ import (
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	appslistersv1 "k8s.io/client-go/listers/apps/v1"
-	"k8s.io/client-go/tools/record"
 	"k8s.io/klog"
 )
 
@@ -22,19 +21,16 @@ type KubernetesStatefulSet interface {
 	List(nameSpace, filterName string) (dl *appsV1.StatefulSetList, err error)
 }
 
-func NewKubernetesStatefulSet(kubeClientSet kubernetes.Interface, kubeInformerFactory kubeinformers.SharedInformerFactory, recorder record.EventRecorder) KubernetesStatefulSet {
-	var kss KubernetesStatefulSet = &kubernetesStatefulSet{
+func NewKubernetesStatefulSet(kubeClientSet kubernetes.Interface, kubeInformerFactory kubeinformers.SharedInformerFactory) KubernetesStatefulSet {
+	return &kubernetesStatefulSet{
 		kubeClientSet:     kubeClientSet,
 		statefulSetLister: kubeInformerFactory.Apps().V1().StatefulSets().Lister(),
-		recorder:          recorder,
 	}
-	return kss
 }
 
 type kubernetesStatefulSet struct {
 	kubeClientSet     kubernetes.Interface
 	statefulSetLister appslistersv1.StatefulSetLister
-	recorder          record.EventRecorder
 }
 
 func (kss *kubernetesStatefulSet) Get(nameSpace, specName string) (ss *appsV1.StatefulSet, err error) {

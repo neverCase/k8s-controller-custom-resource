@@ -10,7 +10,6 @@ import (
 	kubeInformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	coreListersV1 "k8s.io/client-go/listers/core/v1"
-	"k8s.io/client-go/tools/record"
 	"k8s.io/klog"
 )
 
@@ -22,19 +21,16 @@ type KubernetesConfigMap interface {
 	List(nameSpace, filterName string) (sl *coreV1.ConfigMapList, err error)
 }
 
-func NewKubernetesConfigMap(kubeClientSet kubernetes.Interface, kubeInformerFactory kubeInformers.SharedInformerFactory, recorder record.EventRecorder) KubernetesConfigMap {
-	var kcm KubernetesConfigMap = &kubernetesConfigMap{
+func NewKubernetesConfigMap(kubeClientSet kubernetes.Interface, kubeInformerFactory kubeInformers.SharedInformerFactory) KubernetesConfigMap {
+	return &kubernetesConfigMap{
 		kubeClientSet:   kubeClientSet,
 		configMapLister: kubeInformerFactory.Core().V1().ConfigMaps().Lister(),
-		recorder:        recorder,
 	}
-	return kcm
 }
 
 type kubernetesConfigMap struct {
 	kubeClientSet   kubernetes.Interface
 	configMapLister coreListersV1.ConfigMapLister
-	recorder        record.EventRecorder
 }
 
 func (kcm *kubernetesConfigMap) Get(nameSpace, specDeploymentName string) (d *coreV1.ConfigMap, err error) {

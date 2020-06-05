@@ -38,7 +38,7 @@ func NewKubernetesOperator(kubeClientset kubernetes.Interface,
 		kubeClientSet:       kubeClientset,
 		kubeInformerFactory: kubeInformerFactory,
 		recorder:            recorder,
-		kubernetesResource:  NewKubernetesResource(kubeClientset, kubeInformerFactory, recorder),
+		kubernetesResource:  NewKubernetesResource(kubeClientset, kubeInformerFactory),
 		agentName:           agentName,
 		options:             opts,
 	}

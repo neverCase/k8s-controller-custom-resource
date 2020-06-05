@@ -10,7 +10,6 @@ import (
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	appslistersv1 "k8s.io/client-go/listers/apps/v1"
-	"k8s.io/client-go/tools/record"
 	"k8s.io/klog"
 )
 
@@ -22,19 +21,16 @@ type KubernetesDeployment interface {
 	List(nameSpace, filterName string) (dl *appsv1.DeploymentList, err error)
 }
 
-func NewKubernetesDeployment(kubeClientSet kubernetes.Interface, kubeInformerFactory kubeinformers.SharedInformerFactory, recorder record.EventRecorder) KubernetesDeployment {
-	var kd KubernetesDeployment = &kubernetesDeployment{
+func NewKubernetesDeployment(kubeClientSet kubernetes.Interface, kubeInformerFactory kubeinformers.SharedInformerFactory) KubernetesDeployment {
+	return &kubernetesDeployment{
 		kubeClientSet:     kubeClientSet,
 		deploymentsLister: kubeInformerFactory.Apps().V1().Deployments().Lister(),
-		recorder:          recorder,
 	}
-	return kd
 }
 
 type kubernetesDeployment struct {
 	kubeClientSet     kubernetes.Interface
 	deploymentsLister appslistersv1.DeploymentLister
-	recorder          record.EventRecorder
 }
 
 func (kd *kubernetesDeployment) Get(nameSpace, specName string) (d *appsv1.Deployment, err error) {

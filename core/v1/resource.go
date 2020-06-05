@@ -3,7 +3,6 @@ package v1
 import (
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/record"
 )
 
 type KubernetesResource interface {
@@ -16,7 +15,6 @@ type KubernetesResource interface {
 type kubernetesResource struct {
 	kubeClientSet       kubernetes.Interface
 	kubeInformerFactory kubeinformers.SharedInformerFactory
-	recorder            record.EventRecorder
 
 	deployment  KubernetesDeployment
 	service     KubernetesService
@@ -24,15 +22,14 @@ type kubernetesResource struct {
 	configMap   KubernetesConfigMap
 }
 
-func NewKubernetesResource(kubeClientSet kubernetes.Interface, kubeInformerFactory kubeinformers.SharedInformerFactory, recorder record.EventRecorder) KubernetesResource {
+func NewKubernetesResource(kubeClientSet kubernetes.Interface, kubeInformerFactory kubeinformers.SharedInformerFactory) KubernetesResource {
 	var kr KubernetesResource = &kubernetesResource{
 		kubeClientSet:       kubeClientSet,
 		kubeInformerFactory: kubeInformerFactory,
-		recorder:            recorder,
-		deployment:          NewKubernetesDeployment(kubeClientSet, kubeInformerFactory, recorder),
-		service:             NewKubernetesService(kubeClientSet, kubeInformerFactory, recorder),
-		statefulSet:         NewKubernetesStatefulSet(kubeClientSet, kubeInformerFactory, recorder),
-		configMap:           NewKubernetesConfigMap(kubeClientSet, kubeInformerFactory, recorder),
+		deployment:          NewKubernetesDeployment(kubeClientSet, kubeInformerFactory),
+		service:             NewKubernetesService(kubeClientSet, kubeInformerFactory),
+		statefulSet:         NewKubernetesStatefulSet(kubeClientSet, kubeInformerFactory),
+		configMap:           NewKubernetesConfigMap(kubeClientSet, kubeInformerFactory),
 	}
 	return kr
 }
