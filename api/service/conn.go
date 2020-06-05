@@ -9,32 +9,32 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	apiV1 "k8s.io/api/core/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/klog"
+
+	v1 "github.com/nevercase/k8s-controller-custom-resource/api/v1"
 )
 
 type ConnHub interface {
 	NewConn(conn *websocket.Conn)
-	GetClientId() int32
-	Close()
 }
 
 type connHub struct {
+	group v1.Group
+
 	mu           sync.RWMutex
 	autoClientId int32
 	connections  map[int32]Conn
 	ctx          context.Context
 }
 
-func (ch *connHub) GetClientId() int32 {
-	return atomic.AddInt32(&ch.autoClientId, 1)
-}
-
 func (ch *connHub) NewConn(conn *websocket.Conn) {
 	ch.mu.Lock()
 	defer ch.mu.Unlock()
-	id := ch.GetClientId()
-	ch.connections[id] = NewConn(id, ch.ctx, conn)
+	id := atomic.AddInt32(&ch.autoClientId, 1)
+	ch.connections[id] = NewConn(id, ch.ctx, conn, ch.group)
 	go func() {
 		if err := ch.connections[id].ReadPump(); err != nil {
 			klog.V(2).Info(err)
@@ -48,11 +48,9 @@ func (ch *connHub) NewConn(conn *websocket.Conn) {
 	go ch.connections[id].KeepAlive()
 }
 
-func (ch *connHub) Close() {
-}
-
-func NewConnHub(ctx context.Context) ConnHub {
+func NewConnHub(ctx context.Context, g v1.Group) ConnHub {
 	return &connHub{
+		group:        g,
 		autoClientId: 0,
 		connections:  make(map[int32]Conn, 0),
 		ctx:          ctx,
@@ -68,8 +66,9 @@ type Conn interface {
 	Close()
 }
 
-func NewConn(clientId int32, ctx context.Context, ws *websocket.Conn) Conn {
+func NewConn(clientId int32, ctx context.Context, ws *websocket.Conn, g v1.Group) Conn {
 	c := &conn{
+		group:             g,
 		clientId:          clientId,
 		conn:              ws,
 		readChan:          make(chan interface{}),
@@ -89,6 +88,8 @@ const (
 )
 
 type conn struct {
+	group v1.Group
+
 	mu                sync.RWMutex
 	clientId          int32
 	conn              *websocket.Conn
@@ -136,13 +137,22 @@ func (c *conn) ReadPump() (err error) {
 			return err
 		}
 		klog.Info(msg.Service)
+
+		if t, err := c.group.Mysql().MysqloperatorV1().MysqlOperators(apiV1.NamespaceDefault).List(metaV1.ListOptions{}); err != nil {
+			klog.V(2).Info(err)
+		} else {
+			if err = c.SendToChannel(GetResponse(t)); err != nil {
+				klog.V(2.).Info(err)
+				return err
+			}
+		}
 		switch msg.Service {
 		case SvcPing:
 			c.Ping()
 			if err = c.SendToChannel(GetResponse(msg.Data)); err != nil {
 				return err
 			}
-		case SvcList:
+		case SvcListResource:
 			if err = c.SendToChannel(GetResponse(msg.Data)); err != nil {
 				return err
 			}

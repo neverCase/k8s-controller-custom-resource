@@ -1,12 +1,12 @@
 package service
 
 const (
-	SvcPing   = "ping"
-	SvcList   = "list"
-	SvcWatch  = "watch"
-	SvcAdd    = "add"
-	SvcUpdate = "update"
-	SvcDelete = "delete"
+	SvcPing         = "ping"
+	SvcListResource = "list_resource"
+	SvcWatch        = "watch"
+	SvcAdd          = "add"
+	SvcUpdate       = "update"
+	SvcDelete       = "delete"
 )
 
 const (
@@ -26,7 +26,7 @@ type Response struct {
 
 func GetResponse(data interface{}) Response {
 	r := Response{
-		Code: CodeNone,
+		Code:   CodeNone,
 		Result: data,
 	}
 	return r
