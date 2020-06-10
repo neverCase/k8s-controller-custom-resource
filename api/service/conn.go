@@ -152,7 +152,7 @@ func (c *conn) ReadPump() (err error) {
 			if err = c.SendToChannel(GetResponse(msg.Data)); err != nil {
 				return err
 			}
-		case SvcListResource:
+		case SvcList:
 			if err = c.SendToChannel(GetResponse(msg.Data)); err != nil {
 				return err
 			}

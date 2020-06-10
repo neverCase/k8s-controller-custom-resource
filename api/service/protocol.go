@@ -1,12 +1,13 @@
 package service
 
 const (
-	SvcPing         = "ping"
-	SvcListResource = "list_resource"
-	SvcWatch        = "watch"
-	SvcAdd          = "add"
-	SvcUpdate       = "update"
-	SvcDelete       = "delete"
+	SvcPing   = "ping"
+	SvcList   = "list"
+	SvcWatch  = "watch"
+	SvcAdd    = "add"
+	SvcUpdate = "update"
+	SvcDelete = "delete"
+	SvcResource = ""
 )
 
 const (
