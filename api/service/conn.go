@@ -152,9 +152,6 @@ func (c *conn) ReadPump() (err error) {
 		s := "svc-121"
 		var a = &proto.List{Code: 0, Result: s}
 		res := a.String()
-		if err != nil {
-			return err
-		}
 		if err = c.SendToChannel(res); err != nil {
 			return err
 		}
