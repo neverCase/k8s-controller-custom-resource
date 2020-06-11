@@ -4,15 +4,18 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+)
 
-	"github.com/nevercase/k8s-controller-custom-resource/pkg/apis/mysqloperator"
+const (
+	GroupName = "mysqloperator.nevercase.io"
+	Version   = "v1"
 )
 
 // GroupVersion is the identifier for the API which includes
 // the name of the group and the version of the API
 var SchemeGroupVersion = schema.GroupVersion{
-	Group:   mysqloperator.GroupName,
-	Version: mysqloperator.Version,
+	Group:   GroupName,
+	Version: Version,
 }
 
 // create a SchemeBuilder which uses functions to add types to
