@@ -1,5 +1,11 @@
 package proto
 
+import (
+	_ "github.com/gogo/protobuf/gogoproto"
+	_ "github.com/gogo/protobuf/proto"
+	_ "github.com/gogo/protobuf/sortkeys"
+)
+
 const (
 	SvcPing     = "ping"
 	SvcList     = "list"

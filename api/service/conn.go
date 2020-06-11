@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	apiV1 "k8s.io/api/core/v1"
-	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	//apiV1 "k8s.io/api/core/v1"
+	//metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/klog"
 
@@ -139,19 +139,20 @@ func (c *conn) ReadPump() (err error) {
 		}
 		klog.Info(msg.Service)
 
-		if t, err := c.group.Mysql().MysqloperatorV1().MysqlOperators(apiV1.NamespaceDefault).List(metaV1.ListOptions{}); err != nil {
-			klog.V(2).Info(err)
-		} else {
-			if err = c.SendToChannel(proto.GetResponse(t)); err != nil {
-				klog.V(2.).Info(err)
-				return err
-			}
-		}
+		//if t, err := c.group.Mysql().MysqloperatorV1().MysqlOperators(apiV1.NamespaceDefault).List(metaV1.ListOptions{}); err != nil {
+		//	klog.V(2).Info(err)
+		//} else {
+		//	if err = c.SendToChannel(proto.GetResponse(t)); err != nil {
+		//		klog.V(2.).Info(err)
+		//		return err
+		//	}
+		//}
 
-		//d := "data-121"
+		klog.Info("1111111111")
 		s := "svc-121"
 		var a = &proto.List{Code: 0, Result: s}
-		res := a.String()
+		res, _ := a.Descriptor()
+		klog.Info("res:", res)
 		if err = c.SendToChannel(res); err != nil {
 			return err
 		}
