@@ -52,6 +52,7 @@ message MysqlOperator {
 
 // MysqlList is a list of MysqlOperator resources
 message MysqlOperatorList {
+  // +optional
   optional k8s.io.apimachinery.pkg.apis.meta.v1.ListMeta metadata = 1;
 
   repeated MysqlOperator items = 2;

@@ -152,7 +152,7 @@ type MysqlStatus struct {
 // MysqlList is a list of MysqlOperator resources
 type MysqlOperatorList struct {
 	metaV1.TypeMeta `json:",inline"`
-	metaV1.ListMeta `json:"metadata"`
-
-	Items []MysqlOperator `json:"items" protobuf:"bytes,2,rep,name=items"`
+	// +optional
+	metaV1.ListMeta `json:"metadata" protobuf:"bytes,1,opt,name=metadata"`
+	Items           []MysqlOperator `json:"items" protobuf:"bytes,2,rep,name=items"`
 }
