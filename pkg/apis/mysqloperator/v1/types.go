@@ -6,7 +6,7 @@ import (
 	//_ "github.com/gogo/protobuf/gogoproto"
 	//_ "github.com/gogo/protobuf/proto"
 	//_ "github.com/gogo/protobuf/sortkeys"
-	//_ "k8s.io/apimachinery/pkg/apis/testapigroup/v1"
+	_ "k8s.io/apimachinery/pkg/apis/testapigroup/v1"
 )
 
 // +genclient

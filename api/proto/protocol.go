@@ -25,6 +25,12 @@ type Response struct {
 	Result string `json:"result" protobuf:"bytes,2,opt,name=result"`
 }
 
+type List struct {
+	Code   int    `json:"code" protobuf:"varint,1,opt,name=code"`
+	Result string `json:"result" protobuf:"bytes,2,opt,name=result"`
+	//Mysql  mysqlOperatorV1.MysqlOperator `json:"mysql" protobuf:"bytes,3,opt,name=result,casttype"`
+}
+
 func GetResponse(data interface{}) Response {
 	r := Response{
 		Code:   CodeNone,

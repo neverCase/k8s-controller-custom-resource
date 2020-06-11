@@ -14,6 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/klog"
 
+	"github.com/nevercase/k8s-controller-custom-resource/api/proto"
 	v1 "github.com/nevercase/k8s-controller-custom-resource/api/v1"
 )
 
@@ -125,7 +126,7 @@ func (c *conn) KeepAlive() {
 func (c *conn) ReadPump() (err error) {
 	defer c.Close()
 	for {
-		var msg Request
+		var msg proto.Request
 		messageType, message, err := c.conn.ReadMessage()
 		klog.Infof("messageType: %d message: %s err: %s\n", messageType, message, err)
 		if err != nil {
@@ -141,25 +142,37 @@ func (c *conn) ReadPump() (err error) {
 		if t, err := c.group.Mysql().MysqloperatorV1().MysqlOperators(apiV1.NamespaceDefault).List(metaV1.ListOptions{}); err != nil {
 			klog.V(2).Info(err)
 		} else {
-			if err = c.SendToChannel(GetResponse(t)); err != nil {
+			if err = c.SendToChannel(proto.GetResponse(t)); err != nil {
 				klog.V(2.).Info(err)
 				return err
 			}
 		}
+
+		//d := "data-121"
+		s := "svc-121"
+		var a = &proto.List{Code: 0, Result: s}
+		res := a.String()
+		if err != nil {
+			return err
+		}
+		if err = c.SendToChannel(res); err != nil {
+			return err
+		}
+
 		switch msg.Service {
-		case SvcPing:
+		case proto.SvcPing:
 			c.Ping()
-			if err = c.SendToChannel(GetResponse(msg.Data)); err != nil {
+			if err = c.SendToChannel(proto.GetResponse(msg.Data)); err != nil {
 				return err
 			}
-		case SvcList:
-			if err = c.SendToChannel(GetResponse(msg.Data)); err != nil {
+		case proto.SvcList:
+			if err = c.SendToChannel(proto.GetResponse(msg.Data)); err != nil {
 				return err
 			}
-		case SvcWatch:
-		case SvcAdd:
-		case SvcUpdate:
-		case SvcDelete:
+		case proto.SvcWatch:
+		case proto.SvcAdd:
+		case proto.SvcUpdate:
+		case proto.SvcDelete:
 		}
 	}
 }
