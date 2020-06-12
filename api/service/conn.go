@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	mysqlOperatorV1 "github.com/nevercase/k8s-controller-custom-resource/pkg/apis/mysqloperator/v1"
 	"log"
 	"sync"
 	"sync/atomic"
@@ -150,11 +151,24 @@ func (c *conn) ReadPump() (err error) {
 
 		klog.Info("1111111111")
 		s := "svc-121"
-		var a = &proto.List{Code: 0, Result: s}
-		res, _ := a.Descriptor()
-		klog.Info("res:", res)
-		if err = c.SendToChannel(res); err != nil {
-			return err
+		var a = &proto.List{Code: 1234, Result: s}
+		if res, err := a.Marshal(); err != nil {
+			klog.V(2).Info(err)
+		} else {
+			klog.Info("res List:", string(res))
+			if err = c.SendToChannel(res); err != nil {
+				return err
+			}
+		}
+
+		var e = &proto.Mysql{Mysql: mysqlOperatorV1.MysqlOperator{}}
+		if res, err := e.Marshal(); err != nil {
+			klog.V(2).Info(err)
+		} else {
+			klog.Info("res mysql:", string(res))
+			if err = c.SendToChannel(res); err != nil {
+				return err
+			}
 		}
 
 		switch msg.Service {

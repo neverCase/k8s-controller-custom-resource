@@ -26,16 +26,11 @@ fi
  --keep-gogoproto=true \
  --verify-only=false \
  --proto-import ${GOPATH}/src/k8s.io/api/core/v1
+# --proto-import ${GOPATH}/src/github.com/nevercase/k8s-controller-custom-resource/pkg/apis/mysqloperator/v1
 
 if [ "${GENS}" = "api" ] || grep -qw "api" <<<"${GENS}"; then
-#  protoc --csharp_out=./ -I=./ ${GOPATH}/src/$ROOT_PACKAGE/api/proto/generated.proto
-#  protoc --js_out=library=myproto_libs,binary:. -I=. --proto_path=
-#
-  echo "21212121\n"
-  protoc --js_out=library=generated,binary:. ./api/proto/generated.proto
-#  protoc --go_out=generated:. ./api/proto/generated.proto
-#
-#  protoc --go_out=generated:. ./pkg/apis/$CUSTOM_RESOURCE_NAME/$CUSTOM_RESOURCE_VERSION/generated.proto
+  echo "print protobuf js"
+  protoc -I=. -I=${GOPATH}/src/github.com/gogo/protobuf/protobuf -I=${GOPATH}/src --js_out=library=generated,binary:./api/proto ./api/proto/generated.proto
 fi
 
 if [ "${GENS}" = "crd" ] || grep -qw "crd" <<<"${GENS}"; then

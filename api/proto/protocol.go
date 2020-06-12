@@ -4,6 +4,8 @@ import (
 	_ "github.com/gogo/protobuf/gogoproto"
 	_ "github.com/gogo/protobuf/proto"
 	_ "github.com/gogo/protobuf/sortkeys"
+
+	mysqlOperatorV1 "github.com/nevercase/k8s-controller-custom-resource/pkg/apis/mysqloperator/v1"
 )
 
 const (
@@ -37,10 +39,14 @@ type List struct {
 	//Mysql  mysqlOperatorV1.MysqlOperator `json:"mysql" protobuf:"bytes,3,opt,name=result,casttype"`
 }
 
-func GetResponse(data interface{}) Response {
+type Mysql struct {
+	Mysql mysqlOperatorV1.MysqlOperator `json:"mysql" protobuf:"varint,1,opt,name=code,casttype=github.com/nevercase/k8s-controller-custom-resource/pkg/apis/mysqloperator/v1.MysqlOperator"`
+}
+
+func GetResponse(data string) Response {
 	r := Response{
 		Code:   CodeNone,
-		Result: "",
+		Result: data,
 	}
 	return r
 }
