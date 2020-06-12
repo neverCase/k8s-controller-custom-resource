@@ -38,7 +38,11 @@ fi
 
 if [ "${GENS}" = "api" ] || grep -qw "api" <<<"${GENS}"; then
   echo "print protobuf js"
-  protoc -I=. -I=${GOPATH}/src/github.com/gogo/protobuf/protobuf -I=${GOPATH}/src --js_out=library=generated,binary:./api/proto ./api/proto/generated.proto
+  protoc -I=. -I=${GOPATH}/src/github.com/gogo/protobuf/protobuf -I=${GOPATH}/src --js_out=library=generated,binary:./api/proto \
+  ./api/proto/generated.proto \
+  ${GOPATH}/src/github.com/nevercase/k8s-controller-custom-resource/pkg/apis/mysqloperator/v1/generated.proto \
+  ${GOPATH}/src/k8s.io/api/core/v1/generated.proto \
+  ${GOPATH}/src/github.com/gogo/protobuf/gogoproto/gogo.proto
 fi
 
 if [ "${GENS}" = "crd" ] || grep -qw "crd" <<<"${GENS}"; then

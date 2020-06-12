@@ -8,3 +8,5 @@ make.sh
 crd
 redisoperatorcrd
 mysqloperatorcrd
+
+*.js

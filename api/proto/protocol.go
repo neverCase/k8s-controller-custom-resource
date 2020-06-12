@@ -34,8 +34,8 @@ type Response struct {
 }
 
 type List struct {
-	Code   int32  `json:"code" protobuf:"varint,1,opt,name=code"`
-	Result string `json:"result" protobuf:"bytes,2,opt,name=result"`
+	Code   int32  `json:"code" protobuf:"varint,1,rep,name=code"`
+	Result string `json:"result" protobuf:"bytes,2,rep,name=result"`
 	//Mysql  mysqlOperatorV1.MysqlOperator `json:"mysql" protobuf:"bytes,3,opt,name=result,casttype"`
 }
 
