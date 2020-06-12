@@ -12,30 +12,31 @@ CUSTOM_RESOURCE_NAME="mysqloperator"
 CUSTOM_RESOURCE_VERSION="v1"
 
 if [ "${GENS}" = "api" ] || grep -qw "api" <<<"${GENS}"; then
+  cp ${GOPATH}/bin/go-to-protobuf-api ${GOPATH}/bin/go-to-protobuf
   Packages="$ROOT_PACKAGE/api/proto"
+  "${GOPATH}/bin/go-to-protobuf" \
+     --packages "${Packages}" \
+     --clean=false \
+     --only-idl=false \
+     --keep-gogoproto=false \
+     --verify-only=false \
+     --proto-import ${GOPATH}/src/k8s.io/api/core/v1 \
+     --proto-import ${GOPATH}/src/github.com/nevercase/k8s-controller-custom-resource/pkg/apis/mysqloperator/v1
 fi
 
 if [ "${GENS}" = "crd" ] || grep -qw "crd" <<<"${GENS}"; then
+  cp ${GOPATH}/bin/go-to-protobuf-crd ${GOPATH}/bin/go-to-protobuf
   Packages="$ROOT_PACKAGE/pkg/apis/$CUSTOM_RESOURCE_NAME/$CUSTOM_RESOURCE_VERSION"
+  "${GOPATH}/bin/go-to-protobuf" \
+     --packages "${Packages}" \
+     --clean=false \
+     --only-idl=false \
+     --keep-gogoproto=false \
+     --verify-only=false \
+     --proto-import ${GOPATH}/src/k8s.io/api/core/v1
 fi
 
-"${GOPATH}/bin/go-to-protobuf" \
- --packages "${Packages}" \
- --clean=false \
- --only-idl=false \
- --keep-gogoproto=false \
- --verify-only=false \
- --proto-import ${GOPATH}/src/k8s.io/api/core/v1 \
- --proto-import ${GOPATH}/src/github.com/nevercase/k8s-controller-custom-resource/pkg/apis/mysqloperator/v1
-
 if [ "${GENS}" = "api" ] || grep -qw "api" <<<"${GENS}"; then
-#  echo "print pg.go"
-#  protoc -I . \
-#  -I /Users/nevermore/go/src \
-#  -I /Users/nevermore/go/src/k8s.io/api/core/v1 \
-#  -I /Users/nevermore/go/src/github.com/nevercase/k8s-controller-custom-resource/pkg/apis/mysqloperator/v1 \
-#  --gogo_out=/Users/nevermore/go/src /Users/nevermore/go/src/github.com/nevercase/k8s-controller-custom-resource/api/proto/generated.proto
-
   echo "print protobuf js"
   protoc -I=. -I=${GOPATH}/src/github.com/gogo/protobuf/protobuf -I=${GOPATH}/src --js_out=library=generated,binary:./api/proto ./api/proto/generated.proto
 fi
