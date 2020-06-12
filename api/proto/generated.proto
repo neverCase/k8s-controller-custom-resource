@@ -21,35 +21,30 @@ syntax = 'proto2';
 
 package github.com.nevercase.k8s_controller_custom_resource.api.proto;
 
-import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+import "github.com/nevercase/k8s-controller-custom-resource/pkg/apis/mysqloperator/v1/generated.proto";
 
 // Package-wide variables from generator "generated".
-option (gogoproto.marshaler_all) = true;
-option (gogoproto.stable_marshaler_all) = true;
-option (gogoproto.sizer_all) = true;
-option (gogoproto.goproto_stringer_all) = false;
-option (gogoproto.stringer_all) = true;
-option (gogoproto.unmarshaler_all) = true;
-option (gogoproto.goproto_unrecognized_all) = false;
-option (gogoproto.goproto_enum_prefix_all) = false;
-option (gogoproto.goproto_getters_all) = false;
 option go_package = "proto";
 
 message List {
-  optional int32 code = 1 [(gogoproto.customname) = "Code", (gogoproto.nullable) = false];
+  optional int32 code = 1;
 
-  optional string result = 2 [(gogoproto.customname) = "Result", (gogoproto.nullable) = false];
+  optional string result = 2;
+}
+
+message Mysql {
+  optional github.com.nevercase.k8s_controller_custom_resource.pkg.apis.mysqloperator.v1.MysqlOperator code = 1;
 }
 
 message Request {
-  optional string service = 1 [(gogoproto.customname) = "Service", (gogoproto.nullable) = false];
+  optional string service = 1;
 
-  optional string data = 2 [(gogoproto.customname) = "Data", (gogoproto.nullable) = false];
+  optional string data = 2;
 }
 
 message Response {
-  optional int32 code = 1 [(gogoproto.customname) = "Code", (gogoproto.nullable) = false];
+  optional int32 code = 1;
 
-  optional string result = 2 [(gogoproto.customname) = "Result", (gogoproto.nullable) = false];
+  optional string result = 2;
 }
 

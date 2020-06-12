@@ -156,7 +156,7 @@ func (c *conn) ReadPump() (err error) {
 			klog.V(2).Info(err)
 		} else {
 			klog.Info("res List:", string(res))
-			if err = c.SendToChannel(res); err != nil {
+			if err = c.SendToChannel(proto.GetResponse(string(res))); err != nil {
 				return err
 			}
 		}
@@ -166,7 +166,7 @@ func (c *conn) ReadPump() (err error) {
 			klog.V(2).Info(err)
 		} else {
 			klog.Info("res mysql:", string(res))
-			if err = c.SendToChannel(res); err != nil {
+			if err = c.SendToChannel(proto.GetResponse(string(res))); err != nil {
 				return err
 			}
 		}
