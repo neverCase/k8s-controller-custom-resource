@@ -1,4 +1,4 @@
-package v1
+package group
 
 import (
 	"k8s.io/client-go/tools/clientcmd"

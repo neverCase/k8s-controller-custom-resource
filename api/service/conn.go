@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	mysqlOperatorV1 "github.com/nevercase/k8s-controller-custom-resource/pkg/apis/mysqloperator/v1"
 	"log"
 	"sync"
 	"sync/atomic"
@@ -15,8 +14,9 @@ import (
 	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/klog"
 
+	"github.com/nevercase/k8s-controller-custom-resource/api/group"
 	"github.com/nevercase/k8s-controller-custom-resource/api/proto"
-	v1 "github.com/nevercase/k8s-controller-custom-resource/api/v1"
+	mysqlOperatorV1 "github.com/nevercase/k8s-controller-custom-resource/pkg/apis/mysqloperator/v1"
 )
 
 type ConnHub interface {
@@ -24,7 +24,7 @@ type ConnHub interface {
 }
 
 type connHub struct {
-	group v1.Group
+	group group.Group
 
 	mu           sync.RWMutex
 	autoClientId int32
@@ -50,7 +50,7 @@ func (ch *connHub) NewConn(conn *websocket.Conn) {
 	go ch.connections[id].KeepAlive()
 }
 
-func NewConnHub(ctx context.Context, g v1.Group) ConnHub {
+func NewConnHub(ctx context.Context, g group.Group) ConnHub {
 	return &connHub{
 		group:        g,
 		autoClientId: 0,
@@ -68,7 +68,7 @@ type Conn interface {
 	Close()
 }
 
-func NewConn(clientId int32, ctx context.Context, ws *websocket.Conn, g v1.Group) Conn {
+func NewConn(clientId int32, ctx context.Context, ws *websocket.Conn, g group.Group) Conn {
 	c := &conn{
 		group:             g,
 		clientId:          clientId,
@@ -90,7 +90,7 @@ const (
 )
 
 type conn struct {
-	group v1.Group
+	group group.Group
 
 	mu                sync.RWMutex
 	clientId          int32

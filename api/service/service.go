@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/nevercase/k8s-controller-custom-resource/api/conf"
-	v1 "github.com/nevercase/k8s-controller-custom-resource/api/v1"
+	"github.com/nevercase/k8s-controller-custom-resource/api/group"
 )
 
 type Service interface {
@@ -29,11 +29,11 @@ func (s *service) Close() {
 }
 
 func NewService(c conf.Config) Service {
-	group := v1.NewGroup(c.MasterUrl(), c.KubeConfig())
+	g := group.NewGroup(c.MasterUrl(), c.KubeConfig())
 	ctx, cancel := context.WithCancel(context.Background())
 	s := &service{
 		conf:   c,
-		conn:   NewConnHub(ctx, group),
+		conn:   NewConnHub(ctx, g),
 		ctx:    ctx,
 		cancel: cancel,
 	}

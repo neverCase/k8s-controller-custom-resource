@@ -1,9 +1,11 @@
-package v1
+package group
 
 import (
 	"fmt"
 	"reflect"
 	"sync"
+
+	mysqlOperatorV1 "github.com/nevercase/k8s-controller-custom-resource/pkg/apis/mysqloperator/v1"
 )
 
 type ResourceType string
@@ -15,11 +17,14 @@ const (
 	Secret      ResourceType = "Secret"
 	Service     ResourceType = "Service"
 	StatefulSet ResourceType = "StatefulSet"
+
+	MysqlOperator ResourceType = "MysqlOperator"
+	RedisOperator ResourceType = "RedisOperator"
 )
 
 type Options interface {
 	Add(opts ...Option)
-	Get(rt ResourceType) (interface{}, error)
+	Get(rt ResourceType) (Option, error)
 	GetReflectType(rt ResourceType) reflect.Type
 }
 
@@ -39,9 +44,9 @@ func (opts *options) Add(opt ...Option) {
 	}
 }
 
-func (opts *options) Get(rt ResourceType) (interface{}, error) {
+func (opts *options) Get(rt ResourceType) (Option, error) {
 	if t, ok := opts.hub[rt]; ok {
-		return t.Get(), nil
+		return t, nil
 	}
 	return nil, fmt.Errorf("err no ResourceType: %s\n", rt)
 }
@@ -52,8 +57,11 @@ func (opts *options) GetReflectType(rt ResourceType) reflect.Type {
 
 func NewOptions() Options {
 	o := &options{
-		hub: make(map[ResourceType]Option, 0),
+		hub:   make(map[ResourceType]Option, 0),
+		kinds: make(map[ResourceType]reflect.Type, 0),
 	}
+	var b mysqlOperatorV1.MysqlOperator
+	a := reflect.New(reflect.TypeOf(b))
 	return o
 }
 
