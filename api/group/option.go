@@ -4,22 +4,6 @@ import (
 	"fmt"
 	"reflect"
 	"sync"
-
-	mysqlOperatorV1 "github.com/nevercase/k8s-controller-custom-resource/pkg/apis/mysqloperator/v1"
-)
-
-type ResourceType string
-
-const (
-	ConfigMap   ResourceType = "ConfigMap"
-	Deployment  ResourceType = "Deployment"
-	Pod         ResourceType = "Pod"
-	Secret      ResourceType = "Secret"
-	Service     ResourceType = "Service"
-	StatefulSet ResourceType = "StatefulSet"
-
-	MysqlOperator ResourceType = "MysqlOperator"
-	RedisOperator ResourceType = "RedisOperator"
 )
 
 type Options interface {
@@ -60,8 +44,6 @@ func NewOptions() Options {
 		hub:   make(map[ResourceType]Option, 0),
 		kinds: make(map[ResourceType]reflect.Type, 0),
 	}
-	var b mysqlOperatorV1.MysqlOperator
-	a := reflect.New(reflect.TypeOf(b))
 	return o
 }
 

@@ -38,11 +38,13 @@ fi
 
 if [ "${GENS}" = "api" ] || grep -qw "api" <<<"${GENS}"; then
   echo "print protobuf js"
-  protoc -I=. -I=${GOPATH}/src/github.com/gogo/protobuf/protobuf -I=${GOPATH}/src --js_out=import_style=generated,binary:./api/proto/jslib \
-  ./api/proto/generated.proto \
-  ${GOPATH}/src/github.com/nevercase/k8s-controller-custom-resource/pkg/apis/mysqloperator/v1/generated.proto \
-  ${GOPATH}/src/k8s.io/api/core/v1/generated.proto \
-  ${GOPATH}/src/github.com/gogo/protobuf/gogoproto/gogo.proto
+#  protoc -I=. -I=${GOPATH}/src/github.com/gogo/protobuf/protobuf -I=${GOPATH}/src --js_out=library=generated,binary:./api/proto/jslib \
+#  ./api/proto/generated.proto \
+#  ${GOPATH}/src/github.com/nevercase/k8s-controller-custom-resource/pkg/apis/mysqloperator/v1/generated.proto \
+#  ${GOPATH}/src/k8s.io/api/core/v1/generated.proto \
+#  ${GOPATH}/src/github.com/gogo/protobuf/gogoproto/gogo.proto
+
+#  protoc -I=. -I=${GOPATH}/src --js_out=library=test,binary:./api/proto/jslib ./api/proto/test.proto
 fi
 
 if [ "${GENS}" = "crd" ] || grep -qw "crd" <<<"${GENS}"; then

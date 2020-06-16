@@ -166,6 +166,9 @@ func (c *conn) ReadPump() (err error) {
 			klog.V(2).Info(err)
 		} else {
 			klog.Info("res mysql:", string(res))
+			if err = c.conn.WriteMessage(websocket.BinaryMessage, res); err != nil {
+				klog.V(2).Info(err)
+			}
 			if err = c.SendToChannel(proto.GetResponse(string(res))); err != nil {
 				return err
 			}
