@@ -20,22 +20,22 @@ type RedisOperator struct {
 	//  - self link
 	//  - labels
 	//  - ... etc ...
-	metaV1.ObjectMeta `json:"metadata,omitempty"`
+	metaV1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
 
 	// Spec is the custom resource spec
-	Spec RedisOperatorSpec `json:"spec"`
+	Spec RedisOperatorSpec `json:"spec" protobuf:"bytes,2,opt,name=spec"`
 }
 
 // RedisSpec is the spec for a RedisOperator resource
 type RedisOperatorSpec struct {
-	MasterSpec RedisCore `json:"masterSpec"`
-	SlaveSpec  RedisCore `json:"slaveSpec"`
+	MasterSpec RedisCore `json:"masterSpec" protobuf:"bytes,1,rep,name=masterSpec"`
+	SlaveSpec  RedisCore `json:"slaveSpec" protobuf:"bytes,2,rep,name=slaveSpec"`
 }
 
 // RedisCore is the sub spec for a RedisOperator resource
 type RedisCore struct {
-	Spec   RedisSpec   `json:"spec"`
-	Status RedisStatus `json:"status"`
+	Spec   RedisSpec   `json:"spec" protobuf:"bytes,1,rep,name=spec"`
+	Status RedisStatus `json:"status" protobuf:"bytes,2,rep,name=status"`
 }
 
 // RedisSpec is the sub spec for a RedisOperator resource
@@ -63,19 +63,19 @@ type RedisSpec struct {
 	// +optional
 	// +patchMergeKey=name
 	// +patchStrategy=merge
-	ImagePullSecrets []coreV1.LocalObjectReference `json:"imagePullSecrets,omitempty" patchStrategy:"merge" patchMergeKey:"name" protobuf:"bytes,4,rep,name=imagePullSecrets"`
+	ImagePullSecrets []coreV1.LocalObjectReference `json:"imagePullSecrets,omitempty" patchStrategy:"merge" patchMergeKey:"name" protobuf:"bytes,4,rep,name=imagePullSecrets,casttype=k8s.io/api/core/v1.LocalObjectReference"`
 	// List of environment variables to set in the container.
 	// Cannot be updated.
 	// +optional
 	// +patchMergeKey=name
 	// +patchStrategy=merge
-	Env []coreV1.EnvVar `json:"env,omitempty" patchStrategy:"merge" patchMergeKey:"name" protobuf:"bytes,5,rep,name=env"`
+	Env []coreV1.EnvVar `json:"env,omitempty" patchStrategy:"merge" patchMergeKey:"name" protobuf:"bytes,5,rep,name=env,casttype=k8s.io/api/core/v1.EnvVar"`
 	// Pod volumes to mount into the container's filesystem.
 	// Cannot be updated.
 	// +optional
 	// +patchMergeKey=mountPath
 	// +patchStrategy=merge
-	VolumeMounts []coreV1.VolumeMount `json:"volumeMounts,omitempty" patchStrategy:"merge" patchMergeKey:"mountPath" protobuf:"bytes,6,rep,name=volumeMounts"`
+	VolumeMounts []coreV1.VolumeMount `json:"volumeMounts,omitempty" patchStrategy:"merge" patchMergeKey:"mountPath" protobuf:"bytes,6,rep,name=volumeMounts,casttype=k8s.io/api/core/v1.VolumeMount"`
 	// List of ports to expose from the container. Exposing a port here gives
 	// the system additional information about the network connections a
 	// container uses, but is primarily informational. Not specifying a port here
@@ -89,7 +89,7 @@ type RedisSpec struct {
 	// +listType=map
 	// +listMapKey=containerPort
 	// +listMapKey=protocol
-	ContainerPorts []coreV1.ContainerPort `json:"containerPorts,omitempty" patchStrategy:"merge" patchMergeKey:"containerPort" protobuf:"bytes,7,rep,name=containerPorts"`
+	ContainerPorts []coreV1.ContainerPort `json:"containerPorts,omitempty" patchStrategy:"merge" patchMergeKey:"containerPort" protobuf:"bytes,7,rep,name=containerPorts,casttype=k8s.io/api/core/v1.ContainerPort"`
 	// The list of ports that are exposed by this service.
 	// More info: https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies
 	// +patchMergeKey=port
@@ -97,7 +97,7 @@ type RedisSpec struct {
 	// +listType=map
 	// +listMapKey=port
 	// +listMapKey=protocol
-	ServicePorts []coreV1.ServicePort `json:"servicePorts,omitempty" patchStrategy:"merge" patchMergeKey:"port" protobuf:"bytes,8,rep,name=servicePorts"`
+	ServicePorts []coreV1.ServicePort `json:"servicePorts,omitempty" patchStrategy:"merge" patchMergeKey:"port" protobuf:"bytes,8,rep,name=servicePorts,casttype=k8s.io/api/core/v1.ServicePort"`
 	// The role of the server in the clusters.
 	// such as: master, slave
 	Role string `json:"role" protobuf:"bytes,9,rep,name=role"`
@@ -137,7 +137,7 @@ type RedisStatus struct {
 // RedisList is a list of RedisOperator resources
 type RedisOperatorList struct {
 	metaV1.TypeMeta `json:",inline"`
-	metaV1.ListMeta `json:"metadata"`
-
-	Items []RedisOperator `json:"items"`
+	// +optional
+	metaV1.ListMeta `json:"metadata" protobuf:"bytes,1,opt,name=metadata"`
+	Items           []RedisOperator `json:"items" protobuf:"bytes,2,rep,name=items"`
 }
