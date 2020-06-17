@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 	"fmt"
+	apiCorev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"log"
 	"sync"
 	"sync/atomic"
@@ -172,6 +174,21 @@ func (c *conn) ReadPump() (err error) {
 			if err = c.SendToChannel(proto.GetResponse(string(res))); err != nil {
 				return err
 			}
+		}
+
+		// test configmap
+		selector := labels.NewSelector()
+		if m, err := c.group.Resource().List(group.ConfigMap, apiCorev1.NamespaceDefault, selector); err != nil {
+			klog.V(2).Info(err)
+		} else {
+			klog.Info("configMap:", m.(*apiCorev1.ConfigMapList))
+		}
+
+		// test mysql
+		if m, err := c.group.Resource().List(group.MysqlOperator, apiCorev1.NamespaceDefault, selector); err != nil {
+			klog.V(2).Info(err)
+		} else {
+			klog.Info("MysqlOperatorList:", m.(*mysqlOperatorV1.MysqlOperatorList))
 		}
 
 		switch msg.Service {
