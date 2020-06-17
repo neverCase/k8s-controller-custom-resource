@@ -9,6 +9,7 @@ import (
 type Options interface {
 	Add(opts ...Option)
 	Get(rt ResourceType) (Option, error)
+	GetOptionTypeList() []ResourceType
 	GetReflectType(rt ResourceType) reflect.Type
 }
 
@@ -37,6 +38,14 @@ func (opts *options) Get(rt ResourceType) (Option, error) {
 
 func (opts *options) GetReflectType(rt ResourceType) reflect.Type {
 	return opts.kinds[rt]
+}
+
+func (opts *options) GetOptionTypeList() []ResourceType {
+	res := make([]ResourceType, 0)
+	for k := range opts.hub {
+		res = append(res, k)
+	}
+	return res
 }
 
 func NewOptions() Options {

@@ -1,14 +1,17 @@
 package group
 
 import (
+	mysqloperatorv1 "github.com/nevercase/k8s-controller-custom-resource/pkg/apis/mysqloperator/v1"
+	redisoperatorv1 "github.com/nevercase/k8s-controller-custom-resource/pkg/apis/redisoperator/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog"
 
-	mysqlClientSet "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/mysqloperator/clientset/versioned"
-	redisClientSet "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/redisoperator/clientset/versioned"
+	mysqlclientset "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/mysqloperator/clientset/versioned"
+	redisclientset "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/redisoperator/clientset/versioned"
 )
 
 type ResourceType string
@@ -32,6 +35,7 @@ type ResourceGetter interface {
 
 type ResourceInterface interface {
 	List(rt ResourceType, nameSpace string, selector labels.Selector) (res interface{}, err error)
+	Resource() []ResourceType
 }
 
 func NewResource(masterUrl, kubeconfigPath string) ResourceInterface {
@@ -43,13 +47,13 @@ func NewResource(masterUrl, kubeconfigPath string) ResourceInterface {
 	if err != nil {
 		klog.Fatalf("Error building kubernetes clientset: %s", err.Error())
 	}
-	mysql, err := mysqlClientSet.NewForConfig(cfg)
+	mysql, err := mysqlclientset.NewForConfig(cfg)
 	if err != nil {
-		klog.Fatalf("Error building mysqlClientSet: %s", err.Error())
+		klog.Fatalf("Error building mysqlclientset: %s", err.Error())
 	}
-	redis, err := redisClientSet.NewForConfig(cfg)
+	redis, err := redisclientset.NewForConfig(cfg)
 	if err != nil {
-		klog.Fatalf("Error building redisClientSet: %s", err.Error())
+		klog.Fatalf("Error building redisclientset: %s", err.Error())
 	}
 	opts := NewOptions()
 	mysqlOpt := NewOption(MysqlOperator, mysql)
@@ -68,36 +72,56 @@ type resource struct {
 }
 
 func (r *resource) List(rt ResourceType, nameSpace string, selector labels.Selector) (res interface{}, err error) {
-	opts := metav1.ListOptions{
+	var opt Option
+	var opts = metav1.ListOptions{
 		LabelSelector: selector.String(),
 	}
 	switch rt {
 	case ConfigMap:
 		res, err = r.kubeClientSet.CoreV1().ConfigMaps(nameSpace).List(opts)
-		if err != nil {
-			klog.V(2).Info(err)
-		}
 	case MysqlOperator:
-		obj, err := r.options.Get(rt)
-		if err != nil {
-			klog.V(2).Info(err)
+		if opt, err = r.options.Get(rt); err != nil {
+			break
 		}
-		mysql := obj.Get().(*mysqlClientSet.Clientset)
+		mysql := opt.Get().(*mysqlclientset.Clientset)
 		res, err = mysql.MysqloperatorV1().MysqlOperators(nameSpace).List(opts)
-		if err != nil {
-			klog.V(2).Info(err)
-		}
 	case RedisOperator:
-		obj, err := r.options.Get(rt)
-		if err != nil {
-			klog.V(2).Info(err)
+		if opt, err = r.options.Get(rt); err != nil {
+			break
 		}
-		redis := obj.Get().(*redisClientSet.Clientset)
+		redis := opt.Get().(*redisclientset.Clientset)
 		res, err = redis.RedisoperatorV1().RedisOperators(nameSpace).List(opts)
-		if err != nil {
-			klog.V(2).Info(err)
-		}
 	case HelixOperator:
 	}
+	if err != nil {
+		klog.V(2).Info(err)
+	}
 	return res, err
+}
+
+func (r *resource) Create(rt ResourceType, nameSpace string, obj interface{}) (res interface{}, err error) {
+	var opt Option
+	switch rt {
+	case ConfigMap:
+		res, err = r.kubeClientSet.CoreV1().ConfigMaps(nameSpace).Create(obj.(*corev1.ConfigMap))
+	case MysqlOperator:
+		if opt, err = r.options.Get(rt); err != nil {
+			break
+		}
+		res, err = opt.Get().(*mysqlclientset.Clientset).MysqloperatorV1().MysqlOperators(nameSpace).Create(obj.(*mysqloperatorv1.MysqlOperator))
+	case RedisOperator:
+		if opt, err = r.options.Get(rt); err != nil {
+			break
+		}
+		res, err = opt.Get().(*redisclientset.Clientset).RedisoperatorV1().RedisOperators(nameSpace).Create(obj.(*redisoperatorv1.RedisOperator))
+	case HelixOperator:
+	}
+	if err != nil {
+		klog.V(2).Info(err)
+	}
+	return res, err
+}
+
+func (r *resource) Resource() []ResourceType {
+	return r.options.GetOptionTypeList()
 }

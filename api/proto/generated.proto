@@ -21,30 +21,58 @@ syntax = 'proto2';
 
 package github.com.nevercase.k8s_controller_custom_resource.api.proto;
 
-import "github.com/nevercase/k8s-controller-custom-resource/pkg/apis/mysqloperator/v1/generated.proto";
-
 // Package-wide variables from generator "generated".
 option go_package = "proto";
 
-message List {
-  optional int32 code = 1;
+message MysqlCrd {
+  optional string Name = 1;
 
-  optional string result = 2;
+  optional NodeSpec master = 2;
+
+  optional NodeSpec slave = 3;
 }
 
-message Mysql {
-  optional github.com.nevercase.k8s_controller_custom_resource.pkg.apis.mysqloperator.v1.MysqlOperator code = 1;
+message NodeSpec {
+  optional string Name = 1;
+
+  optional int32 replicas = 2;
+
+  optional string image = 3;
+
+  optional string imagePullSecrets = 4;
+}
+
+message Param {
+  optional string service = 1;
+
+  optional string resourceType = 2;
+
+  optional string nameSpace = 3;
+}
+
+message RedisCrd {
+  optional string Name = 1;
+
+  optional NodeSpec master = 2;
+
+  optional NodeSpec slave = 3;
 }
 
 message Request {
-  optional string service = 1;
+  optional Param param = 1;
 
   optional string data = 2;
+}
+
+message Resources {
+  repeated string resources = 1;
 }
 
 message Response {
   optional int32 code = 1;
 
-  optional string result = 2;
+  optional Param param = 2;
+
+  optional string result = 3;
 }
 

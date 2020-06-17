@@ -3,16 +3,14 @@ package service
 import (
 	"context"
 	"fmt"
-	apiCorev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"log"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/gorilla/websocket"
-	//apiV1 "k8s.io/api/core/v1"
-	//metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/klog"
 
@@ -65,7 +63,7 @@ type Conn interface {
 	Ping()
 	KeepAlive()
 	ReadPump() (err error)
-	SendToChannel(data interface{}) (err error)
+	SendToChannel(data []byte) (err error)
 	WritePump() (err error)
 	Close()
 }
@@ -76,7 +74,7 @@ func NewConn(clientId int32, ctx context.Context, ws *websocket.Conn, g group.Gr
 		clientId:          clientId,
 		conn:              ws,
 		readChan:          make(chan interface{}),
-		writeChan:         make(chan interface{}),
+		writeChan:         make(chan []byte),
 		lastHeartBeatTime: time.Now(),
 		status:            connAlive,
 		ctx:               ctx,
@@ -98,7 +96,7 @@ type conn struct {
 	clientId          int32
 	conn              *websocket.Conn
 	readChan          chan interface{}
-	writeChan         chan interface{}
+	writeChan         chan []byte
 	lastHeartBeatTime time.Time
 	tick              *time.Ticker
 	status            connStatus
@@ -140,8 +138,6 @@ func (c *conn) ReadPump() (err error) {
 			klog.V(2).Info(err)
 			return err
 		}
-		klog.Info(msg.Service)
-
 		//if t, err := c.group.Mysql().MysqloperatorV1().MysqlOperators(apiV1.NamespaceDefault).List(metaV1.ListOptions{}); err != nil {
 		//	klog.V(2).Info(err)
 		//} else {
@@ -151,65 +147,65 @@ func (c *conn) ReadPump() (err error) {
 		//	}
 		//}
 
-		klog.Info("1111111111")
-		s := "svc-121"
-		var a = &proto.List{Code: 1234, Result: s}
-		if res, err := a.Marshal(); err != nil {
-			klog.V(2).Info(err)
-		} else {
-			klog.Info("res List:", string(res))
-			if err = c.SendToChannel(proto.GetResponse(string(res))); err != nil {
-				return err
-			}
-		}
-
-		var e = &proto.Mysql{Mysql: mysqlOperatorV1.MysqlOperator{}}
-		if res, err := e.Marshal(); err != nil {
-			klog.V(2).Info(err)
-		} else {
-			klog.Info("res mysql:", string(res))
-			if err = c.conn.WriteMessage(websocket.BinaryMessage, res); err != nil {
-				klog.V(2).Info(err)
-			}
-			if err = c.SendToChannel(proto.GetResponse(string(res))); err != nil {
-				return err
-			}
-		}
+		//var e = &proto.Mysql{Mysql: mysqlOperatorV1.MysqlOperator{}}
+		//if res, err := e.Marshal(); err != nil {
+		//	klog.V(2).Info(err)
+		//} else {
+		//	klog.Info("res mysql:", string(res))
+		//	if err = c.conn.WriteMessage(websocket.BinaryMessage, res); err != nil {
+		//		klog.V(2).Info(err)
+		//	}
+		//	if err = c.SendToChannel(proto.GetResponse(string(res))); err != nil {
+		//		return err
+		//	}
+		//}
 
 		// test configmap
 		selector := labels.NewSelector()
-		if m, err := c.group.Resource().List(group.ConfigMap, apiCorev1.NamespaceDefault, selector); err != nil {
+		if m, err := c.group.Resource().List(group.ConfigMap, corev1.NamespaceDefault, selector); err != nil {
 			klog.V(2).Info(err)
 		} else {
-			klog.Info("configMap:", m.(*apiCorev1.ConfigMapList))
+			klog.Info("configMap:", m.(*corev1.ConfigMapList))
 		}
 
 		// test mysql
-		if m, err := c.group.Resource().List(group.MysqlOperator, apiCorev1.NamespaceDefault, selector); err != nil {
+		if m, err := c.group.Resource().List(group.MysqlOperator, corev1.NamespaceDefault, selector); err != nil {
 			klog.V(2).Info(err)
 		} else {
 			klog.Info("MysqlOperatorList:", m.(*mysqlOperatorV1.MysqlOperatorList))
 		}
 
-		switch msg.Service {
+		switch proto.ApiService(msg.Param.Service) {
 		case proto.SvcPing:
 			c.Ping()
-			if err = c.SendToChannel(proto.GetResponse(msg.Data)); err != nil {
+			res, err := proto.GetResponse(msg.Param, "ping ok")
+			if err != nil {
 				return err
 			}
+			if err = c.SendToChannel(res); err != nil {
+				return err
+			}
+		case proto.SvcCreate:
+		case proto.SvcUpdate:
+		case proto.SvcDelete:
+		case proto.SvcGet:
 		case proto.SvcList:
+			data, err := c.group.Resource().List(msg.Param.ResourceType, msg.Param.NameSpace, selector)
+			if err != nil {
+				return err
+			}
+
 			if err = c.SendToChannel(proto.GetResponse(msg.Data)); err != nil {
 				return err
 			}
 		case proto.SvcWatch:
-		case proto.SvcAdd:
-		case proto.SvcUpdate:
-		case proto.SvcDelete:
+		case proto.SvcResource:
+
 		}
 	}
 }
 
-func (c *conn) SendToChannel(msg interface{}) (err error) {
+func (c *conn) SendToChannel(msg []byte) (err error) {
 	if c.status == connClosed {
 		return
 	}
@@ -243,8 +239,8 @@ func (c *conn) WritePump() (err error) {
 				return nil
 			}
 			log.Println("send to:", c.clientId, " msg:", msg)
-			if err := c.conn.WriteJSON(msg); err != nil {
-				return err
+			if err := c.conn.WriteMessage(websocket.BinaryMessage, msg); err != nil {
+				return nil
 			}
 		}
 	}
