@@ -1,9 +1,6 @@
 package proto
 
 import (
-	//_ "github.com/gogo/protobuf/gogoproto"
-	//_ "github.com/gogo/protobuf/proto"
-	//_ "github.com/gogo/protobuf/sortkeys"
 	"github.com/nevercase/k8s-controller-custom-resource/api/group"
 )
 
@@ -44,10 +41,18 @@ type Response struct {
 	Result string `json:"result" protobuf:"bytes,3,opt,name=result"`
 }
 
+type MysqlCrdList struct {
+	Items []MysqlCrd `json:"items" protobuf:"bytes,1,rep,name=items"`
+}
+
 type MysqlCrd struct {
 	Name   string   `json:"name" protobuf:"bytes,1,rep,name=Name"`
 	Master NodeSpec `json:"master" protobuf:"bytes,2,rep,name=master"`
 	Slave  NodeSpec `json:"slave" protobuf:"bytes,3,rep,name=slave"`
+}
+
+type RedisCrdList struct {
+	Items []RedisCrd `json:"items" protobuf:"bytes,1,rep,name=items"`
 }
 
 type RedisCrd struct {

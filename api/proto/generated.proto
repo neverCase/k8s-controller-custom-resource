@@ -32,6 +32,10 @@ message MysqlCrd {
   optional NodeSpec slave = 3;
 }
 
+message MysqlCrdList {
+  repeated MysqlCrd items = 1;
+}
+
 message NodeSpec {
   optional string Name = 1;
 
@@ -56,6 +60,10 @@ message RedisCrd {
   optional NodeSpec master = 2;
 
   optional NodeSpec slave = 3;
+}
+
+message RedisCrdList {
+  repeated RedisCrd items = 1;
 }
 
 message Request {

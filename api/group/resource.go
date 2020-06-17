@@ -1,8 +1,6 @@
 package group
 
 import (
-	mysqloperatorv1 "github.com/nevercase/k8s-controller-custom-resource/pkg/apis/mysqloperator/v1"
-	redisoperatorv1 "github.com/nevercase/k8s-controller-custom-resource/pkg/apis/redisoperator/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -10,6 +8,8 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog"
 
+	mysqloperatorv1 "github.com/nevercase/k8s-controller-custom-resource/pkg/apis/mysqloperator/v1"
+	redisoperatorv1 "github.com/nevercase/k8s-controller-custom-resource/pkg/apis/redisoperator/v1"
 	mysqlclientset "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/mysqloperator/clientset/versioned"
 	redisclientset "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/redisoperator/clientset/versioned"
 )
@@ -83,14 +83,12 @@ func (r *resource) List(rt ResourceType, nameSpace string, selector labels.Selec
 		if opt, err = r.options.Get(rt); err != nil {
 			break
 		}
-		mysql := opt.Get().(*mysqlclientset.Clientset)
-		res, err = mysql.MysqloperatorV1().MysqlOperators(nameSpace).List(opts)
+		res, err = opt.Get().(*mysqlclientset.Clientset).MysqloperatorV1().MysqlOperators(nameSpace).List(opts)
 	case RedisOperator:
 		if opt, err = r.options.Get(rt); err != nil {
 			break
 		}
-		redis := opt.Get().(*redisclientset.Clientset)
-		res, err = redis.RedisoperatorV1().RedisOperators(nameSpace).List(opts)
+		res, err = opt.Get().(*redisclientset.Clientset).RedisoperatorV1().RedisOperators(nameSpace).List(opts)
 	case HelixOperator:
 	}
 	if err != nil {

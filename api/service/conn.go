@@ -9,14 +9,11 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/klog"
 
 	"github.com/nevercase/k8s-controller-custom-resource/api/group"
 	"github.com/nevercase/k8s-controller-custom-resource/api/proto"
-	mysqlOperatorV1 "github.com/nevercase/k8s-controller-custom-resource/pkg/apis/mysqloperator/v1"
 )
 
 type ConnHub interface {
@@ -70,6 +67,7 @@ type Conn interface {
 
 func NewConn(clientId int32, ctx context.Context, ws *websocket.Conn, g group.Group) Conn {
 	c := &conn{
+		handle:            NewHandle(g),
 		group:             g,
 		clientId:          clientId,
 		conn:              ws,
@@ -90,7 +88,8 @@ const (
 )
 
 type conn struct {
-	group group.Group
+	group  group.Group
+	handle HandleInterface
 
 	mu                sync.RWMutex
 	clientId          int32
@@ -128,6 +127,7 @@ func (c *conn) ReadPump() (err error) {
 	defer c.Close()
 	for {
 		var msg proto.Request
+		var res []byte
 		messageType, message, err := c.conn.ReadMessage()
 		klog.Infof("messageType: %d message: %s err: %s\n", messageType, message, err)
 		if err != nil {
@@ -138,51 +138,10 @@ func (c *conn) ReadPump() (err error) {
 			klog.V(2).Info(err)
 			return err
 		}
-		//if t, err := c.group.Mysql().MysqloperatorV1().MysqlOperators(apiV1.NamespaceDefault).List(metaV1.ListOptions{}); err != nil {
-		//	klog.V(2).Info(err)
-		//} else {
-		//	if err = c.SendToChannel(proto.GetResponse(t)); err != nil {
-		//		klog.V(2.).Info(err)
-		//		return err
-		//	}
-		//}
-
-		//var e = &proto.Mysql{Mysql: mysqlOperatorV1.MysqlOperator{}}
-		//if res, err := e.Marshal(); err != nil {
-		//	klog.V(2).Info(err)
-		//} else {
-		//	klog.Info("res mysql:", string(res))
-		//	if err = c.conn.WriteMessage(websocket.BinaryMessage, res); err != nil {
-		//		klog.V(2).Info(err)
-		//	}
-		//	if err = c.SendToChannel(proto.GetResponse(string(res))); err != nil {
-		//		return err
-		//	}
-		//}
-
-		// test configmap
-		selector := labels.NewSelector()
-		if m, err := c.group.Resource().List(group.ConfigMap, corev1.NamespaceDefault, selector); err != nil {
-			klog.V(2).Info(err)
-		} else {
-			klog.Info("configMap:", m.(*corev1.ConfigMapList))
-		}
-
-		// test mysql
-		if m, err := c.group.Resource().List(group.MysqlOperator, corev1.NamespaceDefault, selector); err != nil {
-			klog.V(2).Info(err)
-		} else {
-			klog.Info("MysqlOperatorList:", m.(*mysqlOperatorV1.MysqlOperatorList))
-		}
-
 		switch proto.ApiService(msg.Param.Service) {
 		case proto.SvcPing:
 			c.Ping()
-			res, err := proto.GetResponse(msg.Param, "ping ok")
-			if err != nil {
-				return err
-			}
-			if err = c.SendToChannel(res); err != nil {
+			if res, err = proto.GetResponse(msg.Param, "ping ok"); err != nil {
 				return err
 			}
 		case proto.SvcCreate:
@@ -190,17 +149,14 @@ func (c *conn) ReadPump() (err error) {
 		case proto.SvcDelete:
 		case proto.SvcGet:
 		case proto.SvcList:
-			data, err := c.group.Resource().List(msg.Param.ResourceType, msg.Param.NameSpace, selector)
-			if err != nil {
-				return err
-			}
-
-			if err = c.SendToChannel(proto.GetResponse(msg.Data)); err != nil {
+			if res, err = c.handle.List(msg.Param); err != nil {
 				return err
 			}
 		case proto.SvcWatch:
 		case proto.SvcResource:
-
+		}
+		if err = c.SendToChannel(res); err != nil {
+			return err
 		}
 	}
 }
