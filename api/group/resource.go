@@ -34,8 +34,9 @@ type ResourceGetter interface {
 }
 
 type ResourceInterface interface {
+	Create(rt ResourceType, nameSpace string, obj interface{}) (res interface{}, err error)
 	List(rt ResourceType, nameSpace string, selector labels.Selector) (res interface{}, err error)
-	Resource() []ResourceType
+	ResourceTypes() []ResourceType
 }
 
 func NewResource(masterUrl, kubeconfigPath string) ResourceInterface {
@@ -71,6 +72,29 @@ type resource struct {
 	options       Options
 }
 
+func (r *resource) Create(rt ResourceType, nameSpace string, obj interface{}) (res interface{}, err error) {
+	var opt Option
+	switch rt {
+	case ConfigMap:
+		res, err = r.kubeClientSet.CoreV1().ConfigMaps(nameSpace).Create(obj.(*corev1.ConfigMap))
+	case MysqlOperator:
+		if opt, err = r.options.Get(rt); err != nil {
+			break
+		}
+		res, err = opt.Get().(*mysqlclientset.Clientset).MysqloperatorV1().MysqlOperators(nameSpace).Create(obj.(*mysqloperatorv1.MysqlOperator))
+	case RedisOperator:
+		if opt, err = r.options.Get(rt); err != nil {
+			break
+		}
+		res, err = opt.Get().(*redisclientset.Clientset).RedisoperatorV1().RedisOperators(nameSpace).Create(obj.(*redisoperatorv1.RedisOperator))
+	case HelixOperator:
+	}
+	if err != nil {
+		klog.V(2).Info(err)
+	}
+	return res, err
+}
+
 func (r *resource) List(rt ResourceType, nameSpace string, selector labels.Selector) (res interface{}, err error) {
 	var opt Option
 	var opts = metav1.ListOptions{
@@ -97,29 +121,6 @@ func (r *resource) List(rt ResourceType, nameSpace string, selector labels.Selec
 	return res, err
 }
 
-func (r *resource) Create(rt ResourceType, nameSpace string, obj interface{}) (res interface{}, err error) {
-	var opt Option
-	switch rt {
-	case ConfigMap:
-		res, err = r.kubeClientSet.CoreV1().ConfigMaps(nameSpace).Create(obj.(*corev1.ConfigMap))
-	case MysqlOperator:
-		if opt, err = r.options.Get(rt); err != nil {
-			break
-		}
-		res, err = opt.Get().(*mysqlclientset.Clientset).MysqloperatorV1().MysqlOperators(nameSpace).Create(obj.(*mysqloperatorv1.MysqlOperator))
-	case RedisOperator:
-		if opt, err = r.options.Get(rt); err != nil {
-			break
-		}
-		res, err = opt.Get().(*redisclientset.Clientset).RedisoperatorV1().RedisOperators(nameSpace).Create(obj.(*redisoperatorv1.RedisOperator))
-	case HelixOperator:
-	}
-	if err != nil {
-		klog.V(2).Info(err)
-	}
-	return res, err
-}
-
-func (r *resource) Resource() []ResourceType {
+func (r *resource) ResourceTypes() []ResourceType {
 	return r.options.GetOptionTypeList()
 }

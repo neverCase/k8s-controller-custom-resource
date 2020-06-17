@@ -115,7 +115,7 @@ func (c *conn) KeepAlive() {
 		case <-c.ctx.Done():
 			return
 		case <-tick.C:
-			if time.Now().Sub(c.lastHeartBeatTime) > 30 {
+			if time.Now().Sub(c.lastHeartBeatTime) > 30*time.Second {
 				klog.Info("keepAlive timeout")
 				return
 			}
@@ -154,6 +154,9 @@ func (c *conn) ReadPump() (err error) {
 			}
 		case proto.SvcWatch:
 		case proto.SvcResource:
+			if res, err = c.handle.Resources(msg.Param); err != nil {
+				return err
+			}
 		}
 		if err = c.SendToChannel(res); err != nil {
 			return err
