@@ -4,6 +4,7 @@ import (
 	"github.com/nevercase/k8s-controller-custom-resource/api/group"
 	"github.com/nevercase/k8s-controller-custom-resource/api/proto"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 
@@ -12,6 +13,8 @@ import (
 )
 
 type HandleInterface interface {
+	Create(req proto.Param, obj interface{}) (res []byte, err error)
+	Delete(req proto.Param, obj interface{}) (err error)
 	List(req proto.Param) ([]byte, error)
 	Resources(req proto.Param) (res []byte, err error)
 }
@@ -24,6 +27,68 @@ func NewHandle(g group.Group) HandleInterface {
 
 type handle struct {
 	group group.Group
+}
+
+func (h *handle) Create(req proto.Param, obj interface{}) (res []byte, err error) {
+	switch req.ResourceType {
+	case group.MysqlOperator:
+		var n interface{}
+		mysqlCrd := obj.(proto.MysqlCrd)
+		m := convertMysqlCrdToOperator(req, mysqlCrd)
+		_, err = h.group.Resource().Get(req.ResourceType, req.NameSpace, m.Name)
+		if err != nil {
+			if !errors.IsNotFound(err) {
+				break
+			}
+			err = nil
+			if n, err = h.group.Resource().Create(req.ResourceType, req.NameSpace, m); err != nil {
+				break
+			}
+		} else {
+			if n, err = h.group.Resource().Update(req.ResourceType, req.NameSpace, m); err != nil {
+				break
+			}
+		}
+		v := n.(*mysqloperatorv1.MysqlOperator)
+		e := convertOperatorToMysqlCrd(v)
+		res, err = e.Marshal()
+	case group.RedisOperator:
+		var n interface{}
+		redisCrd := obj.(proto.RedisCrd)
+		m := convertRedisCrdToOperator(req, redisCrd)
+		_, err = h.group.Resource().Get(req.ResourceType, req.NameSpace, m.Name)
+		if err != nil {
+			if !errors.IsNotFound(err) {
+				break
+			}
+			err = nil
+			if n, err = h.group.Resource().Create(req.ResourceType, req.NameSpace, m); err != nil {
+				break
+			}
+		} else {
+			if n, err = h.group.Resource().Update(req.ResourceType, req.NameSpace, m); err != nil {
+				break
+			}
+		}
+		v := n.(*redisoperatorv1.RedisOperator)
+		e := convertOperatorToRedisCrd(v)
+		res, err = e.Marshal()
+	case group.HelixOperator:
+	}
+	return res, err
+}
+
+func (h *handle) Delete(req proto.Param, obj interface{}) (err error) {
+	switch req.ResourceType {
+	case group.MysqlOperator:
+		mysqlCrd := obj.(proto.MysqlCrd)
+		err = h.group.Resource().Delete(req.ResourceType, req.NameSpace, mysqlCrd.Name)
+	case group.RedisOperator:
+		redisCrd := obj.(proto.RedisCrd)
+		err = h.group.Resource().Delete(req.ResourceType, req.NameSpace, redisCrd.Name)
+	case group.HelixOperator:
+	}
+	return err
 }
 
 func (h *handle) List(req proto.Param) (res []byte, err error) {
@@ -67,33 +132,6 @@ func (h *handle) Resources(req proto.Param) (res []byte, err error) {
 		return nil, err
 	}
 	return proto.GetResponse(req, string(o))
-}
-
-func (h *handle) Create(req proto.Param, obj interface{}) (res []byte, err error) {
-	switch req.ResourceType {
-	case group.MysqlOperator:
-		mysqlCrd := obj.(proto.MysqlCrd)
-		m := convertMysqlCrdToOperator(req, mysqlCrd)
-		n, err := h.group.Resource().Create(req.ResourceType, req.NameSpace, m)
-		if err != nil {
-			break
-		}
-		v := n.(*mysqloperatorv1.MysqlOperator)
-		e := convertOperatorToMysqlCrd(v)
-		res, err = e.Marshal()
-	case group.RedisOperator:
-		redisCrd := obj.(proto.RedisCrd)
-		m := convertRedisCrdToOperator(req, redisCrd)
-		n, err := h.group.Resource().Create(req.ResourceType, req.NameSpace, m)
-		if err != nil {
-			break
-		}
-		v := n.(*redisoperatorv1.RedisOperator)
-		e := convertOperatorToRedisCrd(v)
-		res, err = e.Marshal()
-	case group.HelixOperator:
-	}
-	return res, err
 }
 
 func convertMysqlCrdToOperator(req proto.Param, mysqlCrd proto.MysqlCrd) *mysqloperatorv1.MysqlOperator {

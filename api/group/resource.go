@@ -35,6 +35,9 @@ type ResourceGetter interface {
 
 type ResourceInterface interface {
 	Create(rt ResourceType, nameSpace string, obj interface{}) (res interface{}, err error)
+	Update(rt ResourceType, nameSpace string, obj interface{}) (res interface{}, err error)
+	Delete(rt ResourceType, nameSpace, specName string) (err error)
+	Get(rt ResourceType, nameSpace, specName string) (res interface{}, err error)
 	List(rt ResourceType, nameSpace string, selector labels.Selector) (res interface{}, err error)
 	ResourceTypes() []ResourceType
 }
@@ -87,6 +90,76 @@ func (r *resource) Create(rt ResourceType, nameSpace string, obj interface{}) (r
 			break
 		}
 		res, err = opt.Get().(*redisclientset.Clientset).RedisoperatorV1().RedisOperators(nameSpace).Create(obj.(*redisoperatorv1.RedisOperator))
+	case HelixOperator:
+	}
+	if err != nil {
+		klog.V(2).Info(err)
+	}
+	return res, err
+}
+
+func (r *resource) Update(rt ResourceType, nameSpace string, obj interface{}) (res interface{}, err error) {
+	var opt Option
+	switch rt {
+	case ConfigMap:
+		res, err = r.kubeClientSet.CoreV1().ConfigMaps(nameSpace).Update(obj.(*corev1.ConfigMap))
+	case MysqlOperator:
+		if opt, err = r.options.Get(rt); err != nil {
+			break
+		}
+		res, err = opt.Get().(*mysqlclientset.Clientset).MysqloperatorV1().MysqlOperators(nameSpace).Update(obj.(*mysqloperatorv1.MysqlOperator))
+	case RedisOperator:
+		if opt, err = r.options.Get(rt); err != nil {
+			break
+		}
+		res, err = opt.Get().(*redisclientset.Clientset).RedisoperatorV1().RedisOperators(nameSpace).Update(obj.(*redisoperatorv1.RedisOperator))
+	case HelixOperator:
+	}
+	if err != nil {
+		klog.V(2).Info(err)
+	}
+	return res, err
+}
+func (r *resource) Delete(rt ResourceType, nameSpace, specName string) (err error) {
+	var opt Option
+	var delOpts = &metav1.DeleteOptions{}
+	switch rt {
+	case ConfigMap:
+		err = r.kubeClientSet.CoreV1().ConfigMaps(nameSpace).Delete(specName, delOpts)
+	case MysqlOperator:
+		if opt, err = r.options.Get(rt); err != nil {
+			break
+		}
+		err = opt.Get().(*mysqlclientset.Clientset).MysqloperatorV1().MysqlOperators(nameSpace).Delete(specName, delOpts)
+	case RedisOperator:
+		if opt, err = r.options.Get(rt); err != nil {
+			break
+		}
+		err = opt.Get().(*redisclientset.Clientset).RedisoperatorV1().RedisOperators(nameSpace).Delete(specName, delOpts)
+	case HelixOperator:
+	}
+	if err != nil {
+		klog.V(2).Info(err)
+	}
+	return err
+}
+
+func (r *resource) Get(rt ResourceType, nameSpace, specName string) (res interface{}, err error) {
+	var opt Option
+	var getOpts = metav1.GetOptions{}
+	switch rt {
+	case ConfigMap:
+		res, err = r.kubeClientSet.CoreV1().ConfigMaps(nameSpace).Get(specName, getOpts)
+	case MysqlOperator:
+		if opt, err = r.options.Get(rt); err != nil {
+			break
+		}
+		res, err = opt.Get().(*mysqlclientset.Clientset).MysqloperatorV1().MysqlOperators(nameSpace).Get(specName, getOpts)
+	case RedisOperator:
+		if opt, err = r.options.Get(rt); err != nil {
+			break
+		}
+		res, err = opt.Get().(*redisclientset.Clientset).RedisoperatorV1().RedisOperators(nameSpace).Get(specName, getOpts)
 	case HelixOperator:
 	}
 	if err != nil {
