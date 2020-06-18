@@ -39,21 +39,7 @@ func (h *handle) List(req proto.Param) (res []byte, err error) {
 			Items: make([]proto.MysqlCrd, 0),
 		}
 		for _, v := range d.(*mysqloperatorv1.MysqlOperatorList).Items {
-			m.Items = append(m.Items, proto.MysqlCrd{
-				Name: v.Name,
-				Master: proto.NodeSpec{
-					Name:             v.Spec.MasterSpec.Spec.Name,
-					Replicas:         *v.Spec.MasterSpec.Spec.Replicas,
-					Image:            v.Spec.MasterSpec.Spec.Image,
-					ImagePullSecrets: v.Spec.MasterSpec.Spec.ImagePullSecrets[0].Name,
-				},
-				Slave: proto.NodeSpec{
-					Name:             v.Spec.SlaveSpec.Spec.Name,
-					Replicas:         *v.Spec.SlaveSpec.Spec.Replicas,
-					Image:            v.Spec.SlaveSpec.Spec.Image,
-					ImagePullSecrets: v.Spec.SlaveSpec.Spec.ImagePullSecrets[0].Name,
-				},
-			})
+			m.Items = append(m.Items, convertOperatorToMysqlCrd(&v))
 		}
 		o, err = m.Marshal()
 	case group.RedisOperator:
@@ -61,21 +47,7 @@ func (h *handle) List(req proto.Param) (res []byte, err error) {
 			Items: make([]proto.RedisCrd, 0),
 		}
 		for _, v := range d.(*redisoperatorv1.RedisOperatorList).Items {
-			m.Items = append(m.Items, proto.RedisCrd{
-				Name: v.Name,
-				Master: proto.NodeSpec{
-					Name:             v.Spec.MasterSpec.Spec.Name,
-					Replicas:         *v.Spec.MasterSpec.Spec.Replicas,
-					Image:            v.Spec.MasterSpec.Spec.Image,
-					ImagePullSecrets: v.Spec.MasterSpec.Spec.ImagePullSecrets[0].Name,
-				},
-				Slave: proto.NodeSpec{
-					Name:             v.Spec.SlaveSpec.Spec.Name,
-					Replicas:         *v.Spec.SlaveSpec.Spec.Replicas,
-					Image:            v.Spec.SlaveSpec.Spec.Image,
-					ImagePullSecrets: v.Spec.SlaveSpec.Spec.ImagePullSecrets[0].Name,
-				},
-			})
+			m.Items = append(m.Items, convertOperatorToRedisCrd(&v))
 		}
 		o, err = m.Marshal()
 	case group.HelixOperator:
@@ -101,115 +73,131 @@ func (h *handle) Create(req proto.Param, obj interface{}) (res []byte, err error
 	switch req.ResourceType {
 	case group.MysqlOperator:
 		mysqlCrd := obj.(proto.MysqlCrd)
-		m := &mysqloperatorv1.MysqlOperator{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      mysqlCrd.Name,
-				Namespace: req.NameSpace,
-			},
-			Spec: mysqloperatorv1.MysqlOperatorSpec{
-				MasterSpec: mysqloperatorv1.MysqlCore{
-					Spec: mysqloperatorv1.MysqlSpec{
-						Name:     mysqlCrd.Master.Name,
-						Replicas: &mysqlCrd.Master.Replicas,
-						Image:    mysqlCrd.Master.Image,
-						ImagePullSecrets: []corev1.LocalObjectReference{
-							{
-								Name: mysqlCrd.Master.ImagePullSecrets,
-							},
-						},
-					},
-				},
-				SlaveSpec: mysqloperatorv1.MysqlCore{
-					Spec: mysqloperatorv1.MysqlSpec{
-						Name:     mysqlCrd.Slave.Name,
-						Replicas: &mysqlCrd.Slave.Replicas,
-						Image:    mysqlCrd.Slave.Image,
-						ImagePullSecrets: []corev1.LocalObjectReference{
-							{
-								Name: mysqlCrd.Slave.ImagePullSecrets,
-							},
-						},
-					},
-				},
-			},
-		}
+		m := convertMysqlCrdToOperator(req, mysqlCrd)
 		n, err := h.group.Resource().Create(req.ResourceType, req.NameSpace, m)
 		if err != nil {
 			break
 		}
-		v := n.(mysqloperatorv1.MysqlOperator)
-		e := proto.MysqlCrd{
-			Name: v.Name,
-			Master: proto.NodeSpec{
-				Name:             v.Spec.MasterSpec.Spec.Name,
-				Replicas:         *v.Spec.MasterSpec.Spec.Replicas,
-				Image:            v.Spec.MasterSpec.Spec.Image,
-				ImagePullSecrets: v.Spec.MasterSpec.Spec.ImagePullSecrets[0].Name,
-			},
-			Slave: proto.NodeSpec{
-				Name:             v.Spec.SlaveSpec.Spec.Name,
-				Replicas:         *v.Spec.SlaveSpec.Spec.Replicas,
-				Image:            v.Spec.SlaveSpec.Spec.Image,
-				ImagePullSecrets: v.Spec.SlaveSpec.Spec.ImagePullSecrets[0].Name,
-			},
-		}
+		v := n.(*mysqloperatorv1.MysqlOperator)
+		e := convertOperatorToMysqlCrd(v)
 		res, err = e.Marshal()
 	case group.RedisOperator:
 		redisCrd := obj.(proto.RedisCrd)
-		m := &redisoperatorv1.RedisOperator{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      redisCrd.Name,
-				Namespace: req.NameSpace,
-			},
-			Spec: redisoperatorv1.RedisOperatorSpec{
-				MasterSpec: redisoperatorv1.RedisCore{
-					Spec: redisoperatorv1.RedisSpec{
-						Name:     redisCrd.Master.Name,
-						Replicas: &redisCrd.Master.Replicas,
-						Image:    redisCrd.Master.Image,
-						ImagePullSecrets: []corev1.LocalObjectReference{
-							{
-								Name: redisCrd.Master.ImagePullSecrets,
-							},
-						},
-					},
-				},
-				SlaveSpec: redisoperatorv1.RedisCore{
-					Spec: redisoperatorv1.RedisSpec{
-						Name:     redisCrd.Slave.Name,
-						Replicas: &redisCrd.Slave.Replicas,
-						Image:    redisCrd.Slave.Image,
-						ImagePullSecrets: []corev1.LocalObjectReference{
-							{
-								Name: redisCrd.Slave.ImagePullSecrets,
-							},
-						},
-					},
-				},
-			},
-		}
+		m := convertRedisCrdToOperator(req, redisCrd)
 		n, err := h.group.Resource().Create(req.ResourceType, req.NameSpace, m)
 		if err != nil {
 			break
 		}
-		v := n.(redisoperatorv1.RedisOperator)
-		e := proto.RedisCrd{
-			Name: v.Name,
-			Master: proto.NodeSpec{
-				Name:             v.Spec.MasterSpec.Spec.Name,
-				Replicas:         *v.Spec.MasterSpec.Spec.Replicas,
-				Image:            v.Spec.MasterSpec.Spec.Image,
-				ImagePullSecrets: v.Spec.MasterSpec.Spec.ImagePullSecrets[0].Name,
-			},
-			Slave: proto.NodeSpec{
-				Name:             v.Spec.SlaveSpec.Spec.Name,
-				Replicas:         *v.Spec.SlaveSpec.Spec.Replicas,
-				Image:            v.Spec.SlaveSpec.Spec.Image,
-				ImagePullSecrets: v.Spec.SlaveSpec.Spec.ImagePullSecrets[0].Name,
-			},
-		}
+		v := n.(*redisoperatorv1.RedisOperator)
+		e := convertOperatorToRedisCrd(v)
 		res, err = e.Marshal()
 	case group.HelixOperator:
 	}
 	return res, err
+}
+
+func convertMysqlCrdToOperator(req proto.Param, mysqlCrd proto.MysqlCrd) *mysqloperatorv1.MysqlOperator {
+	return &mysqloperatorv1.MysqlOperator{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      mysqlCrd.Name,
+			Namespace: req.NameSpace,
+		},
+		Spec: mysqloperatorv1.MysqlOperatorSpec{
+			MasterSpec: mysqloperatorv1.MysqlCore{
+				Spec: mysqloperatorv1.MysqlSpec{
+					Name:     mysqlCrd.Master.Name,
+					Replicas: &mysqlCrd.Master.Replicas,
+					Image:    mysqlCrd.Master.Image,
+					ImagePullSecrets: []corev1.LocalObjectReference{
+						{
+							Name: mysqlCrd.Master.ImagePullSecrets,
+						},
+					},
+				},
+			},
+			SlaveSpec: mysqloperatorv1.MysqlCore{
+				Spec: mysqloperatorv1.MysqlSpec{
+					Name:     mysqlCrd.Slave.Name,
+					Replicas: &mysqlCrd.Slave.Replicas,
+					Image:    mysqlCrd.Slave.Image,
+					ImagePullSecrets: []corev1.LocalObjectReference{
+						{
+							Name: mysqlCrd.Slave.ImagePullSecrets,
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func convertOperatorToMysqlCrd(m *mysqloperatorv1.MysqlOperator) proto.MysqlCrd {
+	return proto.MysqlCrd{
+		Name: m.Name,
+		Master: proto.NodeSpec{
+			Name:             m.Spec.MasterSpec.Spec.Name,
+			Replicas:         *m.Spec.MasterSpec.Spec.Replicas,
+			Image:            m.Spec.MasterSpec.Spec.Image,
+			ImagePullSecrets: m.Spec.MasterSpec.Spec.ImagePullSecrets[0].Name,
+		},
+		Slave: proto.NodeSpec{
+			Name:             m.Spec.SlaveSpec.Spec.Name,
+			Replicas:         *m.Spec.SlaveSpec.Spec.Replicas,
+			Image:            m.Spec.SlaveSpec.Spec.Image,
+			ImagePullSecrets: m.Spec.SlaveSpec.Spec.ImagePullSecrets[0].Name,
+		},
+	}
+}
+
+func convertRedisCrdToOperator(req proto.Param, redisCrd proto.RedisCrd) *redisoperatorv1.RedisOperator {
+	return &redisoperatorv1.RedisOperator{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      redisCrd.Name,
+			Namespace: req.NameSpace,
+		},
+		Spec: redisoperatorv1.RedisOperatorSpec{
+			MasterSpec: redisoperatorv1.RedisCore{
+				Spec: redisoperatorv1.RedisSpec{
+					Name:     redisCrd.Master.Name,
+					Replicas: &redisCrd.Master.Replicas,
+					Image:    redisCrd.Master.Image,
+					ImagePullSecrets: []corev1.LocalObjectReference{
+						{
+							Name: redisCrd.Master.ImagePullSecrets,
+						},
+					},
+				},
+			},
+			SlaveSpec: redisoperatorv1.RedisCore{
+				Spec: redisoperatorv1.RedisSpec{
+					Name:     redisCrd.Slave.Name,
+					Replicas: &redisCrd.Slave.Replicas,
+					Image:    redisCrd.Slave.Image,
+					ImagePullSecrets: []corev1.LocalObjectReference{
+						{
+							Name: redisCrd.Slave.ImagePullSecrets,
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func convertOperatorToRedisCrd(v *redisoperatorv1.RedisOperator) proto.RedisCrd {
+	return proto.RedisCrd{
+		Name: v.Name,
+		Master: proto.NodeSpec{
+			Name:             v.Spec.MasterSpec.Spec.Name,
+			Replicas:         *v.Spec.MasterSpec.Spec.Replicas,
+			Image:            v.Spec.MasterSpec.Spec.Image,
+			ImagePullSecrets: v.Spec.MasterSpec.Spec.ImagePullSecrets[0].Name,
+		},
+		Slave: proto.NodeSpec{
+			Name:             v.Spec.SlaveSpec.Spec.Name,
+			Replicas:         *v.Spec.SlaveSpec.Spec.Replicas,
+			Image:            v.Spec.SlaveSpec.Spec.Image,
+			ImagePullSecrets: v.Spec.SlaveSpec.Spec.ImagePullSecrets[0].Name,
+		},
+	}
 }
