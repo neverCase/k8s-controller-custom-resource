@@ -25,7 +25,7 @@ type connHub struct {
 
 	mu           sync.RWMutex
 	autoClientId int32
-	connections  map[int32]Conn
+	connections  map[int32]WsConn
 	ctx          context.Context
 }
 
@@ -51,12 +51,12 @@ func NewConnHub(ctx context.Context, g group.Group) ConnHub {
 	return &connHub{
 		group:        g,
 		autoClientId: 0,
-		connections:  make(map[int32]Conn, 0),
+		connections:  make(map[int32]WsConn, 0),
 		ctx:          ctx,
 	}
 }
 
-type Conn interface {
+type WsConn interface {
 	Ping()
 	KeepAlive()
 	ReadPump() (err error)
@@ -65,8 +65,8 @@ type Conn interface {
 	Close()
 }
 
-func NewConn(clientId int32, ctx context.Context, ws *websocket.Conn, g group.Group) Conn {
-	c := &conn{
+func NewConn(clientId int32, ctx context.Context, ws *websocket.Conn, g group.Group) WsConn {
+	c := &wsConn{
 		handle:            NewHandle(g),
 		group:             g,
 		clientId:          clientId,
@@ -87,7 +87,7 @@ const (
 	connClosed connStatus = 1
 )
 
-type conn struct {
+type wsConn struct {
 	group  group.Group
 	handle HandleInterface
 
@@ -103,11 +103,11 @@ type conn struct {
 	cancel            context.CancelFunc
 }
 
-func (c *conn) Ping() {
+func (c *wsConn) Ping() {
 	c.lastHeartBeatTime = time.Now()
 }
 
-func (c *conn) KeepAlive() {
+func (c *wsConn) KeepAlive() {
 	defer c.Close()
 	for {
 		tick := time.NewTicker(10 * time.Second)
@@ -123,7 +123,7 @@ func (c *conn) KeepAlive() {
 	}
 }
 
-func (c *conn) ReadPump() (err error) {
+func (c *wsConn) ReadPump() (err error) {
 	defer c.Close()
 	for {
 		var msg proto.Request
@@ -164,7 +164,7 @@ func (c *conn) ReadPump() (err error) {
 	}
 }
 
-func (c *conn) SendToChannel(msg []byte) (err error) {
+func (c *wsConn) SendToChannel(msg []byte) (err error) {
 	if c.status == connClosed {
 		return
 	}
@@ -187,7 +187,7 @@ func (c *conn) SendToChannel(msg []byte) (err error) {
 	}
 }
 
-func (c *conn) WritePump() (err error) {
+func (c *wsConn) WritePump() (err error) {
 	defer c.Close()
 	for {
 		select {
@@ -205,7 +205,7 @@ func (c *conn) WritePump() (err error) {
 	}
 }
 
-func (c *conn) Close() {
+func (c *wsConn) Close() {
 	if c.status == connClosed {
 		return
 	}
