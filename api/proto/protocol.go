@@ -32,13 +32,13 @@ type Param struct {
 
 type Request struct {
 	Param Param  `protobuf:"bytes,1,opt,name=param"`
-	Data  string `json:"data" protobuf:"bytes,2,opt,name=data"`
+	Data  []byte `json:"data" protobuf:"bytes,2,opt,name=data"`
 }
 
 type Response struct {
 	Code   int32  `json:"code" protobuf:"varint,1,opt,name=code"`
 	Param  Param  `protobuf:"bytes,2,opt,name=param"`
-	Result string `json:"result" protobuf:"bytes,3,opt,name=result"`
+	Result []byte `json:"result" protobuf:"bytes,3,opt,name=result"`
 }
 
 type MysqlCrdList struct {
@@ -72,7 +72,7 @@ type Resources struct {
 	Resources []group.ResourceType `json:"resources" protobuf:"bytes,1,rep,name=resources"`
 }
 
-func GetResponse(param Param, data string) ([]byte, error) {
+func GetResponse(param Param, data []byte) ([]byte, error) {
 	r := Response{
 		Code:   CodeNone,
 		Param:  param,
@@ -83,9 +83,9 @@ func GetResponse(param Param, data string) ([]byte, error) {
 
 func ErrorResponse(param Param) ([]byte, error) {
 	r := Response{
-		Code:   CodeErr,
-		Param:  param,
-		Result: "",
+		Code:  CodeErr,
+		Param: param,
+		//Result: "",
 	}
 	return r.Marshal()
 }

@@ -69,7 +69,7 @@ message RedisCrdList {
 message Request {
   optional Param param = 1;
 
-  optional string data = 2;
+  optional bytes data = 2;
 }
 
 message Resources {
@@ -81,6 +81,6 @@ message Response {
 
   optional Param param = 2;
 
-  optional string result = 3;
+  optional bytes result = 3;
 }
 

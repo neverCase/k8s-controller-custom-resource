@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/klog"
 
 	"github.com/nevercase/k8s-controller-custom-resource/api/group"
@@ -134,19 +133,28 @@ func (c *wsConn) ReadPump() (err error) {
 			klog.V(2).Info(err)
 			return err
 		}
-		if err = json.Unmarshal(message, &msg); err != nil {
+		if err = msg.Unmarshal(message); err != nil {
 			klog.V(2).Info(err)
 			return err
 		}
+		klog.Info("proto Request:", msg)
 		switch proto.ApiService(msg.Param.Service) {
 		case proto.SvcPing:
 			c.Ping()
-			if res, err = proto.GetResponse(msg.Param, "ping ok"); err != nil {
+			if res, err = proto.GetResponse(msg.Param, []byte("ping success")); err != nil {
 				return err
 			}
-		case proto.SvcCreate:
-		case proto.SvcUpdate:
+		case proto.SvcCreate, proto.SvcUpdate:
+			if res, err = c.handle.Create(msg.Param, msg.Data); err != nil {
+				return err
+			}
 		case proto.SvcDelete:
+			if err = c.handle.Delete(msg.Param, msg.Data); err != nil {
+				return err
+			}
+			if res, err = proto.GetResponse(msg.Param, []byte("delete success")); err != nil {
+				return err
+			}
 		case proto.SvcGet:
 		case proto.SvcList:
 			if res, err = c.handle.List(msg.Param); err != nil {

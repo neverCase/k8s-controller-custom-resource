@@ -13,8 +13,8 @@ import (
 )
 
 type HandleInterface interface {
-	Create(req proto.Param, obj interface{}) (res []byte, err error)
-	Delete(req proto.Param, obj interface{}) (err error)
+	Create(req proto.Param, obj []byte) (res []byte, err error)
+	Delete(req proto.Param, obj []byte) (err error)
 	List(req proto.Param) ([]byte, error)
 	Resources(req proto.Param) (res []byte, err error)
 }
@@ -29,11 +29,14 @@ type handle struct {
 	group group.Group
 }
 
-func (h *handle) Create(req proto.Param, obj interface{}) (res []byte, err error) {
+func (h *handle) Create(req proto.Param, obj []byte) (res []byte, err error) {
 	switch req.ResourceType {
 	case group.MysqlOperator:
 		var n interface{}
-		mysqlCrd := obj.(proto.MysqlCrd)
+		var mysqlCrd proto.MysqlCrd
+		if err = mysqlCrd.Unmarshal(obj); err != nil {
+			break
+		}
 		m := convertMysqlCrdToOperator(req, mysqlCrd)
 		_, err = h.group.Resource().Get(req.ResourceType, req.NameSpace, m.Name)
 		if err != nil {
@@ -54,7 +57,10 @@ func (h *handle) Create(req proto.Param, obj interface{}) (res []byte, err error
 		res, err = e.Marshal()
 	case group.RedisOperator:
 		var n interface{}
-		redisCrd := obj.(proto.RedisCrd)
+		var redisCrd proto.RedisCrd
+		if err = redisCrd.Unmarshal(obj); err != nil {
+			break
+		}
 		m := convertRedisCrdToOperator(req, redisCrd)
 		_, err = h.group.Resource().Get(req.ResourceType, req.NameSpace, m.Name)
 		if err != nil {
@@ -78,13 +84,19 @@ func (h *handle) Create(req proto.Param, obj interface{}) (res []byte, err error
 	return res, err
 }
 
-func (h *handle) Delete(req proto.Param, obj interface{}) (err error) {
+func (h *handle) Delete(req proto.Param, obj []byte) (err error) {
 	switch req.ResourceType {
 	case group.MysqlOperator:
-		mysqlCrd := obj.(proto.MysqlCrd)
+		var mysqlCrd proto.MysqlCrd
+		if err = mysqlCrd.Unmarshal(obj); err != nil {
+			break
+		}
 		err = h.group.Resource().Delete(req.ResourceType, req.NameSpace, mysqlCrd.Name)
 	case group.RedisOperator:
-		redisCrd := obj.(proto.RedisCrd)
+		var redisCrd proto.RedisCrd
+		if err = redisCrd.Unmarshal(obj); err != nil {
+			break
+		}
 		err = h.group.Resource().Delete(req.ResourceType, req.NameSpace, redisCrd.Name)
 	case group.HelixOperator:
 	}
@@ -120,7 +132,7 @@ func (h *handle) List(req proto.Param) (res []byte, err error) {
 	if err != nil {
 		return nil, err
 	}
-	return proto.GetResponse(req, string(o))
+	return proto.GetResponse(req, o)
 }
 
 func (h *handle) Resources(req proto.Param) (res []byte, err error) {
@@ -131,7 +143,7 @@ func (h *handle) Resources(req proto.Param) (res []byte, err error) {
 	if err != nil {
 		return nil, err
 	}
-	return proto.GetResponse(req, string(o))
+	return proto.GetResponse(req, o)
 }
 
 func convertMysqlCrdToOperator(req proto.Param, mysqlCrd proto.MysqlCrd) *mysqloperatorv1.MysqlOperator {
