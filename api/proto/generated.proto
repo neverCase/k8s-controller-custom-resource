@@ -44,6 +44,9 @@ message NodeSpec {
   optional string image = 3;
 
   optional string imagePullSecrets = 4;
+
+  // The path of the nas disk which was mounted on the machine
+  optional string volumePath = 5;
 }
 
 message Param {

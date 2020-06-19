@@ -163,6 +163,7 @@ func convertMysqlCrdToOperator(req proto.Param, mysqlCrd proto.MysqlCrd) *mysqlo
 							Name: mysqlCrd.Master.ImagePullSecrets,
 						},
 					},
+					VolumePath: mysqlCrd.Master.VolumePath,
 				},
 			},
 			SlaveSpec: mysqloperatorv1.MysqlCore{
@@ -175,6 +176,7 @@ func convertMysqlCrdToOperator(req proto.Param, mysqlCrd proto.MysqlCrd) *mysqlo
 							Name: mysqlCrd.Slave.ImagePullSecrets,
 						},
 					},
+					VolumePath: mysqlCrd.Slave.VolumePath,
 				},
 			},
 		},
@@ -189,12 +191,14 @@ func convertOperatorToMysqlCrd(m *mysqloperatorv1.MysqlOperator) proto.MysqlCrd 
 			Replicas:         *m.Spec.MasterSpec.Spec.Replicas,
 			Image:            m.Spec.MasterSpec.Spec.Image,
 			ImagePullSecrets: m.Spec.MasterSpec.Spec.ImagePullSecrets[0].Name,
+			VolumePath:       m.Spec.MasterSpec.Spec.VolumePath,
 		},
 		Slave: proto.NodeSpec{
 			Name:             m.Spec.SlaveSpec.Spec.Name,
 			Replicas:         *m.Spec.SlaveSpec.Spec.Replicas,
 			Image:            m.Spec.SlaveSpec.Spec.Image,
 			ImagePullSecrets: m.Spec.SlaveSpec.Spec.ImagePullSecrets[0].Name,
+			VolumePath:       m.Spec.SlaveSpec.Spec.VolumePath,
 		},
 	}
 }
@@ -216,6 +220,7 @@ func convertRedisCrdToOperator(req proto.Param, redisCrd proto.RedisCrd) *rediso
 							Name: redisCrd.Master.ImagePullSecrets,
 						},
 					},
+					VolumePath: redisCrd.Master.VolumePath,
 				},
 			},
 			SlaveSpec: redisoperatorv1.RedisCore{
@@ -228,6 +233,7 @@ func convertRedisCrdToOperator(req proto.Param, redisCrd proto.RedisCrd) *rediso
 							Name: redisCrd.Slave.ImagePullSecrets,
 						},
 					},
+					VolumePath: redisCrd.Slave.VolumePath,
 				},
 			},
 		},
@@ -242,12 +248,14 @@ func convertOperatorToRedisCrd(v *redisoperatorv1.RedisOperator) proto.RedisCrd 
 			Replicas:         *v.Spec.MasterSpec.Spec.Replicas,
 			Image:            v.Spec.MasterSpec.Spec.Image,
 			ImagePullSecrets: v.Spec.MasterSpec.Spec.ImagePullSecrets[0].Name,
+			VolumePath:       v.Spec.MasterSpec.Spec.VolumePath,
 		},
 		Slave: proto.NodeSpec{
 			Name:             v.Spec.SlaveSpec.Spec.Name,
 			Replicas:         *v.Spec.SlaveSpec.Spec.Replicas,
 			Image:            v.Spec.SlaveSpec.Spec.Image,
 			ImagePullSecrets: v.Spec.SlaveSpec.Spec.ImagePullSecrets[0].Name,
+			VolumePath:       v.Spec.SlaveSpec.Spec.VolumePath,
 		},
 	}
 }

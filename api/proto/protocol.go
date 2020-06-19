@@ -66,6 +66,8 @@ type NodeSpec struct {
 	Replicas         int32  `json:"replicas" protobuf:"varint,2,opt,name=replicas"`
 	Image            string `json:"image" protobuf:"bytes,3,rep,name=image"`
 	ImagePullSecrets string `json:"imagePullSecrets" protobuf:"bytes,4,rep,name=imagePullSecrets"`
+	// The path of the nas disk which was mounted on the machine
+	VolumePath string `json:"volumePath" protobuf:"bytes,5,rep,name=volumePath"`
 }
 
 type Resources struct {
