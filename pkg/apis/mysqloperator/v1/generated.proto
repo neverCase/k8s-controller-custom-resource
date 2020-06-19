@@ -133,12 +133,15 @@ message MysqlSpec {
   // +listMapKey=protocol
   repeated k8s.io.api.core.v1.ServicePort servicePorts = 8;
 
+  // The path of the nas disk which was mounted on the machine
+  optional string volumePath = 9;
+
   // The role of the server in the clusters.
   // such as: master, slave
-  optional string role = 9;
+  optional string role = 10;
 
   // The config of the mysql instance.
-  optional ServerConfig serverConfig = 10;
+  optional ServerConfig serverConfig = 11;
 }
 
 // MysqlSpecStatus is the status for a MysqlOperator resource

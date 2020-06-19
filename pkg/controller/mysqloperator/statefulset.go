@@ -21,7 +21,7 @@ func NewStatefulSet(foo *mysqlOperatorV1.MysqlOperator, rds *mysqlOperatorV1.Mys
 	t := coreV1.HostPathDirectoryOrCreate
 	hostPath := &coreV1.HostPathVolumeSource{
 		Type: &t,
-		Path: fmt.Sprintf("/mnt/ssd1/mysql/%s", rds.Name),
+		Path: fmt.Sprintf("%s/mysql/%s", rds.VolumePath, rds.Name),
 	}
 
 	objectName := fmt.Sprintf(k8sCoreV1.StatefulSetNameTemplate, rds.Name)

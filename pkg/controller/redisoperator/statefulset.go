@@ -21,7 +21,7 @@ func NewStatefulSet(foo *redisOperatorV1.RedisOperator, rds *redisOperatorV1.Red
 	t := coreV1.HostPathDirectoryOrCreate
 	hostPath := &coreV1.HostPathVolumeSource{
 		Type: &t,
-		Path: fmt.Sprintf("/mnt/ssd1/redis/%s", rds.Name),
+		Path: fmt.Sprintf("%s/redis/%s", rds.VolumePath, rds.Name),
 	}
 
 	objectName := fmt.Sprintf(k8sCoreV1.StatefulSetNameTemplate, rds.Name)

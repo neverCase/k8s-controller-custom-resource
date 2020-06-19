@@ -98,9 +98,11 @@ type RedisSpec struct {
 	// +listMapKey=port
 	// +listMapKey=protocol
 	ServicePorts []corev1.ServicePort `json:"servicePorts,omitempty" patchStrategy:"merge" patchMergeKey:"port" protobuf:"bytes,8,rep,name=servicePorts,casttype=k8s.io/api/core/v1.ServicePort"`
+	// The path of the nas disk which was mounted on the machine
+	VolumePath string `json:"volumePath" protobuf:"bytes,9,rep,name=volumePath"`
 	// The role of the server in the clusters.
 	// such as: master, slave
-	Role string `json:"role" protobuf:"bytes,9,rep,name=role"`
+	Role string `json:"role" protobuf:"bytes,10,rep,name=role"`
 }
 
 // RedisSpecStatus is the status for a RedisOperator resource
