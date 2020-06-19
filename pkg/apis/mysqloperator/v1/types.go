@@ -1,8 +1,8 @@
 package v1
 
 import (
-	coreV1 "k8s.io/api/core/v1"
-	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	//_ "github.com/gogo/protobuf/gogoproto"
 	//_ "github.com/gogo/protobuf/proto"
 	//_ "github.com/gogo/protobuf/sortkeys"
@@ -16,7 +16,7 @@ import (
 // Mysql describes a MysqlOperator resource
 type MysqlOperator struct {
 	// TypeMeta is the metadata for the resource, like kind and apiversion
-	metaV1.TypeMeta `json:",inline"`
+	metav1.TypeMeta `json:",inline"`
 	// ObjectMeta contains the metadata for the particular object, including
 	// things like...
 	//  - name
@@ -24,7 +24,7 @@ type MysqlOperator struct {
 	//  - self link
 	//  - labels
 	//  - ... etc ...
-	metaV1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
+	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
 
 	// Spec is the custom resource spec
 	Spec MysqlOperatorSpec `json:"spec" protobuf:"bytes,2,opt,name=spec"`
@@ -66,19 +66,19 @@ type MysqlSpec struct {
 	// +optional
 	// +patchMergeKey=name
 	// +patchStrategy=merge
-	ImagePullSecrets []coreV1.LocalObjectReference `json:"imagePullSecrets,omitempty" patchStrategy:"merge" patchMergeKey:"name" protobuf:"bytes,4,rep,name=imagePullSecrets,casttype=k8s.io/api/core/v1.LocalObjectReference"`
+	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty" patchStrategy:"merge" patchMergeKey:"name" protobuf:"bytes,4,rep,name=imagePullSecrets,casttype=k8s.io/api/core/v1.LocalObjectReference"`
 	// List of environment variables to set in the container.
 	// Cannot be updated.
 	// +optional
 	// +patchMergeKey=name
 	// +patchStrategy=merge
-	Env []coreV1.EnvVar `json:"env,omitempty" patchStrategy:"merge" patchMergeKey:"name" protobuf:"bytes,5,rep,name=env,casttype=k8s.io/api/core/v1.EnvVar"`
+	Env []corev1.EnvVar `json:"env,omitempty" patchStrategy:"merge" patchMergeKey:"name" protobuf:"bytes,5,rep,name=env,casttype=k8s.io/api/core/v1.EnvVar"`
 	// Pod volumes to mount into the container's filesystem.
 	// Cannot be updated.
 	// +optional
 	// +patchMergeKey=mountPath
 	// +patchStrategy=merge
-	VolumeMounts []coreV1.VolumeMount `json:"volumeMounts,omitempty" patchStrategy:"merge" patchMergeKey:"mountPath" protobuf:"bytes,6,rep,name=volumeMounts,casttype=k8s.io/api/core/v1.VolumeMount"`
+	VolumeMounts []corev1.VolumeMount `json:"volumeMounts,omitempty" patchStrategy:"merge" patchMergeKey:"mountPath" protobuf:"bytes,6,rep,name=volumeMounts,casttype=k8s.io/api/core/v1.VolumeMount"`
 	// List of ports to expose from the container. Exposing a port here gives
 	// the system additional information about the network connections a
 	// container uses, but is primarily informational. Not specifying a port here
@@ -92,7 +92,7 @@ type MysqlSpec struct {
 	// +listType=map
 	// +listMapKey=containerPort
 	// +listMapKey=protocol
-	ContainerPorts []coreV1.ContainerPort `json:"containerPorts,omitempty" patchStrategy:"merge" patchMergeKey:"containerPort" protobuf:"bytes,7,rep,name=containerPorts,casttype=k8s.io/api/core/v1.ContainerPort"`
+	ContainerPorts []corev1.ContainerPort `json:"containerPorts,omitempty" patchStrategy:"merge" patchMergeKey:"containerPort" protobuf:"bytes,7,rep,name=containerPorts,casttype=k8s.io/api/core/v1.ContainerPort"`
 	// The list of ports that are exposed by this service.
 	// More info: https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies
 	// +patchMergeKey=port
@@ -100,7 +100,7 @@ type MysqlSpec struct {
 	// +listType=map
 	// +listMapKey=port
 	// +listMapKey=protocol
-	ServicePorts []coreV1.ServicePort `json:"servicePorts,omitempty" patchStrategy:"merge" patchMergeKey:"port" protobuf:"bytes,8,rep,name=servicePorts,casttype=k8s.io/api/core/v1.ServicePort"`
+	ServicePorts []corev1.ServicePort `json:"servicePorts,omitempty" patchStrategy:"merge" patchMergeKey:"port" protobuf:"bytes,8,rep,name=servicePorts,casttype=k8s.io/api/core/v1.ServicePort"`
 	// The role of the server in the clusters.
 	// such as: master, slave
 	Role string `json:"role" protobuf:"bytes,9,rep,name=role"`
@@ -151,8 +151,8 @@ type MysqlStatus struct {
 
 // MysqlList is a list of MysqlOperator resources
 type MysqlOperatorList struct {
-	metaV1.TypeMeta `json:",inline"`
+	metav1.TypeMeta `json:",inline"`
 	// +optional
-	metaV1.ListMeta `json:"metadata" protobuf:"bytes,1,opt,name=metadata"`
+	metav1.ListMeta `json:"metadata" protobuf:"bytes,1,opt,name=metadata"`
 	Items           []MysqlOperator `json:"items" protobuf:"bytes,2,rep,name=items"`
 }
