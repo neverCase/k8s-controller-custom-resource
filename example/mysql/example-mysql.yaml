@@ -10,6 +10,7 @@ spec:
       image: 39.99.229.222:37229/helix-saga/mysql-slave:1.0
       imagePullSecrets:
         - name: private-harbor
+      volumePath: /mnt/nas1
   slaveSpec:
     spec:
       name: "mysql-cn1"
@@ -17,3 +18,4 @@ spec:
       image: 39.99.229.222:37229/helix-saga/mysql-slave:1.0
       imagePullSecrets:
         - name: private-harbor
+      volumePath: /mnt/nas1
