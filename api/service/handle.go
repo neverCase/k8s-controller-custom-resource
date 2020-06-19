@@ -15,6 +15,7 @@ import (
 type HandleInterface interface {
 	Create(req proto.Param, obj []byte) (res []byte, err error)
 	Delete(req proto.Param, obj []byte) (err error)
+	Get(req proto.Param, obj []byte) (res []byte, err error)
 	List(req proto.Param) ([]byte, error)
 	Resources(req proto.Param) (res []byte, err error)
 }
@@ -30,75 +31,52 @@ type handle struct {
 }
 
 func (h *handle) Create(req proto.Param, obj []byte) (res []byte, err error) {
+	var n interface{}
 	switch req.ResourceType {
 	case group.ConfigMap:
-		var n interface{}
 		var cm proto.ConfigMap
 		if err = cm.Unmarshal(obj); err != nil {
 			break
 		}
 		m := convertProtoToConfigMap(req, cm)
-		_, err = h.group.Resource().Get(req.ResourceType, req.NameSpace, m.Name)
-		if err != nil {
-			if !errors.IsNotFound(err) {
-				break
-			}
-			err = nil
-			if n, err = h.group.Resource().Create(req.ResourceType, req.NameSpace, m); err != nil {
-				break
-			}
-		} else {
-			if n, err = h.group.Resource().Update(req.ResourceType, req.NameSpace, m); err != nil {
-				break
-			}
+		if n, err = resourceCreateWithUpdate(h.group, req, m.Name, m); err != nil {
+			break
 		}
 		v := n.(*corev1.ConfigMap)
 		e := convertConfigMapToProto(v)
 		res, err = e.Marshal()
+	case group.NameSpace:
+		var ns proto.NameSpace
+		if err = ns.Unmarshal(obj); err != nil {
+			break
+		}
+		m := convertProtoToNameSpace(ns)
+		if n, err = resourceCreateWithUpdate(h.group, req, m.Name, m); err != nil {
+			break
+		}
+		v := n.(*corev1.Namespace)
+		e := convertNameSpaceToProto(v)
+		res, err = e.Marshal()
 	case group.MysqlOperator:
-		var n interface{}
 		var mysqlCrd proto.MysqlCrd
 		if err = mysqlCrd.Unmarshal(obj); err != nil {
 			break
 		}
 		m := convertMysqlCrdToOperator(req, mysqlCrd)
-		_, err = h.group.Resource().Get(req.ResourceType, req.NameSpace, m.Name)
-		if err != nil {
-			if !errors.IsNotFound(err) {
-				break
-			}
-			err = nil
-			if n, err = h.group.Resource().Create(req.ResourceType, req.NameSpace, m); err != nil {
-				break
-			}
-		} else {
-			if n, err = h.group.Resource().Update(req.ResourceType, req.NameSpace, m); err != nil {
-				break
-			}
+		if n, err = resourceCreateWithUpdate(h.group, req, m.Name, m); err != nil {
+			break
 		}
 		v := n.(*mysqloperatorv1.MysqlOperator)
 		e := convertOperatorToMysqlCrd(v)
 		res, err = e.Marshal()
 	case group.RedisOperator:
-		var n interface{}
 		var redisCrd proto.RedisCrd
 		if err = redisCrd.Unmarshal(obj); err != nil {
 			break
 		}
 		m := convertRedisCrdToOperator(req, redisCrd)
-		_, err = h.group.Resource().Get(req.ResourceType, req.NameSpace, m.Name)
-		if err != nil {
-			if !errors.IsNotFound(err) {
-				break
-			}
-			err = nil
-			if n, err = h.group.Resource().Create(req.ResourceType, req.NameSpace, m); err != nil {
-				break
-			}
-		} else {
-			if n, err = h.group.Resource().Update(req.ResourceType, req.NameSpace, m); err != nil {
-				break
-			}
+		if n, err = resourceCreateWithUpdate(h.group, req, m.Name, m); err != nil {
+			break
 		}
 		v := n.(*redisoperatorv1.RedisOperator)
 		e := convertOperatorToRedisCrd(v)
@@ -109,38 +87,117 @@ func (h *handle) Create(req proto.Param, obj []byte) (res []byte, err error) {
 }
 
 func (h *handle) Delete(req proto.Param, obj []byte) (err error) {
+	var name string
 	switch req.ResourceType {
 	case group.ConfigMap:
 		var cm proto.ConfigMap
 		if err = cm.Unmarshal(obj); err != nil {
 			break
 		}
-		err = h.group.Resource().Delete(req.ResourceType, req.NameSpace, cm.Name)
+		name = cm.Name
+	case group.NameSpace:
+		var ns proto.NameSpace
+		if err = ns.Unmarshal(obj); err != nil {
+			break
+		}
+		name = ns.Name
 	case group.MysqlOperator:
 		var mysqlCrd proto.MysqlCrd
 		if err = mysqlCrd.Unmarshal(obj); err != nil {
 			break
 		}
-		err = h.group.Resource().Delete(req.ResourceType, req.NameSpace, mysqlCrd.Name)
+		name = mysqlCrd.Name
 	case group.RedisOperator:
 		var redisCrd proto.RedisCrd
 		if err = redisCrd.Unmarshal(obj); err != nil {
 			break
 		}
-		err = h.group.Resource().Delete(req.ResourceType, req.NameSpace, redisCrd.Name)
+		name = redisCrd.Name
 	case group.HelixOperator:
 	}
+	err = h.group.Resource().Delete(req.ResourceType, req.NameSpace, name)
 	return err
 }
 
+func (h *handle) Get(req proto.Param, obj []byte) (res []byte, err error) {
+	var n interface{}
+	switch req.ResourceType {
+	case group.ConfigMap:
+		var cm proto.ConfigMap
+		if err = cm.Unmarshal(obj); err != nil {
+			break
+		}
+		n, err = h.group.Resource().Get(req.ResourceType, req.NameSpace, cm.Name)
+		if err != nil {
+			break
+		}
+		m := n.(*corev1.ConfigMap)
+		e := convertConfigMapToProto(m)
+		res, err = e.Marshal()
+	case group.NameSpace:
+		var ns proto.NameSpace
+		if err = ns.Unmarshal(obj); err != nil {
+			break
+		}
+		n, err = h.group.Resource().Get(req.ResourceType, req.NameSpace, ns.Name)
+		if err != nil {
+			break
+		}
+		m := n.(*corev1.Namespace)
+		e := convertNameSpaceToProto(m)
+		res, err = e.Marshal()
+	case group.MysqlOperator:
+		var mysqlCrd proto.MysqlCrd
+		if err = mysqlCrd.Unmarshal(obj); err != nil {
+			break
+		}
+		n, err = h.group.Resource().Get(req.ResourceType, req.NameSpace, mysqlCrd.Name)
+		if err != nil {
+			break
+		}
+		m := n.(*mysqloperatorv1.MysqlOperator)
+		e := convertOperatorToMysqlCrd(m)
+		res, err = e.Marshal()
+	case group.RedisOperator:
+		var redisCrd proto.RedisCrd
+		if err = redisCrd.Unmarshal(obj); err != nil {
+			break
+		}
+		n, err = h.group.Resource().Get(req.ResourceType, req.NameSpace, redisCrd.Name)
+		if err != nil {
+			break
+		}
+		m := n.(*redisoperatorv1.RedisOperator)
+		e := convertOperatorToRedisCrd(m)
+		res, err = e.Marshal()
+	case group.HelixOperator:
+	}
+	return proto.GetResponse(req, res)
+}
+
 func (h *handle) List(req proto.Param) (res []byte, err error) {
-	var o []byte
 	var d interface{}
 	var selector = labels.NewSelector()
 	if d, err = h.group.Resource().List(req.ResourceType, req.NameSpace, selector); err != nil {
 		return res, err
 	}
 	switch req.ResourceType {
+	case group.ConfigMap:
+		m := proto.ConfigMapList{
+			Items: make([]proto.ConfigMap, 0),
+		}
+		for _, v := range d.(*corev1.ConfigMapList).Items {
+			m.Items = append(m.Items, convertConfigMapToProto(&v))
+		}
+		res, err = m.Marshal()
+	case group.NameSpace:
+		m := proto.NameSpaceList{
+			Items: make([]proto.NameSpace, 0),
+		}
+		for _, v := range d.(*corev1.NamespaceList).Items {
+			m.Items = append(m.Items, convertNameSpaceToProto(&v))
+		}
+		res, err = m.Marshal()
 	case group.MysqlOperator:
 		m := proto.MysqlCrdList{
 			Items: make([]proto.MysqlCrd, 0),
@@ -148,7 +205,7 @@ func (h *handle) List(req proto.Param) (res []byte, err error) {
 		for _, v := range d.(*mysqloperatorv1.MysqlOperatorList).Items {
 			m.Items = append(m.Items, convertOperatorToMysqlCrd(&v))
 		}
-		o, err = m.Marshal()
+		res, err = m.Marshal()
 	case group.RedisOperator:
 		m := proto.RedisCrdList{
 			Items: make([]proto.RedisCrd, 0),
@@ -156,13 +213,13 @@ func (h *handle) List(req proto.Param) (res []byte, err error) {
 		for _, v := range d.(*redisoperatorv1.RedisOperatorList).Items {
 			m.Items = append(m.Items, convertOperatorToRedisCrd(&v))
 		}
-		o, err = m.Marshal()
+		res, err = m.Marshal()
 	case group.HelixOperator:
 	}
 	if err != nil {
 		return nil, err
 	}
-	return proto.GetResponse(req, o)
+	return proto.GetResponse(req, res)
 }
 
 func (h *handle) Resources(req proto.Param) (res []byte, err error) {
@@ -174,6 +231,24 @@ func (h *handle) Resources(req proto.Param) (res []byte, err error) {
 		return nil, err
 	}
 	return proto.GetResponse(req, o)
+}
+
+func resourceCreateWithUpdate(g group.Group, req proto.Param, specName string, m interface{}) (res interface{}, err error) {
+	_, err = g.Resource().Get(req.ResourceType, req.NameSpace, specName)
+	if err != nil {
+		if !errors.IsNotFound(err) {
+			return
+		}
+		err = nil
+		if res, err = g.Resource().Create(req.ResourceType, req.NameSpace, m); err != nil {
+			return
+		}
+	} else {
+		if res, err = g.Resource().Update(req.ResourceType, req.NameSpace, m); err != nil {
+			return
+		}
+	}
+	return
 }
 
 func convertMysqlCrdToOperator(req proto.Param, mysqlCrd proto.MysqlCrd) *mysqloperatorv1.MysqlOperator {
@@ -304,5 +379,19 @@ func convertConfigMapToProto(c *corev1.ConfigMap) proto.ConfigMap {
 	return proto.ConfigMap{
 		Name: c.Name,
 		Data: c.Data,
+	}
+}
+
+func convertProtoToNameSpace(v proto.NameSpace) *corev1.Namespace {
+	return &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: v.Name,
+		},
+	}
+}
+
+func convertNameSpaceToProto(c *corev1.Namespace) proto.NameSpace {
+	return proto.NameSpace{
+		Name: c.Name,
 	}
 }

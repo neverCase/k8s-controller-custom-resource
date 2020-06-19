@@ -1,7 +1,7 @@
 package group
 
 type Group interface {
-	Resource() ResourceInterface
+	ResourceGetter
 }
 
 func NewGroup(masterUrl, kubeconfigPath string) Group {

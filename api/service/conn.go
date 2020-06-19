@@ -163,6 +163,12 @@ func (c *wsConn) ReadPump() (err error) {
 				}
 			}
 		case proto.SvcGet:
+			if res, err = c.handle.Get(msg.Param, msg.Data); err != nil {
+				klog.V(2).Info(err)
+				if res, err = proto.ErrorResponse(msg.Param); err != nil {
+					klog.V(2).Info(err)
+				}
+			}
 		case proto.SvcList:
 			if res, err = c.handle.List(msg.Param); err != nil {
 				klog.V(2).Info(err)
