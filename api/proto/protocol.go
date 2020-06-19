@@ -70,8 +70,31 @@ type NodeSpec struct {
 	VolumePath string `json:"volumePath" protobuf:"bytes,5,rep,name=volumePath"`
 }
 
-type Resources struct {
-	Resources []group.ResourceType `json:"resources" protobuf:"bytes,1,rep,name=resources"`
+type ResourceList struct {
+	Items []group.ResourceType `json:"items" protobuf:"bytes,1,rep,name=items"`
+}
+
+type ConfigMapList struct {
+	Items []ConfigMap `json:"items" protobuf:"bytes,1,rep,name=items"`
+}
+
+type ConfigMap struct {
+	Name string `json:"name" protobuf:"bytes,1,rep,name=Name"`
+	// Data contains the configuration data.
+	// Each key must consist of alphanumeric characters, '-', '_' or '.'.
+	// Values with non-UTF-8 byte sequences must use the BinaryData field.
+	// The keys stored in Data must not overlap with the keys in
+	// the BinaryData field, this is enforced during validation process.
+	// +optional
+	Data map[string]string `json:"data" protobuf:"bytes,2,rep,name=data"`
+}
+
+type NameSpaceList struct {
+	Items []NameSpace `json:"items" protobuf:"bytes,1,rep,name=items"`
+}
+
+type NameSpace struct {
+	Name string `json:"name" protobuf:"bytes,1,rep,name=Name"`
 }
 
 func GetResponse(param Param, data []byte) ([]byte, error) {

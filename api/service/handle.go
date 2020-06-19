@@ -31,6 +31,30 @@ type handle struct {
 
 func (h *handle) Create(req proto.Param, obj []byte) (res []byte, err error) {
 	switch req.ResourceType {
+	case group.ConfigMap:
+		var n interface{}
+		var cm proto.ConfigMap
+		if err = cm.Unmarshal(obj); err != nil {
+			break
+		}
+		m := convertProtoToConfigMap(req, cm)
+		_, err = h.group.Resource().Get(req.ResourceType, req.NameSpace, m.Name)
+		if err != nil {
+			if !errors.IsNotFound(err) {
+				break
+			}
+			err = nil
+			if n, err = h.group.Resource().Create(req.ResourceType, req.NameSpace, m); err != nil {
+				break
+			}
+		} else {
+			if n, err = h.group.Resource().Update(req.ResourceType, req.NameSpace, m); err != nil {
+				break
+			}
+		}
+		v := n.(*corev1.ConfigMap)
+		e := convertConfigMapToProto(v)
+		res, err = e.Marshal()
 	case group.MysqlOperator:
 		var n interface{}
 		var mysqlCrd proto.MysqlCrd
@@ -86,6 +110,12 @@ func (h *handle) Create(req proto.Param, obj []byte) (res []byte, err error) {
 
 func (h *handle) Delete(req proto.Param, obj []byte) (err error) {
 	switch req.ResourceType {
+	case group.ConfigMap:
+		var cm proto.ConfigMap
+		if err = cm.Unmarshal(obj); err != nil {
+			break
+		}
+		err = h.group.Resource().Delete(req.ResourceType, req.NameSpace, cm.Name)
 	case group.MysqlOperator:
 		var mysqlCrd proto.MysqlCrd
 		if err = mysqlCrd.Unmarshal(obj); err != nil {
@@ -257,5 +287,22 @@ func convertOperatorToRedisCrd(v *redisoperatorv1.RedisOperator) proto.RedisCrd 
 			ImagePullSecrets: v.Spec.SlaveSpec.Spec.ImagePullSecrets[0].Name,
 			VolumePath:       v.Spec.SlaveSpec.Spec.VolumePath,
 		},
+	}
+}
+
+func convertProtoToConfigMap(req proto.Param, v proto.ConfigMap) *corev1.ConfigMap {
+	return &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      v.Name,
+			Namespace: req.NameSpace,
+		},
+		Data: v.Data,
+	}
+}
+
+func convertConfigMapToProto(c *corev1.ConfigMap) proto.ConfigMap {
+	return proto.ConfigMap{
+		Name: c.Name,
+		Data: c.Data,
 	}
 }

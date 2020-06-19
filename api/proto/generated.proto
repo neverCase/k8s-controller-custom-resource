@@ -24,6 +24,22 @@ package github.com.nevercase.k8s_controller_custom_resource.api.proto;
 // Package-wide variables from generator "generated".
 option go_package = "proto";
 
+message ConfigMap {
+  optional string Name = 1;
+
+  // Data contains the configuration data.
+  // Each key must consist of alphanumeric characters, '-', '_' or '.'.
+  // Values with non-UTF-8 byte sequences must use the BinaryData field.
+  // The keys stored in Data must not overlap with the keys in
+  // the BinaryData field, this is enforced during validation process.
+  // +optional
+  map<string, string> data = 2;
+}
+
+message ConfigMapList {
+  repeated ConfigMap items = 1;
+}
+
 message MysqlCrd {
   optional string Name = 1;
 
@@ -34,6 +50,14 @@ message MysqlCrd {
 
 message MysqlCrdList {
   repeated MysqlCrd items = 1;
+}
+
+message NameSpace {
+  optional string Name = 1;
+}
+
+message NameSpaceList {
+  repeated NameSpace items = 1;
 }
 
 message NodeSpec {
@@ -75,8 +99,8 @@ message Request {
   optional bytes data = 2;
 }
 
-message Resources {
-  repeated string resources = 1;
+message ResourceList {
+  repeated string items = 1;
 }
 
 message Response {
