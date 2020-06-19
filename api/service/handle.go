@@ -166,8 +166,8 @@ func (h *handle) List(req proto.Param) (res []byte, err error) {
 }
 
 func (h *handle) Resources(req proto.Param) (res []byte, err error) {
-	m := proto.Resources{
-		Resources: h.group.Resource().ResourceTypes(),
+	m := proto.ResourceList{
+		Items: h.group.Resource().ResourceTypes(),
 	}
 	o, err := m.Marshal()
 	if err != nil {
