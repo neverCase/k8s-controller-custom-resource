@@ -17,13 +17,28 @@ import (
 type ResourceType string
 
 const (
-	ConfigMap   ResourceType = "ConfigMap"
+	// corev1
+	ComponentStatus       ResourceType = "ComponentStatus"
+	ConfigMap             ResourceType = "ConfigMap"
+	Endpoint              ResourceType = "Endpoint"
+	LimitRange            ResourceType = "LimitRange"
+	Node                  ResourceType = "Node"
+	NameSpace             ResourceType = "NameSpace"
+	PersistentVolume      ResourceType = "PersistentVolume"
+	PersistentVolumeClaim ResourceType = "PersistentVolume"
+	Pod                   ResourceType = "Pod"
+	PodTemplate           ResourceType = "PodTemplate"
+	ReplicationController ResourceType = "ReplicationController"
+	ResourceQuota         ResourceType = "ResourceQuota"
+	Secret                ResourceType = "Secret"
+	Service               ResourceType = "Service"
+	ServiceAccount        ResourceType = "ServiceAccount"
+
+	// appv1
 	Deployment  ResourceType = "Deployment"
-	Pod         ResourceType = "Pod"
-	Secret      ResourceType = "Secret"
-	Service     ResourceType = "Service"
 	StatefulSet ResourceType = "StatefulSet"
 
+	// custom resource definition
 	MysqlOperator ResourceType = "MysqlOperator"
 	RedisOperator ResourceType = "RedisOperator"
 	HelixOperator ResourceType = "HelixOperator"
@@ -60,9 +75,14 @@ func NewResource(masterUrl, kubeconfigPath string) ResourceInterface {
 		klog.Fatalf("Error building redisclientset: %s", err.Error())
 	}
 	opts := NewOptions()
-	mysqlOpt := NewOption(MysqlOperator, mysql)
-	redisOpt := NewOption(RedisOperator, redis)
-	opts.Add(mysqlOpt, redisOpt)
+	var empty interface{}
+	opts.Add(
+		NewOption(NameSpace, empty),
+		NewOption(ConfigMap, empty),
+		NewOption(Secret, empty),
+		NewOption(MysqlOperator, mysql),
+		NewOption(RedisOperator, redis),
+	)
 	var r = &resource{
 		kubeClientSet: kubeClient,
 		options:       opts,
@@ -80,6 +100,8 @@ func (r *resource) Create(rt ResourceType, nameSpace string, obj interface{}) (r
 	switch rt {
 	case ConfigMap:
 		res, err = r.kubeClientSet.CoreV1().ConfigMaps(nameSpace).Create(obj.(*corev1.ConfigMap))
+	case NameSpace:
+		res, err = r.kubeClientSet.CoreV1().Namespaces().Create(obj.(*corev1.Namespace))
 	case MysqlOperator:
 		if opt, err = r.options.Get(rt); err != nil {
 			break
@@ -126,6 +148,8 @@ func (r *resource) Delete(rt ResourceType, nameSpace, specName string) (err erro
 	switch rt {
 	case ConfigMap:
 		err = r.kubeClientSet.CoreV1().ConfigMaps(nameSpace).Delete(specName, delOpts)
+	case NameSpace:
+		err = r.kubeClientSet.CoreV1().Namespaces().Delete(specName, delOpts)
 	case MysqlOperator:
 		if opt, err = r.options.Get(rt); err != nil {
 			break
@@ -150,6 +174,8 @@ func (r *resource) Get(rt ResourceType, nameSpace, specName string) (res interfa
 	switch rt {
 	case ConfigMap:
 		res, err = r.kubeClientSet.CoreV1().ConfigMaps(nameSpace).Get(specName, getOpts)
+	case NameSpace:
+		res, err = r.kubeClientSet.CoreV1().Namespaces().Get(specName, getOpts)
 	case MysqlOperator:
 		if opt, err = r.options.Get(rt); err != nil {
 			break
@@ -176,6 +202,10 @@ func (r *resource) List(rt ResourceType, nameSpace string, selector labels.Selec
 	switch rt {
 	case ConfigMap:
 		res, err = r.kubeClientSet.CoreV1().ConfigMaps(nameSpace).List(opts)
+	case Node:
+		res, err = r.kubeClientSet.CoreV1().Nodes().List(opts)
+	case NameSpace:
+		res, err = r.kubeClientSet.CoreV1().Namespaces().List(opts)
 	case MysqlOperator:
 		if opt, err = r.options.Get(rt); err != nil {
 			break

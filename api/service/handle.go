@@ -81,7 +81,7 @@ func (h *handle) Create(req proto.Param, obj []byte) (res []byte, err error) {
 		res, err = e.Marshal()
 	case group.HelixOperator:
 	}
-	return res, err
+	return proto.GetResponse(req, res)
 }
 
 func (h *handle) Delete(req proto.Param, obj []byte) (err error) {

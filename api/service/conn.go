@@ -128,7 +128,7 @@ func (c *wsConn) ReadPump() (err error) {
 		var msg proto.Request
 		var res []byte
 		messageType, message, err := c.conn.ReadMessage()
-		klog.Infof("messageType: %d message: %s err: %s\n", messageType, message, err)
+		klog.Infof("messageType: %d message: %v err: %s\n", messageType, message, err)
 		if err != nil {
 			klog.V(2).Info(err)
 			return err
@@ -146,24 +146,37 @@ func (c *wsConn) ReadPump() (err error) {
 			}
 		case proto.SvcCreate, proto.SvcUpdate:
 			if res, err = c.handle.Create(msg.Param, msg.Data); err != nil {
-				return err
+				klog.V(2).Info(err)
+				if res, err = proto.ErrorResponse(msg.Param); err != nil {
+					klog.V(2).Info(err)
+				}
 			}
 		case proto.SvcDelete:
 			if err = c.handle.Delete(msg.Param, msg.Data); err != nil {
-				return err
-			}
-			if res, err = proto.GetResponse(msg.Param, []byte("delete success")); err != nil {
-				return err
+				klog.V(2).Info(err)
+				if res, err = proto.ErrorResponse(msg.Param); err != nil {
+					klog.V(2).Info(err)
+				}
+			} else {
+				if res, err = proto.GetResponse(msg.Param, []byte("delete success")); err != nil {
+					klog.V(2).Info(err)
+				}
 			}
 		case proto.SvcGet:
 		case proto.SvcList:
 			if res, err = c.handle.List(msg.Param); err != nil {
-				return err
+				klog.V(2).Info(err)
+				if res, err = proto.ErrorResponse(msg.Param); err != nil {
+					klog.V(2).Info(err)
+				}
 			}
 		case proto.SvcWatch:
 		case proto.SvcResource:
 			if res, err = c.handle.Resources(msg.Param); err != nil {
-				return err
+				klog.V(2).Info(err)
+				if res, err = proto.ErrorResponse(msg.Param); err != nil {
+					klog.V(2).Info(err)
+				}
 			}
 		}
 		if err = c.SendToChannel(res); err != nil {
@@ -205,7 +218,7 @@ func (c *wsConn) WritePump() (err error) {
 			if !isClose {
 				return nil
 			}
-			log.Println("send to:", c.clientId, " msg:", msg)
+			log.Println("send to:", c.clientId, " msg:", string(msg))
 			if err := c.conn.WriteMessage(websocket.BinaryMessage, msg); err != nil {
 				return nil
 			}
