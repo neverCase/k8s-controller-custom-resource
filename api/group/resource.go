@@ -25,7 +25,7 @@ const (
 	Node                  ResourceType = "Node"
 	NameSpace             ResourceType = "NameSpace"
 	PersistentVolume      ResourceType = "PersistentVolume"
-	PersistentVolumeClaim ResourceType = "PersistentVolume"
+	PersistentVolumeClaim ResourceType = "PersistentVolumeClaim"
 	Pod                   ResourceType = "Pod"
 	PodTemplate           ResourceType = "PodTemplate"
 	ReplicationController ResourceType = "ReplicationController"

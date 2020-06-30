@@ -22,7 +22,7 @@ $ export CLOUD_REGISTRY="domain.harbor.com"
 $ bash makefile.sh
 
 # compile controller
-$ CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o redisoperatorcrd cmd/redisoperator/main.go
+$ CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o multiplexcrd cmd/multiplex/main.go
 ```
 
 ### define the resource of the `RedisOperator`
@@ -60,6 +60,7 @@ spec:
       image: domain/redis-slave:1.1
       imagePullSecrets:
         - name: private-secret
+      volumePath: /mnt/nas1
   slaveSpec:
     spec:
       name: "redis-demo"
@@ -67,6 +68,7 @@ spec:
       image: domain/redis-slave:1.1
       imagePullSecrets:
         - name: private-secret
+      volumePath: /mnt/nas1
 EOF
 
 $ kubectl apply -f example-redis.yaml
