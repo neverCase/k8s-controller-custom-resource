@@ -97,6 +97,94 @@ type NameSpace struct {
 	Name string `json:"name" protobuf:"bytes,1,rep,name=Name"`
 }
 
+type ServiceList struct {
+	Items []Service `json:"items" protobuf:"bytes,1,rep,name=items"`
+}
+
+type Service struct {
+	// The list of ports that are exposed by this service.
+	// More info: https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies
+	// +patchMergeKey=port
+	// +patchStrategy=merge
+	// +listType=map
+	// +listMapKey=port
+	// +listMapKey=protocol
+	Ports []ServicePort `json:"ports,omitempty" patchStrategy:"merge" patchMergeKey:"port" protobuf:"bytes,1,rep,name=ports"`
+	// clusterIP is the IP address of the service and is usually assigned
+	// randomly by the master. If an address is specified manually and is not in
+	// use by others, it will be allocated to the service; otherwise, creation
+	// of the service will fail. This field can not be changed through updates.
+	// Valid values are "None", empty string (""), or a valid IP address. "None"
+	// can be specified for headless services when proxying is not required.
+	// Only applies to types ClusterIP, NodePort, and LoadBalancer. Ignored if
+	// type is ExternalName.
+	// More info: https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies
+	// +optional
+	ClusterIP string `json:"clusterIP,omitempty" protobuf:"bytes,2,opt,name=clusterIP"`
+	// type determines how the Service is exposed. Defaults to ClusterIP. Valid
+	// options are ExternalName, ClusterIP, NodePort, and LoadBalancer.
+	// "ExternalName" maps to the specified externalName.
+	// "ClusterIP" allocates a cluster-internal IP address for load-balancing to
+	// endpoints. Endpoints are determined by the selector or if that is not
+	// specified, by manual construction of an Endpoints object. If clusterIP is
+	// "None", no virtual IP is allocated and the endpoints are published as a
+	// set of endpoints rather than a stable IP.
+	// "NodePort" builds on ClusterIP and allocates a port on every node which
+	// routes to the clusterIP.
+	// "LoadBalancer" builds on NodePort and creates an
+	// external load-balancer (if supported in the current cloud) which routes
+	// to the clusterIP.
+	// More info: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types
+	// +optional
+	Type string `json:"type,omitempty" protobuf:"bytes,3,opt,name=type"`
+	// externalIPs is a list of IP addresses for which nodes in the cluster
+	// will also accept traffic for this service.  These IPs are not managed by
+	// Kubernetes.  The user is responsible for ensuring that traffic arrives
+	// at a node with this IP.  A common example is external load-balancers
+	// that are not part of the Kubernetes system.
+	// +optional
+	ExternalIPs []string `json:"externalIPs,omitempty" protobuf:"bytes,4,rep,name=externalIPs"`
+}
+
+type ServicePort struct {
+	// The name of this port within the service. This must be a DNS_LABEL.
+	// All ports within a ServiceSpec must have unique names. When considering
+	// the endpoints for a Service, this must match the 'name' field in the
+	// EndpointPort.
+	// Optional if only one ServicePort is defined on this service.
+	// +optional
+	Name string `json:"name,omitempty" protobuf:"bytes,1,opt,name=name"`
+	// The IP protocol for this port. Supports "TCP", "UDP", and "SCTP".
+	// Default is TCP.
+	// +optional
+	Protocol string `json:"protocol,omitempty" protobuf:"bytes,2,opt,name=protocol,casttype=Protocol"`
+	// The port that will be exposed by this service.
+	Port int32 `json:"port" protobuf:"varint,3,opt,name=port"`
+	// Number or name of the port to access on the pods targeted by the service.
+	// Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.
+	// If this is a string, it will be looked up as a named port in the
+	// target Pod's container ports. If this is not specified, the value
+	// of the 'port' field is used (an identity map).
+	// This field is ignored for services with clusterIP=None, and should be
+	// omitted or set equal to the 'port' field.
+	// More info: https://kubernetes.io/docs/concepts/services-networking/service/#defining-a-service
+	// +optional
+	TargetPort IntOrString `json:"targetPort,omitempty" protobuf:"bytes,4,opt,name=targetPort"`
+	// The port on each node on which this service is exposed when type=NodePort or LoadBalancer.
+	// Usually assigned by the system. If specified, it will be allocated to the service
+	// if unused or else creation of the service will fail.
+	// Default is to auto-allocate a port if the ServiceType of this Service requires one.
+	// More info: https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport
+	// +optional
+	NodePort int32 `json:"nodePort,omitempty" protobuf:"varint,5,opt,name=nodePort"`
+}
+
+type IntOrString struct {
+	Type   int32  `protobuf:"varint,1,opt,name=type"`
+	IntVal int32  `protobuf:"varint,2,opt,name=intVal"`
+	StrVal string `protobuf:"bytes,3,opt,name=strVal"`
+}
+
 func GetResponse(param Param, data []byte) ([]byte, error) {
 	r := Response{
 		Code:   CodeNone,

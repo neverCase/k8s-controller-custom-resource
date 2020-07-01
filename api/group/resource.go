@@ -80,6 +80,7 @@ func NewResource(masterUrl, kubeconfigPath string) ResourceInterface {
 		NewOption(NameSpace, empty),
 		NewOption(ConfigMap, empty),
 		NewOption(Secret, empty),
+		NewOption(Service, empty),
 		NewOption(MysqlOperator, mysql),
 		NewOption(RedisOperator, redis),
 	)
@@ -102,6 +103,8 @@ func (r *resource) Create(rt ResourceType, nameSpace string, obj interface{}) (r
 		res, err = r.kubeClientSet.CoreV1().ConfigMaps(nameSpace).Create(obj.(*corev1.ConfigMap))
 	case NameSpace:
 		res, err = r.kubeClientSet.CoreV1().Namespaces().Create(obj.(*corev1.Namespace))
+	case Service:
+		res, err = r.kubeClientSet.CoreV1().Services(nameSpace).Create(obj.(*corev1.Service))
 	case MysqlOperator:
 		if opt, err = r.options.Get(rt); err != nil {
 			break
@@ -125,6 +128,8 @@ func (r *resource) Update(rt ResourceType, nameSpace string, obj interface{}) (r
 	switch rt {
 	case ConfigMap:
 		res, err = r.kubeClientSet.CoreV1().ConfigMaps(nameSpace).Update(obj.(*corev1.ConfigMap))
+	case Service:
+		res, err = r.kubeClientSet.CoreV1().Services(nameSpace).UpdateStatus(obj.(*corev1.Service))
 	case MysqlOperator:
 		if opt, err = r.options.Get(rt); err != nil {
 			break
@@ -142,6 +147,7 @@ func (r *resource) Update(rt ResourceType, nameSpace string, obj interface{}) (r
 	}
 	return res, err
 }
+
 func (r *resource) Delete(rt ResourceType, nameSpace, specName string) (err error) {
 	var opt Option
 	var delOpts = &metav1.DeleteOptions{}
@@ -150,6 +156,8 @@ func (r *resource) Delete(rt ResourceType, nameSpace, specName string) (err erro
 		err = r.kubeClientSet.CoreV1().ConfigMaps(nameSpace).Delete(specName, delOpts)
 	case NameSpace:
 		err = r.kubeClientSet.CoreV1().Namespaces().Delete(specName, delOpts)
+	case Service:
+		err = r.kubeClientSet.CoreV1().Services(nameSpace).Delete(specName, delOpts)
 	case MysqlOperator:
 		if opt, err = r.options.Get(rt); err != nil {
 			break
@@ -176,6 +184,8 @@ func (r *resource) Get(rt ResourceType, nameSpace, specName string) (res interfa
 		res, err = r.kubeClientSet.CoreV1().ConfigMaps(nameSpace).Get(specName, getOpts)
 	case NameSpace:
 		res, err = r.kubeClientSet.CoreV1().Namespaces().Get(specName, getOpts)
+	case Service:
+		res, err = r.kubeClientSet.CoreV1().Services(nameSpace).Get(specName, getOpts)
 	case MysqlOperator:
 		if opt, err = r.options.Get(rt); err != nil {
 			break
@@ -206,6 +216,8 @@ func (r *resource) List(rt ResourceType, nameSpace string, selector labels.Selec
 		res, err = r.kubeClientSet.CoreV1().Nodes().List(opts)
 	case NameSpace:
 		res, err = r.kubeClientSet.CoreV1().Namespaces().List(opts)
+	case Service:
+		res, err = r.kubeClientSet.CoreV1().Services(nameSpace).List(opts)
 	case MysqlOperator:
 		if opt, err = r.options.Get(rt); err != nil {
 			break
