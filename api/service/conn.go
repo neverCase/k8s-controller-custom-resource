@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"log"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -224,10 +223,13 @@ func (c *wsConn) WritePump() (err error) {
 			if !isClose {
 				return nil
 			}
-			log.Println("send to:", c.clientId, " msg:", string(msg))
+			klog.Info("send to:", c.clientId, " msg:", string(msg))
+			s := time.Now()
 			if err := c.conn.WriteMessage(websocket.BinaryMessage, msg); err != nil {
-				return nil
+				klog.V(2).Info(err)
+				return err
 			}
+			klog.Info("send to:", c.clientId, " used time:", time.Now().Sub(s))
 		}
 	}
 }

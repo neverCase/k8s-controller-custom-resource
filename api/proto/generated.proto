@@ -120,6 +120,8 @@ message Response {
 }
 
 message Service {
+  optional string Name = 1;
+
   // The list of ports that are exposed by this service.
   // More info: https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies
   // +patchMergeKey=port
@@ -127,7 +129,7 @@ message Service {
   // +listType=map
   // +listMapKey=port
   // +listMapKey=protocol
-  repeated ServicePort ports = 1;
+  repeated ServicePort ports = 2;
 
   // clusterIP is the IP address of the service and is usually assigned
   // randomly by the master. If an address is specified manually and is not in
@@ -139,7 +141,7 @@ message Service {
   // type is ExternalName.
   // More info: https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies
   // +optional
-  optional string clusterIP = 2;
+  optional string clusterIP = 3;
 
   // type determines how the Service is exposed. Defaults to ClusterIP. Valid
   // options are ExternalName, ClusterIP, NodePort, and LoadBalancer.
@@ -156,7 +158,7 @@ message Service {
   // to the clusterIP.
   // More info: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types
   // +optional
-  optional string type = 3;
+  optional string type = 4;
 
   // externalIPs is a list of IP addresses for which nodes in the cluster
   // will also accept traffic for this service.  These IPs are not managed by
@@ -164,7 +166,7 @@ message Service {
   // at a node with this IP.  A common example is external load-balancers
   // that are not part of the Kubernetes system.
   // +optional
-  repeated string externalIPs = 4;
+  repeated string externalIPs = 5;
 }
 
 message ServiceList {

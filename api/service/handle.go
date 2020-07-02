@@ -1,13 +1,14 @@
 package service
 
 import (
-	"github.com/nevercase/k8s-controller-custom-resource/api/group"
-	"github.com/nevercase/k8s-controller-custom-resource/api/proto"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/util/intstr"
 
+	"github.com/nevercase/k8s-controller-custom-resource/api/group"
+	"github.com/nevercase/k8s-controller-custom-resource/api/proto"
 	mysqloperatorv1 "github.com/nevercase/k8s-controller-custom-resource/pkg/apis/mysqloperator/v1"
 	redisoperatorv1 "github.com/nevercase/k8s-controller-custom-resource/pkg/apis/redisoperator/v1"
 )
@@ -57,6 +58,18 @@ func (h *handle) Create(req proto.Param, obj []byte) (res []byte, err error) {
 		v := n.(*corev1.Namespace)
 		e := convertNameSpaceToProto(v)
 		res, err = e.Marshal()
+	case group.Service:
+		var s proto.Service
+		if err = s.Unmarshal(obj); err != nil {
+			break
+		}
+		m := convertProtoToService(req, s)
+		if n, err = resourceCreateWithUpdate(h.group, req, m.Name, m); err != nil {
+			break
+		}
+		v := n.(*corev1.Service)
+		e := convertServiceToProto(v)
+		res, err = e.Marshal()
 	case group.MysqlOperator:
 		var mysqlCrd proto.MysqlCrd
 		if err = mysqlCrd.Unmarshal(obj); err != nil {
@@ -101,6 +114,12 @@ func (h *handle) Delete(req proto.Param, obj []byte) (err error) {
 			break
 		}
 		name = ns.Name
+	case group.Service:
+		var s proto.Service
+		if err = s.Unmarshal(obj); err != nil {
+			break
+		}
+		name = s.Name
 	case group.MysqlOperator:
 		var mysqlCrd proto.MysqlCrd
 		if err = mysqlCrd.Unmarshal(obj); err != nil {
@@ -145,6 +164,18 @@ func (h *handle) Get(req proto.Param, obj []byte) (res []byte, err error) {
 		}
 		m := n.(*corev1.Namespace)
 		e := convertNameSpaceToProto(m)
+		res, err = e.Marshal()
+	case group.Service:
+		var s proto.Service
+		if err = s.Unmarshal(obj); err != nil {
+			break
+		}
+		n, err = h.group.Resource().Get(req.ResourceType, req.NameSpace, s.Name)
+		if err != nil {
+			break
+		}
+		m := n.(*corev1.Service)
+		e := convertServiceToProto(m)
 		res, err = e.Marshal()
 	case group.MysqlOperator:
 		var mysqlCrd proto.MysqlCrd
@@ -196,6 +227,14 @@ func (h *handle) List(req proto.Param) (res []byte, err error) {
 		}
 		for _, v := range d.(*corev1.NamespaceList).Items {
 			m.Items = append(m.Items, convertNameSpaceToProto(&v))
+		}
+		res, err = m.Marshal()
+	case group.Service:
+		m := proto.ServiceList{
+			Items: make([]proto.Service, 0),
+		}
+		for _, v := range d.(*corev1.ServiceList).Items {
+			m.Items = append(m.Items, convertServiceToProto(&v))
 		}
 		res, err = m.Marshal()
 	case group.MysqlOperator:
@@ -394,4 +433,65 @@ func convertNameSpaceToProto(c *corev1.Namespace) proto.NameSpace {
 	return proto.NameSpace{
 		Name: c.Name,
 	}
+}
+
+func convertProtoToService(req proto.Param, v proto.Service) *corev1.Service {
+	return &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      v.Name,
+			Namespace: req.NameSpace,
+		},
+		Spec: corev1.ServiceSpec{
+			Ports:       convertProtoToServicePort(v.Ports),
+			ClusterIP:   v.ClusterIP,
+			Type:        corev1.ServiceType(v.Type),
+			ExternalIPs: v.ExternalIPs,
+		},
+	}
+}
+
+func convertServiceToProto(s *corev1.Service) proto.Service {
+	return proto.Service{
+		Name:        s.Name,
+		Ports:       convertServicePortToProto(s.Spec.Ports),
+		ClusterIP:   s.Spec.ClusterIP,
+		Type:        string(s.Spec.Type),
+		ExternalIPs: s.Spec.ExternalIPs,
+	}
+}
+
+func convertProtoToServicePort(p []proto.ServicePort) []corev1.ServicePort {
+	res := make([]corev1.ServicePort, 0)
+	for _, v := range p {
+		res = append(res, corev1.ServicePort{
+			Name:     v.Name,
+			Protocol: corev1.Protocol(v.Protocol),
+			Port:     v.Port,
+			TargetPort: intstr.IntOrString{
+				Type:   intstr.Type(v.TargetPort.Type),
+				IntVal: v.TargetPort.IntVal,
+				StrVal: v.TargetPort.StrVal,
+			},
+			NodePort: v.NodePort,
+		})
+	}
+	return res
+}
+
+func convertServicePortToProto(p []corev1.ServicePort) []proto.ServicePort {
+	res := make([]proto.ServicePort, 0)
+	for _, v := range p {
+		res = append(res, proto.ServicePort{
+			Name:     v.Name,
+			Protocol: string(v.Protocol),
+			Port:     v.Port,
+			TargetPort: proto.IntOrString{
+				Type:   int32(v.TargetPort.Type),
+				IntVal: v.TargetPort.IntVal,
+				StrVal: v.TargetPort.StrVal,
+			},
+			NodePort: v.NodePort,
+		})
+	}
+	return res
 }

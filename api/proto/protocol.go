@@ -102,6 +102,7 @@ type ServiceList struct {
 }
 
 type Service struct {
+	Name string `json:"name" protobuf:"bytes,1,rep,name=Name"`
 	// The list of ports that are exposed by this service.
 	// More info: https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies
 	// +patchMergeKey=port
@@ -109,7 +110,7 @@ type Service struct {
 	// +listType=map
 	// +listMapKey=port
 	// +listMapKey=protocol
-	Ports []ServicePort `json:"ports,omitempty" patchStrategy:"merge" patchMergeKey:"port" protobuf:"bytes,1,rep,name=ports"`
+	Ports []ServicePort `json:"ports,omitempty" patchStrategy:"merge" patchMergeKey:"port" protobuf:"bytes,2,rep,name=ports"`
 	// clusterIP is the IP address of the service and is usually assigned
 	// randomly by the master. If an address is specified manually and is not in
 	// use by others, it will be allocated to the service; otherwise, creation
@@ -120,7 +121,7 @@ type Service struct {
 	// type is ExternalName.
 	// More info: https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies
 	// +optional
-	ClusterIP string `json:"clusterIP,omitempty" protobuf:"bytes,2,opt,name=clusterIP"`
+	ClusterIP string `json:"clusterIP,omitempty" protobuf:"bytes,3,opt,name=clusterIP"`
 	// type determines how the Service is exposed. Defaults to ClusterIP. Valid
 	// options are ExternalName, ClusterIP, NodePort, and LoadBalancer.
 	// "ExternalName" maps to the specified externalName.
@@ -136,14 +137,14 @@ type Service struct {
 	// to the clusterIP.
 	// More info: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types
 	// +optional
-	Type string `json:"type,omitempty" protobuf:"bytes,3,opt,name=type"`
+	Type string `json:"type,omitempty" protobuf:"bytes,4,opt,name=type"`
 	// externalIPs is a list of IP addresses for which nodes in the cluster
 	// will also accept traffic for this service.  These IPs are not managed by
 	// Kubernetes.  The user is responsible for ensuring that traffic arrives
 	// at a node with this IP.  A common example is external load-balancers
 	// that are not part of the Kubernetes system.
 	// +optional
-	ExternalIPs []string `json:"externalIPs,omitempty" protobuf:"bytes,4,rep,name=externalIPs"`
+	ExternalIPs []string `json:"externalIPs,omitempty" protobuf:"bytes,5,rep,name=externalIPs"`
 }
 
 type ServicePort struct {
@@ -157,7 +158,7 @@ type ServicePort struct {
 	// The IP protocol for this port. Supports "TCP", "UDP", and "SCTP".
 	// Default is TCP.
 	// +optional
-	Protocol string `json:"protocol,omitempty" protobuf:"bytes,2,opt,name=protocol,casttype=Protocol"`
+	Protocol string `json:"protocol,omitempty" protobuf:"bytes,2,opt,name=protocol"`
 	// The port that will be exposed by this service.
 	Port int32 `json:"port" protobuf:"varint,3,opt,name=port"`
 	// Number or name of the port to access on the pods targeted by the service.
