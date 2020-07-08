@@ -6,12 +6,15 @@ import (
 	"net/http"
 	"time"
 
+	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/klog"
 )
 
 type Harbor interface {
+	Http(method string, url string) (res *http.Response, err error)
 	Login() error
-	Projects() error
+	Projects() (res []Project, err error)
+	Repositories(projectId int) (res []RepoRecord, err error)
 }
 
 func NewHarbor(url, admin, password string) Harbor {
@@ -37,17 +40,33 @@ type harbor struct {
 type HarborUrlSuffix string
 
 const (
-	Login      HarborUrlSuffix = "login"
-	SystemInfo HarborUrlSuffix = "api/systeminfo"
-	Projects   HarborUrlSuffix = "api/projects"
+	Login        HarborUrlSuffix = "login"
+	SystemInfo   HarborUrlSuffix = "api/systeminfo"
+	Projects     HarborUrlSuffix = "api/projects"                    // api/projects?page=1&page_size=15
+	Repositories HarborUrlSuffix = "api/repositories?&project_id=%d" // api/repositories?page=1&page_size=15&project_id=2
 )
 
 func (h *harbor) SystemInfo() {
 
 }
 
+func (h *harbor) Http(method string, url string) (res *http.Response, err error) {
+	var req *http.Request
+	if req, err = http.NewRequest(method, url, nil); err != nil {
+		klog.V(2).Info(err)
+		return res, err
+	}
+	req.SetBasicAuth(h.admin, h.password)
+	httpClient := http.Client{
+		Timeout: time.Second * time.Duration(h.timeout),
+	}
+	if res, err = httpClient.Do(req); err != nil {
+		klog.V(2).Info(err)
+	}
+	return res, err
+}
+
 func (h *harbor) Login() error {
-	fmt.Println("h:", h)
 	var (
 		req  *http.Request
 		resp *http.Response
@@ -70,37 +89,54 @@ func (h *harbor) Login() error {
 	return err
 }
 
-func (h *harbor) Projects() error {
-	var (
-		req  *http.Request
-		resp *http.Response
-		err  error
-	)
-	req, err = http.NewRequest("GET", fmt.Sprintf("%s/%v", h.url, Projects), nil)
-	if err != nil {
-		klog.V(2).Info(err)
-		return err
-	}
-	req.SetBasicAuth(h.admin, h.password)
-	httpClient := http.Client{
-		Timeout: time.Second * time.Duration(h.timeout),
-	}
-	resp, err = httpClient.Do(req)
-	if err != nil {
-		klog.V(2).Info(err)
-		return err
+func (h *harbor) Projects() (res []Project, err error) {
+	var resp *http.Response
+	if resp, err = h.Http("GET", fmt.Sprintf("%s/%v", h.url, Projects)); err != nil {
+		return res, err
 	}
 	if resp.StatusCode == http.StatusOK {
 		cont, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			klog.V(2).Info(err)
-			return err
+			return res, err
 		}
 		if err = resp.Body.Close(); err != nil {
 			klog.V(2).Info(err)
-			return err
+			return res, err
 		}
-		fmt.Println("cont:", string(cont))
+		if err = json.Unmarshal(cont, &res); err != nil {
+			klog.V(2).Info(err)
+			return res, err
+		}
 	}
-	return err
+	klog.Info(res)
+	return res, nil
+}
+
+func (h *harbor) Repositories(projectId int) (res []RepoRecord, err error) {
+	var (
+		suffix string
+		resp   *http.Response
+	)
+	suffix = fmt.Sprintf(string(Repositories), projectId)
+	if resp, err = h.Http("GET", fmt.Sprintf("%s/%v", h.url, suffix)); err != nil {
+		return res, err
+	}
+	if resp.StatusCode == http.StatusOK {
+		cont, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			klog.V(2).Info(err)
+			return res, err
+		}
+		if err = resp.Body.Close(); err != nil {
+			klog.V(2).Info(err)
+			return res, err
+		}
+		if err = json.Unmarshal(cont, &res); err != nil {
+			klog.V(2).Info(err)
+			return res, err
+		}
+	}
+	klog.Info(res)
+	return res, nil
 }
