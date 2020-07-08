@@ -2,7 +2,7 @@ package group
 
 import "time"
 
-//These structures were all forked from github.com/goharbor/harbor/src/common/models/
+// These structures below were all forked from github.com/goharbor/harbor/src/common/models/*
 
 // Project holds the details of a project.
 type Project struct {
@@ -31,4 +31,23 @@ type RepoRecord struct {
 	StarCount    int64     `orm:"column(star_count)" json:"star_count"`
 	CreationTime time.Time `orm:"column(creation_time);auto_now_add" json:"creation_time"`
 	UpdateTime   time.Time `orm:"column(update_time);auto_now" json:"update_time"`
+}
+
+// TagDetail ...
+type TagDetail struct {
+	Digest        string    `json:"digest"`
+	Name          string    `json:"name"`
+	Size          int64     `json:"size"`
+	Architecture  string    `json:"architecture"`
+	OS            string    `json:"os"`
+	OSVersion     string    `json:"os.version"`
+	DockerVersion string    `json:"docker_version"`
+	Author        string    `json:"author"`
+	Created       time.Time `json:"created"`
+	//Config        *TagCfg   `json:"config"`
+}
+
+// TagCfg ...
+type TagCfg struct {
+	Labels map[string]string `json:"labels"`
 }
