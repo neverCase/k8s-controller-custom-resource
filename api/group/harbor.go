@@ -10,7 +10,11 @@ import (
 	"k8s.io/klog"
 )
 
-type Harbor interface {
+type HarborGetter interface {
+	Harbor() HarborInterface
+}
+
+type HarborInterface interface {
 	Http(method string, url string) (res *http.Response, err error)
 	Login() error
 	Projects() (res []Project, err error)
@@ -18,7 +22,7 @@ type Harbor interface {
 	Tags(imageName string) (res []TagDetail, err error)
 }
 
-func NewHarbor(url, admin, password string) Harbor {
+func NewHarbor(url, admin, password string) HarborInterface {
 	return &harbor{
 		url:      url,
 		admin:    admin,

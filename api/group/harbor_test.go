@@ -29,7 +29,7 @@ func TestNewHarbor(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want Harbor
+		want HarborInterface
 	}{
 		{
 			name: "NewHarbor_case1",
