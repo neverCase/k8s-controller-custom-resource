@@ -103,12 +103,17 @@ message RedisSpec {
   // +patchStrategy=merge
   repeated k8s.io.api.core.v1.EnvVar env = 5;
 
+  // Resources represents the minimum resources the volume should have.
+  // More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources
+  // +optional
+  optional k8s.io.api.core.v1.ResourceRequirements resources = 6;
+
   // Pod volumes to mount into the container's filesystem.
   // Cannot be updated.
   // +optional
   // +patchMergeKey=mountPath
   // +patchStrategy=merge
-  repeated k8s.io.api.core.v1.VolumeMount volumeMounts = 6;
+  repeated k8s.io.api.core.v1.VolumeMount volumeMounts = 7;
 
   // List of ports to expose from the container. Exposing a port here gives
   // the system additional information about the network connections a
@@ -123,7 +128,7 @@ message RedisSpec {
   // +listType=map
   // +listMapKey=containerPort
   // +listMapKey=protocol
-  repeated k8s.io.api.core.v1.ContainerPort containerPorts = 7;
+  repeated k8s.io.api.core.v1.ContainerPort containerPorts = 8;
 
   // The list of ports that are exposed by this service.
   // More info: https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies
@@ -132,14 +137,14 @@ message RedisSpec {
   // +listType=map
   // +listMapKey=port
   // +listMapKey=protocol
-  repeated k8s.io.api.core.v1.ServicePort servicePorts = 8;
+  repeated k8s.io.api.core.v1.ServicePort servicePorts = 9;
 
   // The path of the nas disk which was mounted on the machine
-  optional string volumePath = 9;
+  optional string volumePath = 10;
 
   // The role of the server in the clusters.
   // such as: master, slave
-  optional string role = 10;
+  optional string role = 11;
 }
 
 // RedisSpecStatus is the status for a RedisOperator resource

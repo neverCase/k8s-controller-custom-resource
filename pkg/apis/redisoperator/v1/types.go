@@ -70,12 +70,16 @@ type RedisSpec struct {
 	// +patchMergeKey=name
 	// +patchStrategy=merge
 	Env []corev1.EnvVar `json:"env,omitempty" patchStrategy:"merge" patchMergeKey:"name" protobuf:"bytes,5,rep,name=env,casttype=k8s.io/api/core/v1.EnvVar"`
+	// Resources represents the minimum resources the volume should have.
+	// More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources
+	// +optional
+	Resources corev1.ResourceRequirements `json:"resources,omitempty" protobuf:"bytes,6,opt,name=resources"`
 	// Pod volumes to mount into the container's filesystem.
 	// Cannot be updated.
 	// +optional
 	// +patchMergeKey=mountPath
 	// +patchStrategy=merge
-	VolumeMounts []corev1.VolumeMount `json:"volumeMounts,omitempty" patchStrategy:"merge" patchMergeKey:"mountPath" protobuf:"bytes,6,rep,name=volumeMounts,casttype=k8s.io/api/core/v1.VolumeMount"`
+	VolumeMounts []corev1.VolumeMount `json:"volumeMounts,omitempty" patchStrategy:"merge" patchMergeKey:"mountPath" protobuf:"bytes,7,rep,name=volumeMounts,casttype=k8s.io/api/core/v1.VolumeMount"`
 	// List of ports to expose from the container. Exposing a port here gives
 	// the system additional information about the network connections a
 	// container uses, but is primarily informational. Not specifying a port here
@@ -89,7 +93,7 @@ type RedisSpec struct {
 	// +listType=map
 	// +listMapKey=containerPort
 	// +listMapKey=protocol
-	ContainerPorts []corev1.ContainerPort `json:"containerPorts,omitempty" patchStrategy:"merge" patchMergeKey:"containerPort" protobuf:"bytes,7,rep,name=containerPorts,casttype=k8s.io/api/core/v1.ContainerPort"`
+	ContainerPorts []corev1.ContainerPort `json:"containerPorts,omitempty" patchStrategy:"merge" patchMergeKey:"containerPort" protobuf:"bytes,8,rep,name=containerPorts,casttype=k8s.io/api/core/v1.ContainerPort"`
 	// The list of ports that are exposed by this service.
 	// More info: https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies
 	// +patchMergeKey=port
@@ -97,12 +101,12 @@ type RedisSpec struct {
 	// +listType=map
 	// +listMapKey=port
 	// +listMapKey=protocol
-	ServicePorts []corev1.ServicePort `json:"servicePorts,omitempty" patchStrategy:"merge" patchMergeKey:"port" protobuf:"bytes,8,rep,name=servicePorts,casttype=k8s.io/api/core/v1.ServicePort"`
+	ServicePorts []corev1.ServicePort `json:"servicePorts,omitempty" patchStrategy:"merge" patchMergeKey:"port" protobuf:"bytes,9,rep,name=servicePorts,casttype=k8s.io/api/core/v1.ServicePort"`
 	// The path of the nas disk which was mounted on the machine
-	VolumePath string `json:"volumePath" protobuf:"bytes,9,rep,name=volumePath"`
+	VolumePath string `json:"volumePath" protobuf:"bytes,10,rep,name=volumePath"`
 	// The role of the server in the clusters.
 	// such as: master, slave
-	Role string `json:"role" protobuf:"bytes,10,rep,name=role"`
+	Role string `json:"role" protobuf:"bytes,11,rep,name=role"`
 }
 
 // RedisSpecStatus is the status for a RedisOperator resource
