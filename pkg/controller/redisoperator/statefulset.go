@@ -99,7 +99,8 @@ func NewStatefulSet(foo *redisOperatorV1.RedisOperator, rds *redisOperatorV1.Red
 									ContainerPort: RedisDefaultPort,
 								},
 							},
-							Env: envs,
+							Env:       envs,
+							Resources: rds.Resources,
 							VolumeMounts: []coreV1.VolumeMount{
 								{
 									MountPath: "/data",

@@ -107,6 +107,7 @@ func NewStatefulSet(foo *mysqlOperatorV1.MysqlOperator, rds *mysqlOperatorV1.Mys
 									Value: "0",
 								},
 							},
+							Resources: rds.Resources,
 							VolumeMounts: []coreV1.VolumeMount{
 								{
 									MountPath: "/data",
