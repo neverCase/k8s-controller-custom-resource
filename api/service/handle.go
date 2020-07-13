@@ -75,24 +75,24 @@ func (h *handle) Create(req proto.Param, obj []byte) (res []byte, err error) {
 		if err = mysqlCrd.Unmarshal(obj); err != nil {
 			break
 		}
-		m := convertMysqlCrdToOperator(req, mysqlCrd)
+		m := convertMysqlCrdToProto(req, mysqlCrd)
 		if n, err = resourceCreateWithUpdate(h.group, req, m.Name, m); err != nil {
 			break
 		}
 		v := n.(*mysqloperatorv1.MysqlOperator)
-		e := convertOperatorToMysqlCrd(v)
+		e := convertProtoToMysqlCrd(v)
 		res, err = e.Marshal()
 	case group.RedisOperator:
 		var redisCrd proto.RedisCrd
 		if err = redisCrd.Unmarshal(obj); err != nil {
 			break
 		}
-		m := convertRedisCrdToOperator(req, redisCrd)
+		m := convertProtoToRedisCrd(req, redisCrd)
 		if n, err = resourceCreateWithUpdate(h.group, req, m.Name, m); err != nil {
 			break
 		}
 		v := n.(*redisoperatorv1.RedisOperator)
-		e := convertOperatorToRedisCrd(v)
+		e := convertRedisCrdToProto(v)
 		res, err = e.Marshal()
 	case group.HelixOperator:
 	}
@@ -187,7 +187,7 @@ func (h *handle) Get(req proto.Param, obj []byte) (res []byte, err error) {
 			break
 		}
 		m := n.(*mysqloperatorv1.MysqlOperator)
-		e := convertOperatorToMysqlCrd(m)
+		e := convertProtoToMysqlCrd(m)
 		res, err = e.Marshal()
 	case group.RedisOperator:
 		var redisCrd proto.RedisCrd
@@ -199,7 +199,7 @@ func (h *handle) Get(req proto.Param, obj []byte) (res []byte, err error) {
 			break
 		}
 		m := n.(*redisoperatorv1.RedisOperator)
-		e := convertOperatorToRedisCrd(m)
+		e := convertRedisCrdToProto(m)
 		res, err = e.Marshal()
 	case group.HelixOperator:
 	}
@@ -242,7 +242,7 @@ func (h *handle) List(req proto.Param) (res []byte, err error) {
 			Items: make([]proto.MysqlCrd, 0),
 		}
 		for _, v := range d.(*mysqloperatorv1.MysqlOperatorList).Items {
-			m.Items = append(m.Items, convertOperatorToMysqlCrd(&v))
+			m.Items = append(m.Items, convertProtoToMysqlCrd(&v))
 		}
 		res, err = m.Marshal()
 	case group.RedisOperator:
@@ -250,7 +250,7 @@ func (h *handle) List(req proto.Param) (res []byte, err error) {
 			Items: make([]proto.RedisCrd, 0),
 		}
 		for _, v := range d.(*redisoperatorv1.RedisOperatorList).Items {
-			m.Items = append(m.Items, convertOperatorToRedisCrd(&v))
+			m.Items = append(m.Items, convertRedisCrdToProto(&v))
 		}
 		res, err = m.Marshal()
 	case group.HelixOperator:
@@ -290,7 +290,7 @@ func resourceCreateWithUpdate(g group.Group, req proto.Param, specName string, m
 	return
 }
 
-func convertMysqlCrdToOperator(req proto.Param, mysqlCrd proto.MysqlCrd) *mysqloperatorv1.MysqlOperator {
+func convertMysqlCrdToProto(req proto.Param, mysqlCrd proto.MysqlCrd) *mysqloperatorv1.MysqlOperator {
 	return &mysqloperatorv1.MysqlOperator{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      mysqlCrd.Name,
@@ -327,7 +327,7 @@ func convertMysqlCrdToOperator(req proto.Param, mysqlCrd proto.MysqlCrd) *mysqlo
 	}
 }
 
-func convertOperatorToMysqlCrd(m *mysqloperatorv1.MysqlOperator) proto.MysqlCrd {
+func convertProtoToMysqlCrd(m *mysqloperatorv1.MysqlOperator) proto.MysqlCrd {
 	return proto.MysqlCrd{
 		Name: m.Name,
 		Master: proto.NodeSpec{
@@ -347,7 +347,7 @@ func convertOperatorToMysqlCrd(m *mysqloperatorv1.MysqlOperator) proto.MysqlCrd 
 	}
 }
 
-func convertRedisCrdToOperator(req proto.Param, redisCrd proto.RedisCrd) *redisoperatorv1.RedisOperator {
+func convertProtoToRedisCrd(req proto.Param, redisCrd proto.RedisCrd) *redisoperatorv1.RedisOperator {
 	return &redisoperatorv1.RedisOperator{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      redisCrd.Name,
@@ -384,7 +384,7 @@ func convertRedisCrdToOperator(req proto.Param, redisCrd proto.RedisCrd) *rediso
 	}
 }
 
-func convertOperatorToRedisCrd(v *redisoperatorv1.RedisOperator) proto.RedisCrd {
+func convertRedisCrdToProto(v *redisoperatorv1.RedisOperator) proto.RedisCrd {
 	return proto.RedisCrd{
 		Name: v.Name,
 		Master: proto.NodeSpec{
