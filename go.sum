@@ -106,6 +106,8 @@ github.com/nevercase/harbor-api v0.0.0-20200708094436-b02262841c08 h1:58f1ue7/TL
 github.com/nevercase/harbor-api v0.0.0-20200708094436-b02262841c08/go.mod h1:BfGGcN//gYvSEmfJFFDt19NbRA6sxh9AI1+W5mDWK8M=
 github.com/nevercase/harbor-api v0.1.0 h1:OTJgN7TloI7RUW8EaBXHKhXr1ZX0gLK9GpTJ0z6izBs=
 github.com/nevercase/harbor-api v0.1.0/go.mod h1:BfGGcN//gYvSEmfJFFDt19NbRA6sxh9AI1+W5mDWK8M=
+github.com/nevercase/harbor-api v0.17.3 h1:Xv09TmtQ6ZStYSiHwaqz0SZgFjq9Hh0OFYkolbmsUEY=
+github.com/nevercase/harbor-api v0.17.3/go.mod h1:/NDdtl4wLA+nPVN6N+Xy4xKKWi2ulHglZwDOvHxa1nE=
 github.com/onsi/ginkgo v0.0.0-20170829012221-11459a886d9c/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=
 github.com/onsi/ginkgo v1.6.0/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=
 github.com/onsi/ginkgo v1.8.0/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=
