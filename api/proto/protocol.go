@@ -68,7 +68,26 @@ type NodeSpec struct {
 	ImagePullSecrets string `json:"imagePullSecrets" protobuf:"bytes,4,rep,name=imagePullSecrets"`
 	// The path of the nas disk which was mounted on the machine
 	VolumePath string `json:"volumePath" protobuf:"bytes,5,rep,name=volumePath"`
+	// PodResource
+	PodResource PodResourceRequirements `json:"podResource" protobuf:"bytes,6,rep,name=podResource"`
 }
+
+// PodResourceRequirements describes the compute resource requirements.
+type PodResourceRequirements struct {
+	// Limits describes the maximum amount of compute resources allowed.
+	// More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
+	// +optional
+	Limits PodResourceList `json:"limits,omitempty" protobuf:"bytes,1,rep,name=limits"`
+	// Requests describes the minimum amount of compute resources required.
+	// If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+	// otherwise to an implementation-defined value.
+	// More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
+	// +optional
+	Requests PodResourceList `json:"requests,omitempty" protobuf:"bytes,2,rep,name=requests"`
+}
+
+// PodResourceList is a set of (resource name, quantity) pairs.
+type PodResourceList map[string]string
 
 type ResourceList struct {
 	Items []group.ResourceType `json:"items" protobuf:"bytes,1,rep,name=items"`

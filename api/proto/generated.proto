@@ -79,6 +79,9 @@ message NodeSpec {
 
   // The path of the nas disk which was mounted on the machine
   optional string volumePath = 5;
+
+  // PodResource
+  optional PodResourceRequirements podResource = 6;
 }
 
 message Param {
@@ -87,6 +90,21 @@ message Param {
   optional string resourceType = 2;
 
   optional string nameSpace = 3;
+}
+
+// PodResourceRequirements describes the compute resource requirements.
+message PodResourceRequirements {
+  // Limits describes the maximum amount of compute resources allowed.
+  // More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
+  // +optional
+  map<string, string> limits = 1;
+
+  // Requests describes the minimum amount of compute resources required.
+  // If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+  // otherwise to an implementation-defined value.
+  // More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
+  // +optional
+  map<string, string> requests = 2;
 }
 
 message RedisCrd {
