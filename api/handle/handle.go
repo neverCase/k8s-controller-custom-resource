@@ -11,7 +11,7 @@ func NewHandle(g group.Group) Handle {
 	return &handle{
 		group:  g,
 		k8s:    NewKubernetesApiHandle(g),
-		harbor: NewHandle(g),
+		harbor: NewHarborApi(g),
 	}
 }
 

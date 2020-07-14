@@ -40,6 +40,39 @@ message ConfigMapList {
   repeated ConfigMap items = 1;
 }
 
+// The shortage ot the harbor projects
+message HarborProject {
+  optional int32 projectId = 1;
+
+  optional string name = 2;
+}
+
+message HarborProjectList {
+  repeated HarborProject items = 1;
+}
+
+message HarborRepository {
+  optional int32 repositoryId = 1;
+
+  optional string name = 2;
+
+  optional int32 projectId = 3;
+}
+
+message HarborRepositoryList {
+  repeated HarborRepository items = 1;
+}
+
+message HarborTag {
+  optional string digest = 1;
+
+  optional string name = 2;
+}
+
+message HarborTagList {
+  repeated HarborTag items = 1;
+}
+
 message IntOrString {
   optional int32 type = 1;
 

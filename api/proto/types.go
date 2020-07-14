@@ -202,3 +202,32 @@ type IntOrString struct {
 	IntVal int32  `protobuf:"varint,2,opt,name=intVal"`
 	StrVal string `protobuf:"bytes,3,opt,name=strVal"`
 }
+
+// The shortage ot the harbor projects
+type HarborProject struct {
+	ProjectID int32  `json:"projectId" protobuf:"varint,1,opt,name=projectId"`
+	Name      string `json:"name" protobuf:"bytes,2,opt,name=name"`
+}
+
+type HarborProjectList struct {
+	Items []HarborProject `json:"items" protobuf:"bytes,1,rep,name=items"`
+}
+
+type HarborRepository struct {
+	RepositoryID int32  `json:"repositoryId" protobuf:"bytes,1,opt,name=repositoryId"`
+	Name         string `json:"name" protobuf:"bytes,2,opt,name=name"`
+	ProjectID    int32  `json:"projectId" protobuf:"varint,3,opt,name=projectId"`
+}
+
+type HarborRepositoryList struct {
+	Items []HarborRepository `json:"items" protobuf:"bytes,1,rep,name=items"`
+}
+
+type HarborTag struct {
+	Digest string `json:"digest" protobuf:"bytes,1,rep,name=digest"`
+	Name   string `json:"name" protobuf:"bytes,2,opt,name=name"`
+}
+
+type HarborTagList struct {
+	Items []HarborTag `json:"items" protobuf:"bytes,1,rep,name=items"`
+}
