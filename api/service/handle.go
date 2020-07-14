@@ -3,9 +3,11 @@ package service
 import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/klog"
 
 	"github.com/nevercase/k8s-controller-custom-resource/api/group"
 	"github.com/nevercase/k8s-controller-custom-resource/api/proto"
@@ -40,7 +42,7 @@ func (h *handle) Create(req proto.Param, obj []byte) (res []byte, err error) {
 			break
 		}
 		m := convertProtoToConfigMap(req, cm)
-		if n, err = resourceCreateWithUpdate(h.group, req, m.Name, m); err != nil {
+		if n, err = resourceCreateOrUpdate(h.group, req, m.Name, m); err != nil {
 			break
 		}
 		v := n.(*corev1.ConfigMap)
@@ -52,7 +54,7 @@ func (h *handle) Create(req proto.Param, obj []byte) (res []byte, err error) {
 			break
 		}
 		m := convertProtoToNameSpace(ns)
-		if n, err = resourceCreateWithUpdate(h.group, req, m.Name, m); err != nil {
+		if n, err = resourceCreateOrUpdate(h.group, req, m.Name, m); err != nil {
 			break
 		}
 		v := n.(*corev1.Namespace)
@@ -64,7 +66,7 @@ func (h *handle) Create(req proto.Param, obj []byte) (res []byte, err error) {
 			break
 		}
 		m := convertProtoToService(req, s)
-		if n, err = resourceCreateWithUpdate(h.group, req, m.Name, m); err != nil {
+		if n, err = resourceCreateOrUpdate(h.group, req, m.Name, m); err != nil {
 			break
 		}
 		v := n.(*corev1.Service)
@@ -76,7 +78,7 @@ func (h *handle) Create(req proto.Param, obj []byte) (res []byte, err error) {
 			break
 		}
 		m := convertMysqlCrdToProto(req, mysqlCrd)
-		if n, err = resourceCreateWithUpdate(h.group, req, m.Name, m); err != nil {
+		if n, err = resourceCreateOrUpdate(h.group, req, m.Name, m); err != nil {
 			break
 		}
 		v := n.(*mysqloperatorv1.MysqlOperator)
@@ -88,7 +90,7 @@ func (h *handle) Create(req proto.Param, obj []byte) (res []byte, err error) {
 			break
 		}
 		m := convertProtoToRedisCrd(req, redisCrd)
-		if n, err = resourceCreateWithUpdate(h.group, req, m.Name, m); err != nil {
+		if n, err = resourceCreateOrUpdate(h.group, req, m.Name, m); err != nil {
 			break
 		}
 		v := n.(*redisoperatorv1.RedisOperator)
@@ -272,7 +274,7 @@ func (h *handle) Resources(req proto.Param) (res []byte, err error) {
 	return proto.GetResponse(req, o)
 }
 
-func resourceCreateWithUpdate(g group.Group, req proto.Param, specName string, m interface{}) (res interface{}, err error) {
+func resourceCreateOrUpdate(g group.Group, req proto.Param, specName string, m interface{}) (res interface{}, err error) {
 	_, err = g.Resource().Get(req.ResourceType, req.NameSpace, specName)
 	if err != nil {
 		if !errors.IsNotFound(err) {
@@ -288,6 +290,41 @@ func resourceCreateWithUpdate(g group.Group, req proto.Param, specName string, m
 		}
 	}
 	return
+}
+
+func convertPodResourceLimitsToProto(res proto.PodResourceList) corev1.ResourceList {
+	rl := make(map[corev1.ResourceName]resource.Quantity, 0)
+	for k, v := range res {
+		t, err := resource.ParseQuantity(v)
+		if err != nil {
+			klog.V(2).Info(err)
+			continue
+		}
+		rl[corev1.ResourceName(k)] = t
+	}
+	return rl
+}
+
+func convertProtoToPodResourceLimits(rl corev1.ResourceList) proto.PodResourceList {
+	res := make(map[string]string, 0)
+	for k, v := range rl {
+		res[string(k)] = v.String()
+	}
+	return res
+}
+
+func convertResourceRequirementsToProto(res proto.PodResourceRequirements) corev1.ResourceRequirements {
+	return corev1.ResourceRequirements{
+		Limits:   convertPodResourceLimitsToProto(res.Limits),
+		Requests: convertPodResourceLimitsToProto(res.Requests),
+	}
+}
+
+func convertProtoToResourceRequirements(rl corev1.ResourceRequirements) proto.PodResourceRequirements {
+	return proto.PodResourceRequirements{
+		Limits:   convertProtoToPodResourceLimits(rl.Limits),
+		Requests: convertProtoToPodResourceLimits(rl.Requests),
+	}
 }
 
 func convertMysqlCrdToProto(req proto.Param, mysqlCrd proto.MysqlCrd) *mysqloperatorv1.MysqlOperator {
@@ -308,6 +345,7 @@ func convertMysqlCrdToProto(req proto.Param, mysqlCrd proto.MysqlCrd) *mysqloper
 						},
 					},
 					VolumePath: mysqlCrd.Master.VolumePath,
+					Resources:  convertResourceRequirementsToProto(mysqlCrd.Master.PodResource),
 				},
 			},
 			SlaveSpec: mysqloperatorv1.MysqlCore{
@@ -321,6 +359,7 @@ func convertMysqlCrdToProto(req proto.Param, mysqlCrd proto.MysqlCrd) *mysqloper
 						},
 					},
 					VolumePath: mysqlCrd.Slave.VolumePath,
+					Resources:  convertResourceRequirementsToProto(mysqlCrd.Slave.PodResource),
 				},
 			},
 		},
@@ -336,6 +375,7 @@ func convertProtoToMysqlCrd(m *mysqloperatorv1.MysqlOperator) proto.MysqlCrd {
 			Image:            m.Spec.MasterSpec.Spec.Image,
 			ImagePullSecrets: m.Spec.MasterSpec.Spec.ImagePullSecrets[0].Name,
 			VolumePath:       m.Spec.MasterSpec.Spec.VolumePath,
+			PodResource:      convertProtoToResourceRequirements(m.Spec.MasterSpec.Spec.Resources),
 		},
 		Slave: proto.NodeSpec{
 			Name:             m.Spec.SlaveSpec.Spec.Name,
@@ -343,6 +383,7 @@ func convertProtoToMysqlCrd(m *mysqloperatorv1.MysqlOperator) proto.MysqlCrd {
 			Image:            m.Spec.SlaveSpec.Spec.Image,
 			ImagePullSecrets: m.Spec.SlaveSpec.Spec.ImagePullSecrets[0].Name,
 			VolumePath:       m.Spec.SlaveSpec.Spec.VolumePath,
+			PodResource:      convertProtoToResourceRequirements(m.Spec.SlaveSpec.Spec.Resources),
 		},
 	}
 }
@@ -365,6 +406,7 @@ func convertProtoToRedisCrd(req proto.Param, redisCrd proto.RedisCrd) *redisoper
 						},
 					},
 					VolumePath: redisCrd.Master.VolumePath,
+					Resources:  convertResourceRequirementsToProto(redisCrd.Master.PodResource),
 				},
 			},
 			SlaveSpec: redisoperatorv1.RedisCore{
@@ -378,6 +420,7 @@ func convertProtoToRedisCrd(req proto.Param, redisCrd proto.RedisCrd) *redisoper
 						},
 					},
 					VolumePath: redisCrd.Slave.VolumePath,
+					Resources:  convertResourceRequirementsToProto(redisCrd.Slave.PodResource),
 				},
 			},
 		},
@@ -393,6 +436,7 @@ func convertRedisCrdToProto(v *redisoperatorv1.RedisOperator) proto.RedisCrd {
 			Image:            v.Spec.MasterSpec.Spec.Image,
 			ImagePullSecrets: v.Spec.MasterSpec.Spec.ImagePullSecrets[0].Name,
 			VolumePath:       v.Spec.MasterSpec.Spec.VolumePath,
+			PodResource:      convertProtoToResourceRequirements(v.Spec.MasterSpec.Spec.Resources),
 		},
 		Slave: proto.NodeSpec{
 			Name:             v.Spec.SlaveSpec.Spec.Name,
@@ -400,6 +444,7 @@ func convertRedisCrdToProto(v *redisoperatorv1.RedisOperator) proto.RedisCrd {
 			Image:            v.Spec.SlaveSpec.Spec.Image,
 			ImagePullSecrets: v.Spec.SlaveSpec.Spec.ImagePullSecrets[0].Name,
 			VolumePath:       v.Spec.SlaveSpec.Spec.VolumePath,
+			PodResource:      convertProtoToResourceRequirements(v.Spec.SlaveSpec.Spec.Resources),
 		},
 	}
 }
