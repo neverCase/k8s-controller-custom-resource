@@ -204,21 +204,3 @@ type IntOrString struct {
 	IntVal int32  `protobuf:"varint,2,opt,name=intVal"`
 	StrVal string `protobuf:"bytes,3,opt,name=strVal"`
 }
-
-func GetResponse(param Param, data []byte) ([]byte, error) {
-	r := Response{
-		Code:   CodeNone,
-		Param:  param,
-		Result: data,
-	}
-	return r.Marshal()
-}
-
-func ErrorResponse(param Param) ([]byte, error) {
-	r := Response{
-		Code:  CodeErr,
-		Param: param,
-		//Result: "",
-	}
-	return r.Marshal()
-}
