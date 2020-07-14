@@ -1,4 +1,4 @@
-package service
+package handle
 
 import (
 	corev1 "k8s.io/api/core/v1"
@@ -15,7 +15,11 @@ import (
 	redisoperatorv1 "github.com/nevercase/k8s-controller-custom-resource/pkg/apis/redisoperator/v1"
 )
 
-type HandleInterface interface {
+type KubernetesApiGetter interface {
+	KubernetesApi() KubernetesApiInterface
+}
+
+type KubernetesApiInterface interface {
 	Create(req proto.Param, obj []byte) (res []byte, err error)
 	Delete(req proto.Param, obj []byte) (err error)
 	Get(req proto.Param, obj []byte) (res []byte, err error)
@@ -23,17 +27,17 @@ type HandleInterface interface {
 	Resources(req proto.Param) (res []byte, err error)
 }
 
-func NewHandle(g group.Group) HandleInterface {
-	return &handle{
+func NewKubernetesApiHandle(g group.Group) KubernetesApiInterface {
+	return &k8sHandle{
 		group: g,
 	}
 }
 
-type handle struct {
+type k8sHandle struct {
 	group group.Group
 }
 
-func (h *handle) Create(req proto.Param, obj []byte) (res []byte, err error) {
+func (h *k8sHandle) Create(req proto.Param, obj []byte) (res []byte, err error) {
 	var n interface{}
 	switch req.ResourceType {
 	case group.ConfigMap:
@@ -101,7 +105,7 @@ func (h *handle) Create(req proto.Param, obj []byte) (res []byte, err error) {
 	return proto.GetResponse(req, res)
 }
 
-func (h *handle) Delete(req proto.Param, obj []byte) (err error) {
+func (h *k8sHandle) Delete(req proto.Param, obj []byte) (err error) {
 	var name string
 	switch req.ResourceType {
 	case group.ConfigMap:
@@ -140,7 +144,7 @@ func (h *handle) Delete(req proto.Param, obj []byte) (err error) {
 	return err
 }
 
-func (h *handle) Get(req proto.Param, obj []byte) (res []byte, err error) {
+func (h *k8sHandle) Get(req proto.Param, obj []byte) (res []byte, err error) {
 	var n interface{}
 	switch req.ResourceType {
 	case group.ConfigMap:
@@ -208,7 +212,7 @@ func (h *handle) Get(req proto.Param, obj []byte) (res []byte, err error) {
 	return proto.GetResponse(req, res)
 }
 
-func (h *handle) List(req proto.Param) (res []byte, err error) {
+func (h *k8sHandle) List(req proto.Param) (res []byte, err error) {
 	var d interface{}
 	var selector = labels.NewSelector()
 	if d, err = h.group.Resource().List(req.ResourceType, req.NameSpace, selector); err != nil {
@@ -263,7 +267,7 @@ func (h *handle) List(req proto.Param) (res []byte, err error) {
 	return proto.GetResponse(req, res)
 }
 
-func (h *handle) Resources(req proto.Param) (res []byte, err error) {
+func (h *k8sHandle) Resources(req proto.Param) (res []byte, err error) {
 	m := proto.ResourceList{
 		Items: h.group.Resource().ResourceTypes(),
 	}

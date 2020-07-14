@@ -7,15 +7,13 @@ import (
 type ApiService string
 
 const (
-	SvcPing ApiService = "ping"
-
-	SvcCreate ApiService = "create"
-	SvcUpdate ApiService = "update"
-	SvcDelete ApiService = "delete"
-	SvcGet    ApiService = "get"
-	SvcList   ApiService = "list"
-	SvcWatch  ApiService = "watch"
-
+	SvcPing     ApiService = "ping"
+	SvcCreate   ApiService = "create"
+	SvcUpdate   ApiService = "update"
+	SvcDelete   ApiService = "delete"
+	SvcGet      ApiService = "get"
+	SvcList     ApiService = "list"
+	SvcWatch    ApiService = "watch"
 	SvcResource ApiService = "resource"
 )
 

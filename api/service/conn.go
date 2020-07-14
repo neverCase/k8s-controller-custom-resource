@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"github.com/nevercase/k8s-controller-custom-resource/api/handle"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -65,7 +66,7 @@ type WsConn interface {
 
 func NewConn(clientId int32, ctx context.Context, ws *websocket.Conn, g group.Group) WsConn {
 	c := &wsConn{
-		handle:            NewHandle(g),
+		handle:            handle.NewHandle(g),
 		group:             g,
 		clientId:          clientId,
 		conn:              ws,
@@ -87,7 +88,7 @@ const (
 
 type wsConn struct {
 	group  group.Group
-	handle HandleInterface
+	handle handle.Handle
 
 	mu                sync.RWMutex
 	clientId          int32
@@ -144,14 +145,14 @@ func (c *wsConn) ReadPump() (err error) {
 				return err
 			}
 		case proto.SvcCreate, proto.SvcUpdate:
-			if res, err = c.handle.Create(msg.Param, msg.Data); err != nil {
+			if res, err = c.handle.KubernetesApi().Create(msg.Param, msg.Data); err != nil {
 				klog.V(2).Info(err)
 				if res, err = proto.ErrorResponse(msg.Param); err != nil {
 					klog.V(2).Info(err)
 				}
 			}
 		case proto.SvcDelete:
-			if err = c.handle.Delete(msg.Param, msg.Data); err != nil {
+			if err = c.handle.KubernetesApi().Delete(msg.Param, msg.Data); err != nil {
 				klog.V(2).Info(err)
 				if res, err = proto.ErrorResponse(msg.Param); err != nil {
 					klog.V(2).Info(err)
@@ -162,14 +163,14 @@ func (c *wsConn) ReadPump() (err error) {
 				}
 			}
 		case proto.SvcGet:
-			if res, err = c.handle.Get(msg.Param, msg.Data); err != nil {
+			if res, err = c.handle.KubernetesApi().Get(msg.Param, msg.Data); err != nil {
 				klog.V(2).Info(err)
 				if res, err = proto.ErrorResponse(msg.Param); err != nil {
 					klog.V(2).Info(err)
 				}
 			}
 		case proto.SvcList:
-			if res, err = c.handle.List(msg.Param); err != nil {
+			if res, err = c.handle.KubernetesApi().List(msg.Param); err != nil {
 				klog.V(2).Info(err)
 				if res, err = proto.ErrorResponse(msg.Param); err != nil {
 					klog.V(2).Info(err)
@@ -177,7 +178,7 @@ func (c *wsConn) ReadPump() (err error) {
 			}
 		case proto.SvcWatch:
 		case proto.SvcResource:
-			if res, err = c.handle.Resources(msg.Param); err != nil {
+			if res, err = c.handle.KubernetesApi().Resources(msg.Param); err != nil {
 				klog.V(2).Info(err)
 				if res, err = proto.ErrorResponse(msg.Param); err != nil {
 					klog.V(2).Info(err)
