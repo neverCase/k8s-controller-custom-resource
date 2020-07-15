@@ -184,7 +184,7 @@ func (c *wsConn) ReadPump() (err error) {
 				}
 			}
 		case proto.SvcHarbor:
-			if res, err = c.handle.HarborApi().Core(msg.Data); err != nil {
+			if res, err = c.handle.HarborApi().Core(msg.Param, msg.Data); err != nil {
 				klog.V(2).Info(err)
 				if res, err = proto.ErrorResponse(msg.Param); err != nil {
 					klog.V(2).Info(err)
