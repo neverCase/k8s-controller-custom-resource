@@ -55,20 +55,48 @@ metadata:
 spec:
   masterSpec:
     spec:
-      name: "redis-demo"
+      name: "redis-cn1"
       replicas: 1
-      image: domain/redis-slave:1.1
+      image: harbor.domain.com/helix-saga/redis-slave:1.1
       imagePullSecrets:
-        - name: private-secret
+        - name: private-harbor
       volumePath: /mnt/nas1
+      containerPorts:
+        - containerPort: 6379
+          protocol: TCP
+      servicePorts:
+        - port: 6379
+          protocol: TCP
+          targetPort: 6379
+      resources:
+        limits:
+          memory: "1Gi"
+          cpu: "100m"
+        requests:
+          memory: "0.5Gi"
+          cpu: "100m"
   slaveSpec:
     spec:
-      name: "redis-demo"
+      name: "redis-cn1"
       replicas: 4
-      image: domain/redis-slave:1.1
+      image: harbor.domain.com/helix-saga/redis-slave:1.1
       imagePullSecrets:
-        - name: private-secret
+        - name: private-harbor
       volumePath: /mnt/nas1
+      containerPorts:
+        - containerPort: 6379
+          protocol: TCP
+      servicePorts:
+        - port: 6379
+          protocol: TCP
+          targetPort: 6379
+      resources:
+        limits:
+          memory: "1Gi"
+          cpu: "100m"
+        requests:
+          memory: "0.5Gi"
+          cpu: "100m"
 EOF
 
 $ kubectl apply -f example-redis.yaml

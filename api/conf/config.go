@@ -18,7 +18,7 @@ func init() {
 	flag.StringVar(&masterUrl, "master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
 	flag.StringVar(&apiservice, "apiservice", "0.0.0.0:9090", "The address of the api server.")
 	flag.StringVar(&dockerUrl, "dockerurl", "", "The address of the Harbor server.")
-	flag.StringVar(&dockerAdmin, "dockeradmin", "", "The username of the Harbor's accoount")
+	flag.StringVar(&dockerAdmin, "dockeradmin", "", "The username of the Harbor's account")
 	flag.StringVar(&dockerPassword, "dockerpwd", "", "The password of the Harbor's password")
 }
 

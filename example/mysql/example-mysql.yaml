@@ -7,15 +7,43 @@ spec:
     spec:
       name: "mysql-cn1"
       replicas: 1
-      image: 39.99.229.222:37229/helix-saga/mysql-slave:1.0
+      image: harbor.domain.com/helix-saga/mysql-slave:1.0
       imagePullSecrets:
         - name: private-harbor
       volumePath: /mnt/nas1
+      containerPorts:
+        - containerPort: 3306
+          protocol: TCP
+      servicePorts:
+        - port: 3306
+          protocol: TCP
+          targetPort: 3306
+      resources:
+        limits:
+          memory: "1Gi"
+          cpu: "100m"
+        requests:
+          memory: "0.5Gi"
+          cpu: "100m"
   slaveSpec:
     spec:
       name: "mysql-cn1"
       replicas: 4
-      image: 39.99.229.222:37229/helix-saga/mysql-slave:1.0
+      image: harbor.domain.com/helix-saga/mysql-slave:1.0
       imagePullSecrets:
         - name: private-harbor
       volumePath: /mnt/nas1
+      containerPorts:
+        - containerPort: 3306
+          protocol: TCP
+      servicePorts:
+        - port: 3306
+          protocol: TCP
+          targetPort: 3306
+      resources:
+        limits:
+          memory: "1Gi"
+          cpu: "100m"
+        requests:
+          memory: "0.5Gi"
+          cpu: "100m"
