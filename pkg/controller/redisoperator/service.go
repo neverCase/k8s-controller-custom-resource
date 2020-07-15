@@ -18,6 +18,14 @@ func NewService(foo *redisOperatorV1.RedisOperator, rds *redisOperatorV1.RedisSp
 		"role":       rds.Role,
 	}
 	serviceName = fmt.Sprintf(k8sCoreV1.ServiceNameTemplate, rds.Name)
+	ports := []coreV1.ServicePort{
+		{
+			Port: RedisDefaultPort,
+		},
+	}
+	if len(rds.ServicePorts) > 0 {
+		ports = rds.ServicePorts
+	}
 	return &coreV1.Service{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      serviceName,
@@ -28,11 +36,7 @@ func NewService(foo *redisOperatorV1.RedisOperator, rds *redisOperatorV1.RedisSp
 			Labels: labels,
 		},
 		Spec: coreV1.ServiceSpec{
-			Ports: []coreV1.ServicePort{
-				{
-					Port: RedisDefaultPort,
-				},
-			},
+			Ports:    ports,
 			Selector: labels,
 		},
 	}

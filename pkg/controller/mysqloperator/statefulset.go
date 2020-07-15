@@ -23,12 +23,17 @@ func NewStatefulSet(foo *mysqlOperatorV1.MysqlOperator, rds *mysqlOperatorV1.Mys
 		Type: &t,
 		Path: fmt.Sprintf("%s/mysql/%s", rds.VolumePath, rds.Name),
 	}
-
 	objectName := fmt.Sprintf(k8sCoreV1.StatefulSetNameTemplate, rds.Name)
 	containerName := fmt.Sprintf(k8sCoreV1.ContainerNameTemplate, rds.Name)
-
 	masterName := fmt.Sprintf("%s-%s", foo.Spec.MasterSpec.Spec.Name, k8sCoreV1.MasterName)
-
+	ports := []coreV1.ContainerPort{
+		{
+			ContainerPort: MysqlDefaultPort,
+		},
+	}
+	if len(rds.ContainerPorts) > 0 {
+		ports = rds.ContainerPorts
+	}
 	standard := &appsV1.StatefulSet{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      objectName,
@@ -64,11 +69,7 @@ func NewStatefulSet(foo *mysqlOperatorV1.MysqlOperator, rds *mysqlOperatorV1.Mys
 						{
 							Name:  containerName,
 							Image: rds.Image,
-							Ports: []coreV1.ContainerPort{
-								{
-									ContainerPort: MysqlDefaultPort,
-								},
-							},
+							Ports: ports,
 							Env: []coreV1.EnvVar{
 								{
 									Name:  MysqlServerId,

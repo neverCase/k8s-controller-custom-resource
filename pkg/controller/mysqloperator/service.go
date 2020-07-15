@@ -18,6 +18,14 @@ func NewService(foo *mysqlOperatorV1.MysqlOperator, rds *mysqlOperatorV1.MysqlSp
 		"role":       rds.Role,
 	}
 	serviceName = fmt.Sprintf(k8sCoreV1.ServiceNameTemplate, rds.Name)
+	ports := []coreV1.ServicePort{
+		{
+			Port: MysqlDefaultPort,
+		},
+	}
+	if len(rds.ServicePorts) > 0 {
+		ports = rds.ServicePorts
+	}
 	return &coreV1.Service{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      serviceName,
@@ -28,11 +36,7 @@ func NewService(foo *mysqlOperatorV1.MysqlOperator, rds *mysqlOperatorV1.MysqlSp
 			Labels: labels,
 		},
 		Spec: coreV1.ServiceSpec{
-			Ports: []coreV1.ServicePort{
-				{
-					Port: MysqlDefaultPort,
-				},
-			},
+			Ports:    ports,
 			Selector: labels,
 		},
 	}
