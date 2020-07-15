@@ -178,6 +178,16 @@ message Response {
   optional bytes result = 3;
 }
 
+message Secret {
+  optional string name = 1;
+
+  optional string nameSpace = 2;
+}
+
+message SecretList {
+  repeated Secret items = 1;
+}
+
 message Service {
   optional string Name = 1;
 

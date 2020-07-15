@@ -186,6 +186,8 @@ func (r *resource) Get(rt ResourceType, nameSpace, specName string) (res interfa
 		res, err = r.kubeClientSet.CoreV1().Namespaces().Get(specName, getOpts)
 	case Service:
 		res, err = r.kubeClientSet.CoreV1().Services(nameSpace).Get(specName, getOpts)
+	case Secret:
+		res, err = r.kubeClientSet.CoreV1().Secrets(nameSpace).Get(specName, getOpts)
 	case MysqlOperator:
 		if opt, err = r.options.Get(rt); err != nil {
 			break
@@ -218,6 +220,8 @@ func (r *resource) List(rt ResourceType, nameSpace string, selector labels.Selec
 		res, err = r.kubeClientSet.CoreV1().Namespaces().List(opts)
 	case Service:
 		res, err = r.kubeClientSet.CoreV1().Services(nameSpace).List(opts)
+	case Secret:
+		res, err = r.kubeClientSet.CoreV1().Secrets(nameSpace).List(opts)
 	case MysqlOperator:
 		if opt, err = r.options.Get(rt); err != nil {
 			break

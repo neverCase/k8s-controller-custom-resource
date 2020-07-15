@@ -183,6 +183,18 @@ func (h *k8sHandle) Get(req proto.Param, obj []byte) (res []byte, err error) {
 		m := n.(*corev1.Service)
 		e := convertServiceToProto(m)
 		res, err = e.Marshal()
+	case group.Secret:
+		var s proto.Secret
+		if err = s.Unmarshal(obj); err != nil {
+			break
+		}
+		n, err = h.group.Resource().Get(req.ResourceType, req.NameSpace, s.Name)
+		if err != nil {
+			break
+		}
+		m := n.(*corev1.Secret)
+		e := convertSecretToProto(m)
+		res, err = e.Marshal()
 	case group.MysqlOperator:
 		var mysqlCrd proto.MysqlCrd
 		if err = mysqlCrd.Unmarshal(obj); err != nil {
@@ -241,6 +253,14 @@ func (h *k8sHandle) List(req proto.Param) (res []byte, err error) {
 		}
 		for _, v := range d.(*corev1.ServiceList).Items {
 			m.Items = append(m.Items, convertServiceToProto(&v))
+		}
+		res, err = m.Marshal()
+	case group.Secret:
+		m := proto.SecretList{
+			Items: make([]proto.Secret, 0),
+		}
+		for _, v := range d.(*corev1.SecretList).Items {
+			m.Items = append(m.Items, convertSecretToProto(&v))
 		}
 		res, err = m.Marshal()
 	case group.MysqlOperator:
@@ -543,4 +563,20 @@ func convertServicePortToProto(p []corev1.ServicePort) []proto.ServicePort {
 		})
 	}
 	return res
+}
+
+//func convertProtoToSecret(req proto.Param, v proto.Service) corev1.Secret {
+//	return corev1.Secret{
+//		ObjectMeta: metav1.ObjectMeta{
+//			Name:      v.Name,
+//			Namespace: req.NameSpace,
+//		},
+//	}
+//}
+
+func convertSecretToProto(s *corev1.Secret) proto.Secret {
+	return proto.Secret{
+		Name:      s.Name,
+		NameSpace: s.Namespace,
+	}
 }

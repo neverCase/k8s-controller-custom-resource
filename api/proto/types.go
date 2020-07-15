@@ -212,6 +212,15 @@ type IntOrString struct {
 	StrVal string `protobuf:"bytes,3,opt,name=strVal"`
 }
 
+type Secret struct {
+	Name      string `json:"name" protobuf:"bytes,1,opt,name=name"`
+	NameSpace string `json:"nameSpace" protobuf:"bytes,2,opt,name=nameSpace"`
+}
+
+type SecretList struct {
+	Items []Secret `json:"items" protobuf:"bytes,1,rep,name=items"`
+}
+
 // The shortage ot the harbor projects
 type HarborProject struct {
 	ProjectID int32  `json:"projectId" protobuf:"varint,1,opt,name=projectId"`

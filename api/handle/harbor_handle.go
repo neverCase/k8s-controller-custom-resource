@@ -42,6 +42,10 @@ func (ha *harborApi) Core(req proto.Param, obj []byte) (res []byte, err error) {
 	case proto.Tags:
 		res, err = ha.Tags(hr.ImageName)
 	}
+	if err != nil {
+		klog.V(2).Info(err)
+		return nil, err
+	}
 	return proto.GetResponse(req, res)
 }
 
