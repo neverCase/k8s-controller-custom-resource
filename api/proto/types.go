@@ -15,6 +15,15 @@ const (
 	SvcList     ApiService = "list"
 	SvcWatch    ApiService = "watch"
 	SvcResource ApiService = "resource"
+	SvcHarbor   ApiService = "harbor"
+)
+
+type HarborCommand string
+
+const (
+	Projects     HarborCommand = "projects"
+	Repositories HarborCommand = "repositories"
+	Tags         HarborCommand = "tags"
 )
 
 const (
@@ -230,4 +239,10 @@ type HarborTag struct {
 
 type HarborTagList struct {
 	Items []HarborTag `json:"items" protobuf:"bytes,1,rep,name=items"`
+}
+
+type HarborRequest struct {
+	Command   HarborCommand `json:"command" protobuf:"bytes,1,opt,name=command"`
+	ProjectID int32         `json:"projectId" protobuf:"varint,2,opt,name=projectId"`
+	ImageName string        `json:"imageName" protobuf:"bytes,3,opt,name=imageName"`
 }

@@ -3,16 +3,15 @@ package service
 import (
 	"context"
 	"fmt"
-	"github.com/nevercase/k8s-controller-custom-resource/api/handle"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/gorilla/websocket"
-	"k8s.io/klog"
-
 	"github.com/nevercase/k8s-controller-custom-resource/api/group"
+	"github.com/nevercase/k8s-controller-custom-resource/api/handle"
 	"github.com/nevercase/k8s-controller-custom-resource/api/proto"
+	"k8s.io/klog"
 )
 
 type ConnHub interface {
@@ -184,6 +183,13 @@ func (c *wsConn) ReadPump() (err error) {
 					klog.V(2).Info(err)
 				}
 			}
+		case proto.SvcHarbor:
+			if res, err = c.handle.HarborApi().Core(msg.Data); err != nil {
+				klog.V(2).Info(err)
+				if res, err = proto.ErrorResponse(msg.Param); err != nil {
+					klog.V(2).Info(err)
+				}
+			}
 		}
 		if err = c.SendToChannel(res); err != nil {
 			return err
@@ -208,7 +214,7 @@ func (c *wsConn) SendToChannel(msg []byte) (err error) {
 			return
 		case <-tick.C:
 			err = fmt.Errorf("wsSend timeout ws.cid:%d msg:(%v) ws:%v\n", c.clientId, msg, c)
-			klog.Info(err)
+			klog.V(2).Info(err)
 			return err
 		}
 	}

@@ -63,6 +63,14 @@ message HarborRepositoryList {
   repeated HarborRepository items = 1;
 }
 
+message HarborRequest {
+  optional string command = 1;
+
+  optional int32 projectId = 2;
+
+  optional string imageName = 3;
+}
+
 message HarborTag {
   optional string digest = 1;
 

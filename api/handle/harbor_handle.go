@@ -12,6 +12,7 @@ type HarborApiGetter interface {
 }
 
 type HarborApiInterface interface {
+	Core(obj []byte) (res []byte, err error)
 	Projects() (res []byte, err error)
 	Repositories(projectId int) (res []byte, err error)
 	Tags(imageName string) (res []byte, err error)
@@ -25,6 +26,23 @@ func NewHarborApi(g group.Group) HarborApiInterface {
 
 type harborApi struct {
 	group group.Group
+}
+
+func (ha *harborApi) Core(obj []byte) (res []byte, err error) {
+	var req proto.HarborRequest
+	if err = req.Unmarshal(obj); err != nil {
+		klog.V(2).Info(err)
+		return nil, err
+	}
+	switch req.Command {
+	case proto.Projects:
+		return ha.Projects()
+	case proto.Repositories:
+		return ha.Repositories(int(req.ProjectID))
+	case proto.Tags:
+		return ha.Tags(req.ImageName)
+	}
+	return res, nil
 }
 
 func (ha *harborApi) Projects() (res []byte, err error) {
