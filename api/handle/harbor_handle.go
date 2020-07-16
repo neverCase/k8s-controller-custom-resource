@@ -46,6 +46,7 @@ func (ha *harborApi) Core(req proto.Param, obj []byte) (res []byte, err error) {
 		klog.V(2).Info(err)
 		return nil, err
 	}
+	req.Command = hr.Command
 	return proto.GetResponse(req, res)
 }
 

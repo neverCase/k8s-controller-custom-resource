@@ -131,6 +131,8 @@ message Param {
   optional string resourceType = 2;
 
   optional string nameSpace = 3;
+
+  optional string command = 4;
 }
 
 // PodResourceRequirements describes the compute resource requirements.
