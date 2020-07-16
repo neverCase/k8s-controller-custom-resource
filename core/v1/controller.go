@@ -52,7 +52,7 @@ func NewKubernetesController(operator KubernetesOperator) KubernetesControllerV1
 	serviceInformer := kubeInformerFactory.Core().V1().Services()
 	pvcInformer := kubeInformerFactory.Core().V1().PersistentVolumeClaims()
 
-	var kc KubernetesControllerV1 = &kubernetesController{
+	var kc = &kubernetesController{
 		deploymentsLister:   deploymentInformer.Lister(),
 		deploymentsSynced:   deploymentInformer.Informer().HasSynced,
 		statefulSetInformer: statefulSetInformer.Lister(),
@@ -63,29 +63,28 @@ func NewKubernetesController(operator KubernetesOperator) KubernetesControllerV1
 		servicesSynced:      serviceInformer.Informer().HasSynced,
 
 		operator: operator,
-		//operatorSynced: operator.HasSyncedFunc(),
 
 		workqueue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), operator.AgentName()),
 		recorder:  operator.Recorder(),
 	}
-
 	klog.Info("Setting up event handlers")
 	// Set up an event handler for when Operator resources change
-	for crdType, v := range operator.Options().List() {
-		v.AddEventHandler(cache.ResourceEventHandlerFuncs{
+	m := operator.Options().List()
+	for crdType := range m {
+		m[crdType].Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 			AddFunc: kc.EnqueueFoo,
 			UpdateFunc: func(old, new interface{}) {
-				if crdType != reflect.TypeOf(new) {
+				if reflect.TypeOf(old) != reflect.TypeOf(new) {
 					return
 				}
-				if match := v.CompareResourceVersion(old, new); match {
+				t := reflect.TypeOf(new)
+				if match := m[t].CompareResourceVersion(old, new); match {
 					return
 				}
 				kc.EnqueueFoo(new)
 			},
 		})
 	}
-
 	// Set up an event handler for when Deployment resources change. This
 	// handler will lookup the owner of the given Deployment, and if it is
 	// owned by a Operator resource will enqueue that Operator resource for
@@ -106,7 +105,6 @@ func NewKubernetesController(operator KubernetesOperator) KubernetesControllerV1
 		},
 		DeleteFunc: kc.HandleObject,
 	})
-
 	statefulSetInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: kc.HandleObject,
 		UpdateFunc: func(old, new interface{}) {
@@ -121,7 +119,6 @@ func NewKubernetesController(operator KubernetesOperator) KubernetesControllerV1
 		},
 		DeleteFunc: kc.HandleObject,
 	})
-
 	serviceInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: kc.HandleObject,
 		UpdateFunc: func(old, new interface{}) {
@@ -136,7 +133,6 @@ func NewKubernetesController(operator KubernetesOperator) KubernetesControllerV1
 		},
 		DeleteFunc: kc.HandleObject,
 	})
-
 	pvcInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: kc.HandleObject,
 		UpdateFunc: func(old, new interface{}) {
@@ -172,8 +168,7 @@ type kubernetesController struct {
 	servicesLister      corelistersv1.ServiceLister
 	servicesSynced      cache.InformerSynced
 
-	operator       KubernetesOperator
-	operatorSynced cache.InformerSynced
+	operator KubernetesOperator
 
 	// workqueue is a rate limited work queue. This is used to queue work to be
 	// processed instead of performing it as soon as a change happens. This
@@ -203,9 +198,13 @@ func (kc *kubernetesController) Run(threadiness int, stopCh <-chan struct{}) err
 	cacheSyncs = append(cacheSyncs, kc.deploymentsSynced)
 	cacheSyncs = append(cacheSyncs, kc.statefulSetSynced)
 	cacheSyncs = append(cacheSyncs, kc.servicesSynced)
-	for _, v := range kc.operator.Options().HasSyncedFunc() {
-		cacheSyncs = append(cacheSyncs, v)
+	for k, v := range kc.operator.Options().List() {
+		klog.Infof("HasSynced k:%v v:%v\n", k, v.Informer().HasSynced)
+		cacheSyncs = append(cacheSyncs, v.Informer().HasSynced)
 	}
+	//for _, v := range kc.operator.Options().HasSyncedFunc() {
+	//	cacheSyncs = append(cacheSyncs, v)
+	//}
 	if ok := cache.WaitForCacheSync(stopCh, cacheSyncs...); !ok {
 		return fmt.Errorf("failed to wait for caches to sync")
 	}

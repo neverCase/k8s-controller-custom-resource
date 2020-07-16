@@ -19,10 +19,9 @@ const (
 )
 
 type Options interface {
-	Add(opt... Option) error
+	Add(opt ...Option) error
 	Get(objType reflect.Type) Option
 	GetWithKindName(kindName string) (opt Option, err error)
-	HasSyncedFunc() []func() bool
 	List() map[reflect.Type]Option
 }
 
@@ -40,7 +39,7 @@ func NewOptions() Options {
 	return o
 }
 
-func (o *options) Add(opt... Option) error {
+func (o *options) Add(opt ...Option) error {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 	for _, v := range opt {
@@ -66,16 +65,6 @@ func (o *options) GetWithKindName(kindName string) (opt Option, err error) {
 	return o.Get(t), nil
 }
 
-func (o *options) HasSyncedFunc() []func() bool {
-	o.mu.Lock()
-	defer o.mu.Unlock()
-	res := make([]func() bool, 0)
-	for _, v := range o.hub {
-		res = append(res, v.HasSyncedFunc())
-	}
-	return res
-}
-
 func (o *options) List() map[reflect.Type]Option {
 	return o.hub
 }
@@ -84,9 +73,8 @@ type Option interface {
 	GetReflectType() reflect.Type
 	KindName() string
 	AgentName() string
+	Informer() cache.SharedIndexInformer
 	SyncHandleObject(obj interface{}, ks KubernetesResource, recorder record.EventRecorder) error
-	HasSyncedFunc() func() bool
-	AddEventHandler(handler cache.ResourceEventHandler)
 	CompareResourceVersion(old, new interface{}) bool
 	Get(nameSpace, ownerRefName string) (obj interface{}, err error)
 }
@@ -97,8 +85,7 @@ type option struct {
 	agentClientSet             interface{}
 	agent                      interface{}
 	agentName                  string
-	hasSynced                  func() bool
-	addEvent                   func(handler cache.ResourceEventHandler)
+	informer                   cache.SharedIndexInformer
 	compareResourceVersionFunc func(old, new interface{}) bool
 	getFunc                    func(informer interface{}, nameSpace, ownerRefName string) (obj interface{}, err error)
 	syncFunc                   func(obj interface{}, agentClientSet interface{}, ks KubernetesResource, opt record.EventRecorder) error
@@ -109,22 +96,20 @@ func NewOption(operator interface{},
 	err error,
 	agentClientSet interface{},
 	foo interface{},
-	hasSynced func() bool,
-	addEvent func(handler cache.ResourceEventHandler),
+	informer cache.SharedIndexInformer,
 	compareResourceVersionFunc func(old, new interface{}) bool,
 	getFunc func(informer interface{}, nameSpace, ownerRefName string) (obj interface{}, err error),
 	syncFunc func(obj interface{}, agentClientSet interface{}, ks KubernetesResource, opt record.EventRecorder) error) Option {
 
 	utilruntime.Must(err)
 
-	var opt Option = &option{
+	var opt = &option{
 		operatorType:               reflect.TypeOf(operator),
 		kindName:                   kindName,
 		agentClientSet:             agentClientSet,
 		agent:                      foo,
 		agentName:                  agentName,
-		hasSynced:                  hasSynced,
-		addEvent:                   addEvent,
+		informer:                   informer,
 		compareResourceVersionFunc: compareResourceVersionFunc,
 		getFunc:                    getFunc,
 		syncFunc:                   syncFunc,
@@ -144,12 +129,8 @@ func (opt *option) AgentName() string {
 	return opt.agentName
 }
 
-func (opt *option) HasSyncedFunc() func() bool {
-	return opt.hasSynced
-}
-
-func (opt *option) AddEventHandler(handler cache.ResourceEventHandler) {
-	opt.addEvent(handler)
+func (opt *option) Informer() cache.SharedIndexInformer {
+	return opt.informer
 }
 
 func (opt *option) SyncHandleObject(obj interface{}, ks KubernetesResource, recorder record.EventRecorder) error {

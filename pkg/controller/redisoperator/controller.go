@@ -50,8 +50,7 @@ func NewController(
 		redisOperatorScheme.AddToScheme(scheme.Scheme),
 		clientSet,
 		fooInformer,
-		fooInformer.Informer().HasSynced,
-		fooInformer.Informer().AddEventHandler,
+		fooInformer.Informer(),
 		CompareResourceVersion,
 		Get,
 		Sync)
@@ -78,8 +77,7 @@ func NewOption(controllerName string, cfg *rest.Config, stopCh <-chan struct{}) 
 		redisOperatorScheme.AddToScheme(scheme.Scheme),
 		c,
 		fooInformer,
-		fooInformer.Informer().HasSynced,
-		fooInformer.Informer().AddEventHandler,
+		fooInformer.Informer(),
 		CompareResourceVersion,
 		Get,
 		Sync)
