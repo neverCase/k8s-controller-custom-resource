@@ -13,6 +13,7 @@ type HarborApiGetter interface {
 
 type HarborApiInterface interface {
 	Core(req proto.Param, obj []byte) (res []byte, err error)
+	Hubs() (res []byte, err error)
 	Projects(url string) (res []byte, err error)
 	Repositories(url string, projectId int) (res []byte, err error)
 	Tags(url, imageName string) (res []byte, err error)
@@ -35,6 +36,8 @@ func (ha *harborApi) Core(req proto.Param, obj []byte) (res []byte, err error) {
 		return nil, err
 	}
 	switch hr.Command {
+	case proto.Hubs:
+		res, err = ha.Hubs()
 	case proto.Projects:
 		res, err = ha.Projects(hr.HarborUrl)
 	case proto.Repositories:
@@ -48,6 +51,20 @@ func (ha *harborApi) Core(req proto.Param, obj []byte) (res []byte, err error) {
 	}
 	req.Command = hr.Command
 	return proto.GetResponse(req, res)
+}
+
+func (ha *harborApi) Hubs() (res []byte, err error) {
+	t := make([]string, 0)
+	t = ha.group.HarborHub().List()
+	m := proto.HarborHubList{
+		Items: make([]proto.HarborHub, 0),
+	}
+	for _, v := range t {
+		m.Items = append(m.Items, proto.HarborHub{
+			Name: v,
+		})
+	}
+	return m.Marshal()
 }
 
 func (ha *harborApi) Projects(url string) (res []byte, err error) {

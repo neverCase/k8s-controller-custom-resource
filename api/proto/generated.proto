@@ -41,6 +41,14 @@ message ConfigMapList {
 }
 
 // The shortage ot the harbor projects
+message HarborHub {
+  optional string name = 1;
+}
+
+message HarborHubList {
+  repeated HarborHub items = 1;
+}
+
 message HarborProject {
   optional int32 projectId = 1;
 
@@ -64,11 +72,13 @@ message HarborRepositoryList {
 }
 
 message HarborRequest {
-  optional string command = 1;
+  optional string harborUrl = 1;
 
-  optional int32 projectId = 2;
+  optional string command = 2;
 
-  optional string imageName = 3;
+  optional int32 projectId = 3;
+
+  optional string imageName = 4;
 }
 
 message HarborTag {

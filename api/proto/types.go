@@ -21,6 +21,7 @@ const (
 type HarborCommand string
 
 const (
+	Hubs         HarborCommand = "hubs"
 	Projects     HarborCommand = "projects"
 	Repositories HarborCommand = "repositories"
 	Tags         HarborCommand = "tags"
@@ -223,6 +224,14 @@ type SecretList struct {
 }
 
 // The shortage ot the harbor projects
+type HarborHub struct {
+	Name string `json:"name" protobuf:"bytes,1,opt,name=name"`
+}
+
+type HarborHubList struct {
+	Items []HarborHub `json:"items" protobuf:"bytes,1,rep,name=items"`
+}
+
 type HarborProject struct {
 	ProjectID int32  `json:"projectId" protobuf:"varint,1,opt,name=projectId"`
 	Name      string `json:"name" protobuf:"bytes,2,opt,name=name"`
