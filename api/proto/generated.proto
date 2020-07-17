@@ -40,6 +40,35 @@ message ConfigMapList {
   repeated ConfigMap items = 1;
 }
 
+// ContainerPort represents a network port in a single container.
+message ContainerPort {
+  // If specified, this must be an IANA_SVC_NAME and unique within the pod. Each
+  // named port in a pod must have a unique name. Name for the port that can be
+  // referred to by services.
+  // +optional
+  optional string name = 1;
+
+  // Number of port to expose on the host.
+  // If specified, this must be a valid port number, 0 < x < 65536.
+  // If HostNetwork is specified, this must match ContainerPort.
+  // Most containers do not need this.
+  // +optional
+  optional int32 hostPort = 2;
+
+  // Number of port to expose on the pod's IP address.
+  // This must be a valid port number, 0 < x < 65536.
+  optional int32 containerPort = 3;
+
+  // Protocol for port. Must be UDP, TCP, or SCTP.
+  // Defaults to "TCP".
+  // +optional
+  optional string protocol = 4;
+
+  // What host IP to bind the external port to.
+  // +optional
+  optional string hostIP = 5;
+}
+
 // The shortage ot the harbor projects
 message HarborHub {
   optional string name = 1;
@@ -133,6 +162,30 @@ message NodeSpec {
 
   // PodResource
   optional PodResourceRequirements podResource = 6;
+
+  // List of ports to expose from the container. Exposing a port here gives
+  // the system additional information about the network connections a
+  // container uses, but is primarily informational. Not specifying a port here
+  // DOES NOT prevent that port from being exposed. Any port which is
+  // listening on the default "0.0.0.0" address inside a container will be
+  // accessible from the network.
+  // Cannot be updated.
+  // +optional
+  // +patchMergeKey=containerPort
+  // +patchStrategy=merge
+  // +listType=map
+  // +listMapKey=containerPort
+  // +listMapKey=protocol
+  repeated ContainerPort containerPorts = 7;
+
+  // The list of ports that are exposed by this service.
+  // More info: https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies
+  // +patchMergeKey=port
+  // +patchStrategy=merge
+  // +listType=map
+  // +listMapKey=port
+  // +listMapKey=protocol
+  repeated ServicePort servicePorts = 8;
 }
 
 message Param {

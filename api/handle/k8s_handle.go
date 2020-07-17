@@ -368,8 +368,10 @@ func convertMysqlCrdToProto(req proto.Param, mysqlCrd proto.MysqlCrd) *mysqloper
 							Name: mysqlCrd.Master.ImagePullSecrets,
 						},
 					},
-					VolumePath: mysqlCrd.Master.VolumePath,
-					Resources:  convertResourceRequirementsToProto(mysqlCrd.Master.PodResource),
+					VolumePath:     mysqlCrd.Master.VolumePath,
+					Resources:      convertResourceRequirementsToProto(mysqlCrd.Master.PodResource),
+					ContainerPorts: convertProtoToContainerPort(mysqlCrd.Master.ContainerPorts),
+					ServicePorts:   convertProtoToServicePort(mysqlCrd.Master.ServicePorts),
 				},
 			},
 			SlaveSpec: mysqloperatorv1.MysqlCore{
@@ -382,8 +384,10 @@ func convertMysqlCrdToProto(req proto.Param, mysqlCrd proto.MysqlCrd) *mysqloper
 							Name: mysqlCrd.Slave.ImagePullSecrets,
 						},
 					},
-					VolumePath: mysqlCrd.Slave.VolumePath,
-					Resources:  convertResourceRequirementsToProto(mysqlCrd.Slave.PodResource),
+					VolumePath:     mysqlCrd.Slave.VolumePath,
+					Resources:      convertResourceRequirementsToProto(mysqlCrd.Slave.PodResource),
+					ContainerPorts: convertProtoToContainerPort(mysqlCrd.Slave.ContainerPorts),
+					ServicePorts:   convertProtoToServicePort(mysqlCrd.Slave.ServicePorts),
 				},
 			},
 		},
@@ -400,6 +404,8 @@ func convertProtoToMysqlCrd(m *mysqloperatorv1.MysqlOperator) proto.MysqlCrd {
 			ImagePullSecrets: m.Spec.MasterSpec.Spec.ImagePullSecrets[0].Name,
 			VolumePath:       m.Spec.MasterSpec.Spec.VolumePath,
 			PodResource:      convertProtoToResourceRequirements(m.Spec.MasterSpec.Spec.Resources),
+			ContainerPorts:   convertContainerPortToProto(m.Spec.MasterSpec.Spec.ContainerPorts),
+			ServicePorts:     convertServicePortToProto(m.Spec.MasterSpec.Spec.ServicePorts),
 		},
 		Slave: proto.NodeSpec{
 			Name:             m.Spec.SlaveSpec.Spec.Name,
@@ -408,6 +414,8 @@ func convertProtoToMysqlCrd(m *mysqloperatorv1.MysqlOperator) proto.MysqlCrd {
 			ImagePullSecrets: m.Spec.SlaveSpec.Spec.ImagePullSecrets[0].Name,
 			VolumePath:       m.Spec.SlaveSpec.Spec.VolumePath,
 			PodResource:      convertProtoToResourceRequirements(m.Spec.SlaveSpec.Spec.Resources),
+			ContainerPorts:   convertContainerPortToProto(m.Spec.SlaveSpec.Spec.ContainerPorts),
+			ServicePorts:     convertServicePortToProto(m.Spec.SlaveSpec.Spec.ServicePorts),
 		},
 	}
 }
@@ -429,8 +437,10 @@ func convertProtoToRedisCrd(req proto.Param, redisCrd proto.RedisCrd) *redisoper
 							Name: redisCrd.Master.ImagePullSecrets,
 						},
 					},
-					VolumePath: redisCrd.Master.VolumePath,
-					Resources:  convertResourceRequirementsToProto(redisCrd.Master.PodResource),
+					VolumePath:     redisCrd.Master.VolumePath,
+					Resources:      convertResourceRequirementsToProto(redisCrd.Master.PodResource),
+					ContainerPorts: convertProtoToContainerPort(redisCrd.Master.ContainerPorts),
+					ServicePorts:   convertProtoToServicePort(redisCrd.Master.ServicePorts),
 				},
 			},
 			SlaveSpec: redisoperatorv1.RedisCore{
@@ -443,8 +453,10 @@ func convertProtoToRedisCrd(req proto.Param, redisCrd proto.RedisCrd) *redisoper
 							Name: redisCrd.Slave.ImagePullSecrets,
 						},
 					},
-					VolumePath: redisCrd.Slave.VolumePath,
-					Resources:  convertResourceRequirementsToProto(redisCrd.Slave.PodResource),
+					VolumePath:     redisCrd.Slave.VolumePath,
+					Resources:      convertResourceRequirementsToProto(redisCrd.Slave.PodResource),
+					ContainerPorts: convertProtoToContainerPort(redisCrd.Slave.ContainerPorts),
+					ServicePorts:   convertProtoToServicePort(redisCrd.Slave.ServicePorts),
 				},
 			},
 		},
@@ -461,6 +473,8 @@ func convertRedisCrdToProto(v *redisoperatorv1.RedisOperator) proto.RedisCrd {
 			ImagePullSecrets: v.Spec.MasterSpec.Spec.ImagePullSecrets[0].Name,
 			VolumePath:       v.Spec.MasterSpec.Spec.VolumePath,
 			PodResource:      convertProtoToResourceRequirements(v.Spec.MasterSpec.Spec.Resources),
+			ContainerPorts:   convertContainerPortToProto(v.Spec.MasterSpec.Spec.ContainerPorts),
+			ServicePorts:     convertServicePortToProto(v.Spec.MasterSpec.Spec.ServicePorts),
 		},
 		Slave: proto.NodeSpec{
 			Name:             v.Spec.SlaveSpec.Spec.Name,
@@ -469,6 +483,8 @@ func convertRedisCrdToProto(v *redisoperatorv1.RedisOperator) proto.RedisCrd {
 			ImagePullSecrets: v.Spec.SlaveSpec.Spec.ImagePullSecrets[0].Name,
 			VolumePath:       v.Spec.SlaveSpec.Spec.VolumePath,
 			PodResource:      convertProtoToResourceRequirements(v.Spec.SlaveSpec.Spec.Resources),
+			ContainerPorts:   convertContainerPortToProto(v.Spec.SlaveSpec.Spec.ContainerPorts),
+			ServicePorts:     convertServicePortToProto(v.Spec.SlaveSpec.Spec.ServicePorts),
 		},
 	}
 }
@@ -560,6 +576,34 @@ func convertServicePortToProto(p []corev1.ServicePort) []proto.ServicePort {
 				StrVal: v.TargetPort.StrVal,
 			},
 			NodePort: v.NodePort,
+		})
+	}
+	return res
+}
+
+func convertProtoToContainerPort(c []proto.ContainerPort) []corev1.ContainerPort {
+	res := make([]corev1.ContainerPort, 0)
+	for _, v := range c {
+		res = append(res, corev1.ContainerPort{
+			Name:          v.Name,
+			HostPort:      v.HostPort,
+			ContainerPort: v.ContainerPort,
+			Protocol:      corev1.Protocol(v.Protocol),
+			HostIP:        v.HostIP,
+		})
+	}
+	return res
+}
+
+func convertContainerPortToProto(c []corev1.ContainerPort) []proto.ContainerPort {
+	res := make([]proto.ContainerPort, 0)
+	for _, v := range c {
+		res = append(res, proto.ContainerPort{
+			Name:          v.Name,
+			HostPort:      v.HostPort,
+			ContainerPort: v.ContainerPort,
+			Protocol:      string(v.Protocol),
+			HostIP:        v.HostIP,
 		})
 	}
 	return res
