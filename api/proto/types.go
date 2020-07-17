@@ -71,7 +71,7 @@ type RedisCrd struct {
 }
 
 type NodeSpec struct {
-	Name             string `json:"name" protobuf:"bytes,1,rep,name=Name"`
+	Name             string `json:"name" protobuf:"bytes,1,rep,name=name"`
 	Replicas         int32  `json:"replicas" protobuf:"varint,2,opt,name=replicas"`
 	Image            string `json:"image" protobuf:"bytes,3,rep,name=image"`
 	ImagePullSecrets string `json:"imagePullSecrets" protobuf:"bytes,4,rep,name=imagePullSecrets"`

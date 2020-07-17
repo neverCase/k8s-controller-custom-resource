@@ -149,7 +149,7 @@ message NameSpaceList {
 }
 
 message NodeSpec {
-  optional string Name = 1;
+  optional string name = 1;
 
   optional int32 replicas = 2;
 
