@@ -6,7 +6,7 @@ require (
 	github.com/gogo/protobuf v1.3.1
 	github.com/gorilla/websocket v1.4.2
 	github.com/imdario/mergo v0.3.8 // indirect
-	github.com/nevercase/harbor-api v0.0.0-20200716083006-8acb88268c2a
+	github.com/nevercase/harbor-api v0.0.0-20200717044838-aa246b4ff92b
 	golang.org/x/crypto v0.0.0-20191011191535-87dc89f01550 // indirect
 	golang.org/x/net v0.0.0-20200226121028-0de0cce0169b // indirect
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d // indirect

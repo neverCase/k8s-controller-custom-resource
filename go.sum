@@ -96,6 +96,12 @@ github.com/munnerz/goautoneg v0.0.0-20120707110453-a547fc61f48d/go.mod h1:+n7T8m
 github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f/go.mod h1:ZdcZmHo+o7JKHSa8/e818NopupXU1YMK5fe1lsApnBw=
 github.com/nevercase/harbor-api v0.0.0-20200716083006-8acb88268c2a h1:FBofx2lSL5fi+HLJ8sBLb3h1g/EKxEjBaQVjqjA9WN4=
 github.com/nevercase/harbor-api v0.0.0-20200716083006-8acb88268c2a/go.mod h1:/NDdtl4wLA+nPVN6N+Xy4xKKWi2ulHglZwDOvHxa1nE=
+github.com/nevercase/harbor-api v0.0.0-20200717042021-dc0b8e67ba74 h1:ntJMKcMB8U35hEk5TXFeKI2IPAln7ahQv9W0W4L/3tU=
+github.com/nevercase/harbor-api v0.0.0-20200717042021-dc0b8e67ba74/go.mod h1:/NDdtl4wLA+nPVN6N+Xy4xKKWi2ulHglZwDOvHxa1nE=
+github.com/nevercase/harbor-api v0.0.0-20200717044045-a94335d78f0e h1:4u5Sdt8XCkElxNsQSpXeth1UDYXc4Tth+BIl7xoSzBQ=
+github.com/nevercase/harbor-api v0.0.0-20200717044045-a94335d78f0e/go.mod h1:/NDdtl4wLA+nPVN6N+Xy4xKKWi2ulHglZwDOvHxa1nE=
+github.com/nevercase/harbor-api v0.0.0-20200717044838-aa246b4ff92b h1:5db5l2akuiXDvfJIny49HIhQiT6OAiLzfOpEYi2h1Tg=
+github.com/nevercase/harbor-api v0.0.0-20200717044838-aa246b4ff92b/go.mod h1:/NDdtl4wLA+nPVN6N+Xy4xKKWi2ulHglZwDOvHxa1nE=
 github.com/nevercase/harbor-api v0.17.3 h1:Xv09TmtQ6ZStYSiHwaqz0SZgFjq9Hh0OFYkolbmsUEY=
 github.com/nevercase/harbor-api v0.17.3/go.mod h1:/NDdtl4wLA+nPVN6N+Xy4xKKWi2ulHglZwDOvHxa1nE=
 github.com/onsi/ginkgo v0.0.0-20170829012221-11459a886d9c/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=

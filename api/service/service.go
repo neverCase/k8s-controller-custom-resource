@@ -29,7 +29,7 @@ func (s *service) Close() {
 }
 
 func NewService(c conf.Config) Service {
-	g := group.NewGroup(c.MasterUrl(), c.KubeConfig(), c.DockerUrl(), c.DockerAdmin(), c.DockerPassword())
+	g := group.NewGroup(c.MasterUrl(), c.KubeConfig(), c.DockerHub())
 	ctx, cancel := context.WithCancel(context.Background())
 	s := &service{
 		conf:   c,

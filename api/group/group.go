@@ -4,26 +4,26 @@ import harbor "github.com/nevercase/harbor-api"
 
 type Group interface {
 	ResourceGetter
-	harbor.HarborGetter
+	harbor.HubGetter
 }
 
-func NewGroup(masterUrl, kubeconfigPath, dockerUrl, dockerAdmin, dockerPassword string) Group {
+func NewGroup(masterUrl, kubeConfigPath string, dockerHub []harbor.Config) Group {
 	var g = &group{
-		resource: NewResource(masterUrl, kubeconfigPath),
-		harbor:   harbor.NewHarbor(dockerUrl, dockerAdmin, dockerPassword),
+		resource: NewResource(masterUrl, kubeConfigPath),
+		harbor:   harbor.NewHub(dockerHub),
 	}
 	return g
 }
 
 type group struct {
 	resource ResourceInterface
-	harbor   harbor.HarborInterface
+	harbor   harbor.HubInterface
 }
 
 func (g *group) Resource() ResourceInterface {
 	return g.resource
 }
 
-func (g *group) Harbor() harbor.HarborInterface {
+func (g *group) HarborHub() harbor.HubInterface {
 	return g.harbor
 }

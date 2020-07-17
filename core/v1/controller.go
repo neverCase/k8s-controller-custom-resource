@@ -77,8 +77,7 @@ func NewKubernetesController(operator KubernetesOperator) KubernetesControllerV1
 				if reflect.TypeOf(old) != reflect.TypeOf(new) {
 					return
 				}
-				t := reflect.TypeOf(new)
-				if match := m[t].CompareResourceVersion(old, new); match {
+				if match := m[reflect.TypeOf(new)].CompareResourceVersion(old, new); match {
 					return
 				}
 				kc.EnqueueFoo(new)

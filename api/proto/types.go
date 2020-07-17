@@ -252,7 +252,8 @@ type HarborTagList struct {
 }
 
 type HarborRequest struct {
-	Command   HarborCommand `json:"command" protobuf:"bytes,1,opt,name=command"`
-	ProjectID int32         `json:"projectId" protobuf:"varint,2,opt,name=projectId"`
-	ImageName string        `json:"imageName" protobuf:"bytes,3,opt,name=imageName"`
+	HarborUrl string        `json:"harborUrl" protobuf:"bytes,1,opt,name=harborUrl"`
+	Command   HarborCommand `json:"command" protobuf:"bytes,2,opt,name=command"`
+	ProjectID int32         `json:"projectId" protobuf:"varint,3,opt,name=projectId"`
+	ImageName string        `json:"imageName" protobuf:"bytes,4,opt,name=imageName"`
 }

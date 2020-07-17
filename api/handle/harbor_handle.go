@@ -13,9 +13,9 @@ type HarborApiGetter interface {
 
 type HarborApiInterface interface {
 	Core(req proto.Param, obj []byte) (res []byte, err error)
-	Projects() (res []byte, err error)
-	Repositories(projectId int) (res []byte, err error)
-	Tags(imageName string) (res []byte, err error)
+	Projects(url string) (res []byte, err error)
+	Repositories(url string, projectId int) (res []byte, err error)
+	Tags(url, imageName string) (res []byte, err error)
 }
 
 func NewHarborApi(g group.Group) HarborApiInterface {
@@ -36,11 +36,11 @@ func (ha *harborApi) Core(req proto.Param, obj []byte) (res []byte, err error) {
 	}
 	switch hr.Command {
 	case proto.Projects:
-		res, err = ha.Projects()
+		res, err = ha.Projects(hr.HarborUrl)
 	case proto.Repositories:
-		res, err = ha.Repositories(int(hr.ProjectID))
+		res, err = ha.Repositories(hr.HarborUrl, int(hr.ProjectID))
 	case proto.Tags:
-		res, err = ha.Tags(hr.ImageName)
+		res, err = ha.Tags(hr.HarborUrl, hr.ImageName)
 	}
 	if err != nil {
 		klog.V(2).Info(err)
@@ -50,9 +50,9 @@ func (ha *harborApi) Core(req proto.Param, obj []byte) (res []byte, err error) {
 	return proto.GetResponse(req, res)
 }
 
-func (ha *harborApi) Projects() (res []byte, err error) {
+func (ha *harborApi) Projects(url string) (res []byte, err error) {
 	t := make([]harbor.Project, 0)
-	if t, err = ha.group.Harbor().Projects(); err != nil {
+	if t, err = ha.group.HarborHub().Get(url).Projects(); err != nil {
 		klog.V(2).Info(err)
 		return nil, err
 	}
@@ -68,9 +68,9 @@ func (ha *harborApi) Projects() (res []byte, err error) {
 	return m.Marshal()
 }
 
-func (ha *harborApi) Repositories(projectId int) (res []byte, err error) {
+func (ha *harborApi) Repositories(url string, projectId int) (res []byte, err error) {
 	t := make([]harbor.RepoRecord, 0)
-	if t, err = ha.group.Harbor().Repositories(projectId); err != nil {
+	if t, err = ha.group.HarborHub().Get(url).Repositories(projectId); err != nil {
 		klog.V(2).Info(err)
 		return nil, err
 	}
@@ -87,9 +87,9 @@ func (ha *harborApi) Repositories(projectId int) (res []byte, err error) {
 	return m.Marshal()
 }
 
-func (ha *harborApi) Tags(imageName string) (res []byte, err error) {
+func (ha *harborApi) Tags(url, imageName string) (res []byte, err error) {
 	t := make([]harbor.TagDetail, 0)
-	if t, err = ha.group.Harbor().Tags(imageName); err != nil {
+	if t, err = ha.group.HarborHub().Get(url).Tags(imageName); err != nil {
 		klog.V(2).Info(err)
 		return nil, err
 	}

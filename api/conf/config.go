@@ -2,42 +2,52 @@ package conf
 
 import (
 	"flag"
+
+	harbor "github.com/nevercase/harbor-api"
+	"k8s.io/klog"
 )
+
+type arrayFlags []string
+
+func (i *arrayFlags) String() string {
+	return "my string representation"
+}
+
+func (i *arrayFlags) Set(value string) error {
+	*i = append(*i, value)
+	return nil
+}
 
 var (
 	masterUrl      string
 	kubeconfig     string
 	apiservice     string
-	dockerUrl      string
-	dockerAdmin    string
-	dockerPassword string
+	dockerUrl      arrayFlags
+	dockerAdmin    arrayFlags
+	dockerPassword arrayFlags
 )
 
 func init() {
 	flag.StringVar(&kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required if out-of-cluster.")
 	flag.StringVar(&masterUrl, "master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
 	flag.StringVar(&apiservice, "apiservice", "0.0.0.0:9090", "The address of the api server.")
-	flag.StringVar(&dockerUrl, "dockerurl", "", "The address of the Harbor server.")
-	flag.StringVar(&dockerAdmin, "dockeradmin", "", "The username of the Harbor's account")
-	flag.StringVar(&dockerPassword, "dockerpwd", "", "The password of the Harbor's password")
+	flag.Var(&dockerUrl, "dockerurl", "The address of the Harbor server.")
+	flag.Var(&dockerAdmin, "dockeradmin", "The username of the Harbor's account")
+	flag.Var(&dockerPassword, "dockerpwd", "The password of the Harbor's password")
 }
 
 type Config interface {
 	MasterUrl() string
 	KubeConfig() string
 	ApiService() string
-	DockerUrl() string
-	DockerAdmin() string
-	DockerPassword() string
+	DockerHub() []harbor.Config
 }
 
 type config struct {
-	masterUrl      string
-	kubeConfig     string
-	apiService     string
-	dockerUrl      string
-	dockerAdmin    string
-	dockerPassword string
+	masterUrl  string
+	kubeConfig string
+	apiService string
+	dockerHub  []harbor.Config
 }
 
 func (c *config) MasterUrl() string {
@@ -52,25 +62,31 @@ func (c *config) ApiService() string {
 	return c.apiService
 }
 
-func (c *config) DockerUrl() string {
-	return c.dockerUrl
-}
-
-func (c *config) DockerAdmin() string {
-	return c.dockerAdmin
-}
-
-func (c *config) DockerPassword() string {
-	return c.dockerPassword
+func (c *config) DockerHub() []harbor.Config {
+	return c.dockerHub
 }
 
 func Init() Config {
+	dockerHub := make([]harbor.Config, 0)
+	for k, url := range dockerUrl {
+		var admin, password string
+		if len(dockerAdmin) >= k+1 {
+			admin = dockerAdmin[k]
+		}
+		if len(dockerPassword) >= k+1 {
+			password = dockerPassword[k]
+		}
+		dockerHub = append(dockerHub, harbor.Config{
+			Url:      url,
+			Admin:    admin,
+			Password: password,
+		})
+	}
+	klog.Info("dockerhub:", dockerHub)
 	return &config{
-		masterUrl:      masterUrl,
-		kubeConfig:     kubeconfig,
-		apiService:     apiservice,
-		dockerUrl:      dockerUrl,
-		dockerAdmin:    dockerAdmin,
-		dockerPassword: dockerPassword,
+		masterUrl:  masterUrl,
+		kubeConfig: kubeconfig,
+		apiService: apiservice,
+		dockerHub:  dockerHub,
 	}
 }
