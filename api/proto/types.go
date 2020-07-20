@@ -55,7 +55,7 @@ type MysqlCrdList struct {
 }
 
 type MysqlCrd struct {
-	Name   string   `json:"name" protobuf:"bytes,1,rep,name=Name"`
+	Name   string   `json:"name" protobuf:"bytes,1,rep,name=name"`
 	Master NodeSpec `json:"master" protobuf:"bytes,2,rep,name=master"`
 	Slave  NodeSpec `json:"slave" protobuf:"bytes,3,rep,name=slave"`
 }
@@ -65,7 +65,7 @@ type RedisCrdList struct {
 }
 
 type RedisCrd struct {
-	Name   string   `json:"name" protobuf:"bytes,1,rep,name=Name"`
+	Name   string   `json:"name" protobuf:"bytes,1,rep,name=name"`
 	Master NodeSpec `json:"master" protobuf:"bytes,2,rep,name=master"`
 	Slave  NodeSpec `json:"slave" protobuf:"bytes,3,rep,name=slave"`
 }
@@ -101,6 +101,33 @@ type NodeSpec struct {
 	// +listMapKey=port
 	// +listMapKey=protocol
 	ServicePorts []ServicePort `json:"servicePorts,omitempty" patchStrategy:"merge" patchMergeKey:"port" protobuf:"bytes,8,rep,name=servicePorts"`
+	// List of environment variables to set in the container.
+	// Cannot be updated.
+	// +optional
+	// +patchMergeKey=name
+	// +patchStrategy=merge
+	Env []EnvVar `json:"env,omitempty" patchStrategy:"merge" patchMergeKey:"name" protobuf:"bytes,9,rep,name=env"`
+}
+
+type EnvVar struct {
+	// Name of the environment variable. Must be a C_IDENTIFIER.
+	Name string `json:"name" protobuf:"bytes,1,opt,name=name"`
+
+	// Optional: no more than one of the following may be specified.
+
+	// Variable references $(VAR_NAME) are expanded
+	// using the previous defined environment variables in the container and
+	// any service environment variables. If a variable cannot be resolved,
+	// the reference in the input string will be unchanged. The $(VAR_NAME)
+	// syntax can be escaped with a double $$, ie: $$(VAR_NAME). Escaped
+	// references will never be expanded, regardless of whether the variable
+	// exists or not.
+	// Defaults to "".
+	// +optional
+	Value string `json:"value,omitempty" protobuf:"bytes,2,opt,name=value"`
+	// Source for the environment variable's value. Cannot be used if value is not empty.
+	// +optional
+	//ValueFrom *corev1.EnvVarSource `json:"valueFrom,omitempty" protobuf:"bytes,3,opt,name=valueFrom"`
 }
 
 // PodResourceRequirements describes the compute resource requirements.
@@ -312,4 +339,140 @@ type HarborRequest struct {
 	Command   HarborCommand `json:"command" protobuf:"bytes,2,opt,name=command"`
 	ProjectID int32         `json:"projectId" protobuf:"varint,3,opt,name=projectId"`
 	ImageName string        `json:"imageName" protobuf:"bytes,4,opt,name=imageName"`
+}
+
+// HelixSaga Operator
+type HelixSagaCrd struct {
+	Name         string                   `json:"name" protobuf:"bytes,1,rep,name=name"`
+	ConfigMap    HelixSagaConfigMapVolume `json:"configMap" protobuf:"bytes,2,rep,name=configMap"`
+	Applications []HelixSagaApp           `json:"applications" protobuf:"bytes,3,rep,name=applications"`
+}
+
+type HelixSagaApp struct {
+	Spec NodeSpec `json:"spec" protobuf:"bytes,1,rep,name=spec"`
+	// Entrypoint array. Not executed within a shell.
+	// The docker image's ENTRYPOINT is used if this is not provided.
+	// Variable references $(VAR_NAME) are expanded using the container's environment. If a variable
+	// cannot be resolved, the reference in the input string will be unchanged. The $(VAR_NAME) syntax
+	// can be escaped with a double $$, ie: $$(VAR_NAME). Escaped references will never be expanded,
+	// regardless of whether the variable exists or not.
+	// Cannot be updated.
+	// More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell
+	// +optional
+	Command []string `json:"command,omitempty" protobuf:"bytes,2,rep,name=command"`
+	// Arguments to the entrypoint.
+	// The docker image's CMD is used if this is not provided.
+	// Variable references $(VAR_NAME) are expanded using the container's environment. If a variable
+	// cannot be resolved, the reference in the input string will be unchanged. The $(VAR_NAME) syntax
+	// can be escaped with a double $$, ie: $$(VAR_NAME). Escaped references will never be expanded,
+	// regardless of whether the variable exists or not.
+	// Cannot be updated.
+	// More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell
+	// +optional
+	Args []string `json:"args,omitempty" protobuf:"bytes,3,rep,name=args"`
+}
+
+type HelixSagaCrdList struct {
+	Items []HelixSagaCrd `json:"items" protobuf:"bytes,1,rep,name=items"`
+}
+
+type HelixSagaConfigMapVolume struct {
+	Volume      Volume      `json:"volume" protobuf:"bytes,1,rep,name=volume"`
+	VolumeMount VolumeMount `json:"volumeMount" protobuf:"bytes,2,rep,name=volumeMount"`
+}
+
+// Volume represents a named volume in a pod that may be accessed by any container in the pod.
+type Volume struct {
+	// Volume's name.
+	// Must be a DNS_LABEL and unique within the pod.
+	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+	Name string `json:"name" protobuf:"bytes,1,opt,name=name"`
+	// VolumeSource represents the location and type of the mounted volume.
+	// If not specified, the Volume is implied to be an EmptyDir.
+	// This implied behavior is deprecated and will be removed in a future version.
+	VolumeSource `json:",inline" protobuf:"bytes,2,opt,name=volumeSource"`
+}
+
+// Represents the source of a volume to mount.
+// Only one of its members may be specified.
+type VolumeSource struct {
+	// ConfigMap represents a configMap that should populate this volume
+	// +optional
+	ConfigMap *ConfigMapVolumeSource `json:"configMap,omitempty" protobuf:"bytes,1,opt,name=configMap"`
+}
+
+// Adapts a ConfigMap into a volume.
+//
+// The contents of the target ConfigMap's Data field will be presented in a
+// volume as files using the keys in the Data field as the file names, unless
+// the items element is populated with specific mappings of keys to paths.
+// ConfigMap volumes support ownership management and SELinux relabeling.
+type ConfigMapVolumeSource struct {
+	//LocalObjectReference `json:",inline" protobuf:"bytes,1,opt,name=localObjectReference"`
+	// If unspecified, each key-value pair in the Data field of the referenced
+	// ConfigMap will be projected into the volume as a file whose name is the
+	// key and content is the value. If specified, the listed keys will be
+	// projected into the specified paths, and unlisted keys will not be
+	// present. If a key is specified which is not present in the ConfigMap,
+	// the volume setup will error unless it is marked optional. Paths must be
+	// relative and may not contain the '..' path or start with '..'.
+	// +optional
+	Items []KeyToPath `json:"items,omitempty" protobuf:"bytes,1,rep,name=items"`
+	// Optional: mode bits to use on created files by default. Must be a
+	// value between 0 and 0777. Defaults to 0644.
+	// Directories within the path are not affected by this setting.
+	// This might be in conflict with other options that affect the file
+	// mode, like fsGroup, and the result can be other mode bits set.
+	// +optional
+	DefaultMode *int32 `json:"defaultMode,omitempty" protobuf:"varint,2,opt,name=defaultMode"`
+	// Specify whether the ConfigMap or its keys must be defined
+	// +optional
+	Optional *bool `json:"optional,omitempty" protobuf:"varint,3,opt,name=optional"`
+}
+
+// Maps a string key to a path within a volume.
+type KeyToPath struct {
+	// The key to project.
+	Key string `json:"key" protobuf:"bytes,1,opt,name=key"`
+
+	// The relative path of the file to map the key to.
+	// May not be an absolute path.
+	// May not contain the path element '..'.
+	// May not start with the string '..'.
+	Path string `json:"path" protobuf:"bytes,2,opt,name=path"`
+	// Optional: mode bits to use on this file, must be a value between 0
+	// and 0777. If not specified, the volume defaultMode will be used.
+	// This might be in conflict with other options that affect the file
+	// mode, like fsGroup, and the result can be other mode bits set.
+	// +optional
+	Mode *int32 `json:"mode,omitempty" protobuf:"varint,3,opt,name=mode"`
+}
+
+// VolumeMount describes a mounting of a Volume within a container.
+type VolumeMount struct {
+	// This must match the Name of a Volume.
+	Name string `json:"name" protobuf:"bytes,1,opt,name=name"`
+	// Mounted read-only if true, read-write otherwise (false or unspecified).
+	// Defaults to false.
+	// +optional
+	ReadOnly bool `json:"readOnly,omitempty" protobuf:"varint,2,opt,name=readOnly"`
+	// Path within the container at which the volume should be mounted.  Must
+	// not contain ':'.
+	MountPath string `json:"mountPath" protobuf:"bytes,3,opt,name=mountPath"`
+	// Path within the volume from which the container's volume should be mounted.
+	// Defaults to "" (volume's root).
+	// +optional
+	SubPath string `json:"subPath,omitempty" protobuf:"bytes,4,opt,name=subPath"`
+	// mountPropagation determines how mounts are propagated from the host
+	// to container and the other way around.
+	// When not set, MountPropagationNone is used.
+	// This field is beta in 1.10.
+	// +optional
+	//MountPropagation *MountPropagationMode `json:"mountPropagation,omitempty" protobuf:"bytes,5,opt,name=mountPropagation,casttype=MountPropagationMode"`
+	// Expanded path within the volume from which the container's volume should be mounted.
+	// Behaves similarly to SubPath but environment variable references $(VAR_NAME) are expanded using the container's environment.
+	// Defaults to "" (volume's root).
+	// SubPathExpr and SubPath are mutually exclusive.
+	// +optional
+	SubPathExpr string `json:"subPathExpr,omitempty" protobuf:"bytes,6,opt,name=subPathExpr"`
 }
