@@ -8,6 +8,8 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog"
 
+	helixsagaoperatorv1 "github.com/Shanghai-Lunara/helixsaga-operator/pkg/apis/helixsaga/v1"
+	helixsagaclientset "github.com/Shanghai-Lunara/helixsaga-operator/pkg/generated/helixsaga/clientset/versioned"
 	mysqloperatorv1 "github.com/nevercase/k8s-controller-custom-resource/pkg/apis/mysqloperator/v1"
 	redisoperatorv1 "github.com/nevercase/k8s-controller-custom-resource/pkg/apis/redisoperator/v1"
 	mysqlclientset "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/mysqloperator/clientset/versioned"
@@ -39,9 +41,9 @@ const (
 	StatefulSet ResourceType = "StatefulSet"
 
 	// custom resource definition
-	MysqlOperator ResourceType = "MysqlOperator"
-	RedisOperator ResourceType = "RedisOperator"
-	HelixOperator ResourceType = "HelixOperator"
+	MysqlOperator     ResourceType = "MysqlOperator"
+	RedisOperator     ResourceType = "RedisOperator"
+	HelixSagaOperator ResourceType = "HelixSagaOperator"
 )
 
 type ResourceGetter interface {
@@ -74,6 +76,10 @@ func NewResource(masterUrl, kubeconfigPath string) ResourceInterface {
 	if err != nil {
 		klog.Fatalf("Error building redisclientset: %s", err.Error())
 	}
+	helixsaga, err := helixsagaclientset.NewForConfig(cfg)
+	if err != nil {
+		klog.Fatalf("Error building redisclientset: %s", err.Error())
+	}
 	opts := NewOptions()
 	var empty interface{}
 	opts.Add(
@@ -83,6 +89,7 @@ func NewResource(masterUrl, kubeconfigPath string) ResourceInterface {
 		NewOption(Service, empty),
 		NewOption(MysqlOperator, mysql),
 		NewOption(RedisOperator, redis),
+		NewOption(HelixSagaOperator, helixsaga),
 	)
 	var r = &resource{
 		kubeClientSet: kubeClient,
@@ -115,7 +122,11 @@ func (r *resource) Create(rt ResourceType, nameSpace string, obj interface{}) (r
 			break
 		}
 		res, err = opt.Get().(*redisclientset.Clientset).RedisoperatorV1().RedisOperators(nameSpace).Create(obj.(*redisoperatorv1.RedisOperator))
-	case HelixOperator:
+	case HelixSagaOperator:
+		if opt, err = r.options.Get(rt); err != nil {
+			break
+		}
+		res, err = opt.Get().(*helixsagaclientset.Clientset).HelixsagaV1().HelixSagas(nameSpace).Create(obj.(*helixsagaoperatorv1.HelixSaga))
 	}
 	if err != nil {
 		klog.V(2).Info(err)
@@ -140,7 +151,11 @@ func (r *resource) Update(rt ResourceType, nameSpace string, obj interface{}) (r
 			break
 		}
 		res, err = opt.Get().(*redisclientset.Clientset).RedisoperatorV1().RedisOperators(nameSpace).Update(obj.(*redisoperatorv1.RedisOperator))
-	case HelixOperator:
+	case HelixSagaOperator:
+		if opt, err = r.options.Get(rt); err != nil {
+			break
+		}
+		res, err = opt.Get().(*helixsagaclientset.Clientset).HelixsagaV1().HelixSagas(nameSpace).Update(obj.(*helixsagaoperatorv1.HelixSaga))
 	}
 	if err != nil {
 		klog.V(2).Info(err)
@@ -168,7 +183,11 @@ func (r *resource) Delete(rt ResourceType, nameSpace, specName string) (err erro
 			break
 		}
 		err = opt.Get().(*redisclientset.Clientset).RedisoperatorV1().RedisOperators(nameSpace).Delete(specName, delOpts)
-	case HelixOperator:
+	case HelixSagaOperator:
+		if opt, err = r.options.Get(rt); err != nil {
+			break
+		}
+		err = opt.Get().(*helixsagaclientset.Clientset).HelixsagaV1().HelixSagas(nameSpace).Delete(specName, delOpts)
 	}
 	if err != nil {
 		klog.V(2).Info(err)
@@ -198,7 +217,11 @@ func (r *resource) Get(rt ResourceType, nameSpace, specName string) (res interfa
 			break
 		}
 		res, err = opt.Get().(*redisclientset.Clientset).RedisoperatorV1().RedisOperators(nameSpace).Get(specName, getOpts)
-	case HelixOperator:
+	case HelixSagaOperator:
+		if opt, err = r.options.Get(rt); err != nil {
+			break
+		}
+		res, err = opt.Get().(*helixsagaclientset.Clientset).HelixsagaV1().HelixSagas(nameSpace).Get(specName, getOpts)
 	}
 	if err != nil {
 		klog.V(2).Info(err)
@@ -232,7 +255,11 @@ func (r *resource) List(rt ResourceType, nameSpace string, selector labels.Selec
 			break
 		}
 		res, err = opt.Get().(*redisclientset.Clientset).RedisoperatorV1().RedisOperators(nameSpace).List(opts)
-	case HelixOperator:
+	case HelixSagaOperator:
+		if opt, err = r.options.Get(rt); err != nil {
+			break
+		}
+		res, err = opt.Get().(*helixsagaclientset.Clientset).HelixsagaV1().HelixSagas(nameSpace).List(opts)
 	}
 	if err != nil {
 		klog.V(2).Info(err)
