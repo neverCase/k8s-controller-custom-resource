@@ -9,10 +9,12 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/klog"
 
-	"github.com/nevercase/k8s-controller-custom-resource/api/group"
-	"github.com/nevercase/k8s-controller-custom-resource/api/proto"
+	helixsagaoperatorv1 "github.com/Shanghai-Lunara/helixsaga-operator/pkg/apis/helixsaga/v1"
 	mysqloperatorv1 "github.com/nevercase/k8s-controller-custom-resource/pkg/apis/mysqloperator/v1"
 	redisoperatorv1 "github.com/nevercase/k8s-controller-custom-resource/pkg/apis/redisoperator/v1"
+
+	"github.com/nevercase/k8s-controller-custom-resource/api/group"
+	"github.com/nevercase/k8s-controller-custom-resource/api/proto"
 )
 
 type KubernetesApiGetter interface {
@@ -41,66 +43,71 @@ func (h *k8sHandle) Create(req proto.Param, obj []byte) (res []byte, err error) 
 	var n interface{}
 	switch req.ResourceType {
 	case group.ConfigMap:
-		var cm proto.ConfigMap
-		if err = cm.Unmarshal(obj); err != nil {
+		var e proto.ConfigMap
+		if err = e.Unmarshal(obj); err != nil {
 			break
 		}
-		m := convertProtoToConfigMap(req, cm)
+		m := convertProtoToConfigMap(req, e)
 		if n, err = resourceCreateOrUpdate(h.group, req, m.Name, m); err != nil {
 			break
 		}
-		v := n.(*corev1.ConfigMap)
-		e := convertConfigMapToProto(v)
+		e = convertConfigMapToProto(n.(*corev1.ConfigMap))
 		res, err = e.Marshal()
 	case group.NameSpace:
-		var ns proto.NameSpace
-		if err = ns.Unmarshal(obj); err != nil {
+		var e proto.NameSpace
+		if err = e.Unmarshal(obj); err != nil {
 			break
 		}
-		m := convertProtoToNameSpace(ns)
+		m := convertProtoToNameSpace(e)
 		if n, err = resourceCreateOrUpdate(h.group, req, m.Name, m); err != nil {
 			break
 		}
-		v := n.(*corev1.Namespace)
-		e := convertNameSpaceToProto(v)
+		e = convertNameSpaceToProto(n.(*corev1.Namespace))
 		res, err = e.Marshal()
 	case group.Service:
-		var s proto.Service
-		if err = s.Unmarshal(obj); err != nil {
+		var e proto.Service
+		if err = e.Unmarshal(obj); err != nil {
 			break
 		}
-		m := convertProtoToService(req, s)
+		m := convertProtoToService(req, e)
 		if n, err = resourceCreateOrUpdate(h.group, req, m.Name, m); err != nil {
 			break
 		}
-		v := n.(*corev1.Service)
-		e := convertServiceToProto(v)
+		e = convertServiceToProto(n.(*corev1.Service))
 		res, err = e.Marshal()
 	case group.MysqlOperator:
-		var mysqlCrd proto.MysqlCrd
-		if err = mysqlCrd.Unmarshal(obj); err != nil {
+		var e proto.MysqlCrd
+		if err = e.Unmarshal(obj); err != nil {
 			break
 		}
-		m := convertMysqlCrdToProto(req, mysqlCrd)
+		m := convertMysqlCrdToProto(req, e)
 		if n, err = resourceCreateOrUpdate(h.group, req, m.Name, m); err != nil {
 			break
 		}
-		v := n.(*mysqloperatorv1.MysqlOperator)
-		e := convertProtoToMysqlCrd(v)
+		e = convertProtoToMysqlCrd(n.(*mysqloperatorv1.MysqlOperator))
 		res, err = e.Marshal()
 	case group.RedisOperator:
-		var redisCrd proto.RedisCrd
-		if err = redisCrd.Unmarshal(obj); err != nil {
+		var e proto.RedisCrd
+		if err = e.Unmarshal(obj); err != nil {
 			break
 		}
-		m := convertProtoToRedisCrd(req, redisCrd)
+		m := convertProtoToRedisCrd(req, e)
 		if n, err = resourceCreateOrUpdate(h.group, req, m.Name, m); err != nil {
 			break
 		}
-		v := n.(*redisoperatorv1.RedisOperator)
-		e := convertRedisCrdToProto(v)
+		e = convertRedisCrdToProto(n.(*redisoperatorv1.RedisOperator))
 		res, err = e.Marshal()
-	case group.HelixOperator:
+	case group.HelixSagaOperator:
+		var e proto.HelixSagaCrd
+		if err = e.Unmarshal(obj); err != nil {
+			break
+		}
+		m := convertProtoToHelixSagaCrd(req, e)
+		if n, err = resourceCreateOrUpdate(h.group, req, m.Name, m); err != nil {
+			break
+		}
+		e = covertHelixSagaCrdToProto(n.(*helixsagaoperatorv1.HelixSaga))
+		res, err = e.Marshal()
 	}
 	return proto.GetResponse(req, res)
 }
@@ -127,18 +134,27 @@ func (h *k8sHandle) Delete(req proto.Param, obj []byte) (err error) {
 		}
 		name = s.Name
 	case group.MysqlOperator:
-		var mysqlCrd proto.MysqlCrd
-		if err = mysqlCrd.Unmarshal(obj); err != nil {
+		var e proto.MysqlCrd
+		if err = e.Unmarshal(obj); err != nil {
 			break
 		}
-		name = mysqlCrd.Name
+		name = e.Name
 	case group.RedisOperator:
-		var redisCrd proto.RedisCrd
-		if err = redisCrd.Unmarshal(obj); err != nil {
+		var e proto.RedisCrd
+		if err = e.Unmarshal(obj); err != nil {
 			break
 		}
-		name = redisCrd.Name
-	case group.HelixOperator:
+		name = e.Name
+	case group.HelixSagaOperator:
+		var e proto.HelixSagaCrd
+		if err = e.Unmarshal(obj); err != nil {
+			break
+		}
+		name = e.Name
+	}
+	if err != nil {
+		klog.V(2).Info(err)
+		return err
 	}
 	err = h.group.Resource().Delete(req.ResourceType, req.NameSpace, name)
 	return err
@@ -148,78 +164,86 @@ func (h *k8sHandle) Get(req proto.Param, obj []byte) (res []byte, err error) {
 	var n interface{}
 	switch req.ResourceType {
 	case group.ConfigMap:
-		var cm proto.ConfigMap
-		if err = cm.Unmarshal(obj); err != nil {
+		var e proto.ConfigMap
+		if err = e.Unmarshal(obj); err != nil {
 			break
 		}
-		n, err = h.group.Resource().Get(req.ResourceType, req.NameSpace, cm.Name)
+		n, err = h.group.Resource().Get(req.ResourceType, req.NameSpace, e.Name)
 		if err != nil {
 			break
 		}
-		m := n.(*corev1.ConfigMap)
-		e := convertConfigMapToProto(m)
+		e = convertConfigMapToProto(n.(*corev1.ConfigMap))
 		res, err = e.Marshal()
 	case group.NameSpace:
-		var ns proto.NameSpace
-		if err = ns.Unmarshal(obj); err != nil {
+		var e proto.NameSpace
+		if err = e.Unmarshal(obj); err != nil {
 			break
 		}
-		n, err = h.group.Resource().Get(req.ResourceType, req.NameSpace, ns.Name)
+		n, err = h.group.Resource().Get(req.ResourceType, req.NameSpace, e.Name)
 		if err != nil {
 			break
 		}
-		m := n.(*corev1.Namespace)
-		e := convertNameSpaceToProto(m)
+		e = convertNameSpaceToProto(n.(*corev1.Namespace))
 		res, err = e.Marshal()
 	case group.Service:
-		var s proto.Service
-		if err = s.Unmarshal(obj); err != nil {
+		var e proto.Service
+		if err = e.Unmarshal(obj); err != nil {
 			break
 		}
-		n, err = h.group.Resource().Get(req.ResourceType, req.NameSpace, s.Name)
+		n, err = h.group.Resource().Get(req.ResourceType, req.NameSpace, e.Name)
 		if err != nil {
 			break
 		}
-		m := n.(*corev1.Service)
-		e := convertServiceToProto(m)
+		e = convertServiceToProto(n.(*corev1.Service))
 		res, err = e.Marshal()
 	case group.Secret:
-		var s proto.Secret
-		if err = s.Unmarshal(obj); err != nil {
+		var e proto.Secret
+		if err = e.Unmarshal(obj); err != nil {
 			break
 		}
-		n, err = h.group.Resource().Get(req.ResourceType, req.NameSpace, s.Name)
+		n, err = h.group.Resource().Get(req.ResourceType, req.NameSpace, e.Name)
 		if err != nil {
 			break
 		}
-		m := n.(*corev1.Secret)
-		e := convertSecretToProto(m)
+		e = convertSecretToProto(n.(*corev1.Secret))
 		res, err = e.Marshal()
 	case group.MysqlOperator:
-		var mysqlCrd proto.MysqlCrd
-		if err = mysqlCrd.Unmarshal(obj); err != nil {
+		var e proto.MysqlCrd
+		if err = e.Unmarshal(obj); err != nil {
 			break
 		}
-		n, err = h.group.Resource().Get(req.ResourceType, req.NameSpace, mysqlCrd.Name)
+		n, err = h.group.Resource().Get(req.ResourceType, req.NameSpace, e.Name)
 		if err != nil {
 			break
 		}
-		m := n.(*mysqloperatorv1.MysqlOperator)
-		e := convertProtoToMysqlCrd(m)
+		e = convertProtoToMysqlCrd(n.(*mysqloperatorv1.MysqlOperator))
 		res, err = e.Marshal()
 	case group.RedisOperator:
-		var redisCrd proto.RedisCrd
-		if err = redisCrd.Unmarshal(obj); err != nil {
+		var e proto.RedisCrd
+		if err = e.Unmarshal(obj); err != nil {
 			break
 		}
-		n, err = h.group.Resource().Get(req.ResourceType, req.NameSpace, redisCrd.Name)
+		n, err = h.group.Resource().Get(req.ResourceType, req.NameSpace, e.Name)
 		if err != nil {
 			break
 		}
-		m := n.(*redisoperatorv1.RedisOperator)
-		e := convertRedisCrdToProto(m)
+		e = convertRedisCrdToProto(n.(*redisoperatorv1.RedisOperator))
 		res, err = e.Marshal()
-	case group.HelixOperator:
+	case group.HelixSagaOperator:
+		var e proto.HelixSagaCrd
+		if err = e.Unmarshal(obj); err != nil {
+			break
+		}
+		n, err = h.group.Resource().Get(req.ResourceType, req.NameSpace, e.Name)
+		if err != nil {
+			break
+		}
+		e = covertHelixSagaCrdToProto(n.(*helixsagaoperatorv1.HelixSaga))
+		res, err = e.Marshal()
+	}
+	if err != nil {
+		klog.V(2).Info(err)
+		return nil, err
 	}
 	return proto.GetResponse(req, res)
 }
@@ -279,7 +303,14 @@ func (h *k8sHandle) List(req proto.Param) (res []byte, err error) {
 			m.Items = append(m.Items, convertRedisCrdToProto(&v))
 		}
 		res, err = m.Marshal()
-	case group.HelixOperator:
+	case group.HelixSagaOperator:
+		m := proto.HelixSagaCrdList{
+			Items: make([]proto.HelixSagaCrd, 0),
+		}
+		for _, v := range d.(*helixsagaoperatorv1.HelixSagaList).Items {
+			m.Items = append(m.Items, covertHelixSagaCrdToProto(&v))
+		}
+		res, err = m.Marshal()
 	}
 	if err != nil {
 		return nil, err
@@ -372,6 +403,7 @@ func convertMysqlCrdToProto(req proto.Param, mysqlCrd proto.MysqlCrd) *mysqloper
 					Resources:      convertResourceRequirementsToProto(mysqlCrd.Master.PodResource),
 					ContainerPorts: convertProtoToContainerPort(mysqlCrd.Master.ContainerPorts),
 					ServicePorts:   convertProtoToServicePort(mysqlCrd.Master.ServicePorts),
+					Env:            convertProtoToEnvVar(mysqlCrd.Master.Env),
 				},
 			},
 			SlaveSpec: mysqloperatorv1.MysqlCore{
@@ -388,6 +420,7 @@ func convertMysqlCrdToProto(req proto.Param, mysqlCrd proto.MysqlCrd) *mysqloper
 					Resources:      convertResourceRequirementsToProto(mysqlCrd.Slave.PodResource),
 					ContainerPorts: convertProtoToContainerPort(mysqlCrd.Slave.ContainerPorts),
 					ServicePorts:   convertProtoToServicePort(mysqlCrd.Slave.ServicePorts),
+					Env:            convertProtoToEnvVar(mysqlCrd.Slave.Env),
 				},
 			},
 		},
@@ -406,6 +439,7 @@ func convertProtoToMysqlCrd(m *mysqloperatorv1.MysqlOperator) proto.MysqlCrd {
 			PodResource:      convertProtoToResourceRequirements(m.Spec.MasterSpec.Spec.Resources),
 			ContainerPorts:   convertContainerPortToProto(m.Spec.MasterSpec.Spec.ContainerPorts),
 			ServicePorts:     convertServicePortToProto(m.Spec.MasterSpec.Spec.ServicePorts),
+			Env:              convertEnvVarToProto(m.Spec.MasterSpec.Spec.Env),
 		},
 		Slave: proto.NodeSpec{
 			Name:             m.Spec.SlaveSpec.Spec.Name,
@@ -416,6 +450,7 @@ func convertProtoToMysqlCrd(m *mysqloperatorv1.MysqlOperator) proto.MysqlCrd {
 			PodResource:      convertProtoToResourceRequirements(m.Spec.SlaveSpec.Spec.Resources),
 			ContainerPorts:   convertContainerPortToProto(m.Spec.SlaveSpec.Spec.ContainerPorts),
 			ServicePorts:     convertServicePortToProto(m.Spec.SlaveSpec.Spec.ServicePorts),
+			Env:              convertEnvVarToProto(m.Spec.SlaveSpec.Spec.Env),
 		},
 	}
 }
@@ -441,6 +476,7 @@ func convertProtoToRedisCrd(req proto.Param, redisCrd proto.RedisCrd) *redisoper
 					Resources:      convertResourceRequirementsToProto(redisCrd.Master.PodResource),
 					ContainerPorts: convertProtoToContainerPort(redisCrd.Master.ContainerPorts),
 					ServicePorts:   convertProtoToServicePort(redisCrd.Master.ServicePorts),
+					Env:            convertProtoToEnvVar(redisCrd.Master.Env),
 				},
 			},
 			SlaveSpec: redisoperatorv1.RedisCore{
@@ -457,6 +493,7 @@ func convertProtoToRedisCrd(req proto.Param, redisCrd proto.RedisCrd) *redisoper
 					Resources:      convertResourceRequirementsToProto(redisCrd.Slave.PodResource),
 					ContainerPorts: convertProtoToContainerPort(redisCrd.Slave.ContainerPorts),
 					ServicePorts:   convertProtoToServicePort(redisCrd.Slave.ServicePorts),
+					Env:            convertProtoToEnvVar(redisCrd.Slave.Env),
 				},
 			},
 		},
@@ -475,6 +512,7 @@ func convertRedisCrdToProto(v *redisoperatorv1.RedisOperator) proto.RedisCrd {
 			PodResource:      convertProtoToResourceRequirements(v.Spec.MasterSpec.Spec.Resources),
 			ContainerPorts:   convertContainerPortToProto(v.Spec.MasterSpec.Spec.ContainerPorts),
 			ServicePorts:     convertServicePortToProto(v.Spec.MasterSpec.Spec.ServicePorts),
+			Env:              convertEnvVarToProto(v.Spec.MasterSpec.Spec.Env),
 		},
 		Slave: proto.NodeSpec{
 			Name:             v.Spec.SlaveSpec.Spec.Name,
@@ -485,6 +523,7 @@ func convertRedisCrdToProto(v *redisoperatorv1.RedisOperator) proto.RedisCrd {
 			PodResource:      convertProtoToResourceRequirements(v.Spec.SlaveSpec.Spec.Resources),
 			ContainerPorts:   convertContainerPortToProto(v.Spec.SlaveSpec.Spec.ContainerPorts),
 			ServicePorts:     convertServicePortToProto(v.Spec.SlaveSpec.Spec.ServicePorts),
+			Env:              convertEnvVarToProto(v.Spec.SlaveSpec.Spec.Env),
 		},
 	}
 }
@@ -623,4 +662,157 @@ func convertSecretToProto(s *corev1.Secret) proto.Secret {
 		Name:      s.Name,
 		NameSpace: s.Namespace,
 	}
+}
+
+func convertProtoToEnvVar(e []proto.EnvVar) []corev1.EnvVar {
+	res := make([]corev1.EnvVar, 0)
+	for _, v := range e {
+		res = append(res, corev1.EnvVar{
+			Name:  v.Name,
+			Value: v.Value,
+		})
+	}
+	return res
+}
+
+func convertEnvVarToProto(e []corev1.EnvVar) []proto.EnvVar {
+	res := make([]proto.EnvVar, 0)
+	for _, v := range e {
+		res = append(res, proto.EnvVar{
+			Name:  v.Name,
+			Value: v.Value,
+		})
+	}
+	return res
+}
+
+func covertHelixSagaCrdToProto(hs *helixsagaoperatorv1.HelixSaga) proto.HelixSagaCrd {
+	return proto.HelixSagaCrd{
+		Name:         hs.Name,
+		ConfigMap:    covertHelixSagaConfigMapVolumeToProto(hs.Spec.ConfigMap),
+		Applications: convertHelixSagaAppToProto(hs.Spec.Applications),
+	}
+}
+
+func convertProtoToHelixSagaCrd(req proto.Param, hs proto.HelixSagaCrd) *helixsagaoperatorv1.HelixSaga {
+	return &helixsagaoperatorv1.HelixSaga{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      hs.Name,
+			Namespace: req.NameSpace,
+		},
+		Spec: helixsagaoperatorv1.HelixSagaSpec{
+			ConfigMap:    covertProtoToHelixSagaConfigMapVolume(hs.ConfigMap),
+			Applications: convertProtoToHelixSagaApp(hs.Applications),
+		},
+	}
+}
+
+func convertHelixSagaAppToProto(a []helixsagaoperatorv1.HelixSagaApp) []proto.HelixSagaApp {
+	res := make([]proto.HelixSagaApp, 0)
+	for _, v := range a {
+		res = append(res, proto.HelixSagaApp{
+			Spec: proto.NodeSpec{
+				Name:             v.Spec.Name,
+				Replicas:         *v.Spec.Replicas,
+				Image:            v.Spec.Image,
+				ImagePullSecrets: v.Spec.ImagePullSecrets[0].Name,
+				VolumePath:       v.Spec.VolumePath,
+				PodResource:      convertProtoToResourceRequirements(v.Spec.Resources),
+				ContainerPorts:   convertContainerPortToProto(v.Spec.ContainerPorts),
+				ServicePorts:     convertServicePortToProto(v.Spec.ServicePorts),
+				Env:              convertEnvVarToProto(v.Spec.Env),
+			},
+			Command: v.Spec.Command,
+			Args:    v.Spec.Args,
+		})
+	}
+	return res
+}
+
+func convertProtoToHelixSagaApp(a []proto.HelixSagaApp) []helixsagaoperatorv1.HelixSagaApp {
+	res := make([]helixsagaoperatorv1.HelixSagaApp, 0)
+	for _, v := range a {
+		res = append(res, helixsagaoperatorv1.HelixSagaApp{
+			Spec: helixsagaoperatorv1.HelixSagaAppSpec{
+				Name:     v.Spec.Name,
+				Replicas: &v.Spec.Replicas,
+				Image:    v.Spec.Image,
+				ImagePullSecrets: []corev1.LocalObjectReference{
+					{
+						Name: v.Spec.ImagePullSecrets,
+					},
+				},
+				VolumePath:     v.Spec.VolumePath,
+				Resources:      convertResourceRequirementsToProto(v.Spec.PodResource),
+				ContainerPorts: convertProtoToContainerPort(v.Spec.ContainerPorts),
+				ServicePorts:   convertProtoToServicePort(v.Spec.ServicePorts),
+				Env:            convertProtoToEnvVar(v.Spec.Env),
+				Command:        v.Command,
+				Args:           v.Args,
+			},
+		})
+	}
+	return res
+}
+
+func covertHelixSagaConfigMapVolumeToProto(c helixsagaoperatorv1.HelixSagaConfigMap) proto.HelixSagaConfigMapVolume {
+	return proto.HelixSagaConfigMapVolume{
+		Volume: proto.Volume{
+			Name: c.Volume.Name,
+			VolumeSource: proto.VolumeSource{
+				Name: c.Volume.ConfigMap.Name,
+				ConfigMap: &proto.ConfigMapVolumeSource{
+					Items: covertKeyToPathToProto(c.Volume.ConfigMap.Items),
+				},
+			},
+		},
+		VolumeMount: proto.VolumeMount{
+			Name:      c.VolumeMount.Name,
+			MountPath: c.VolumeMount.MountPath,
+		},
+	}
+}
+
+func covertProtoToHelixSagaConfigMapVolume(c proto.HelixSagaConfigMapVolume) helixsagaoperatorv1.HelixSagaConfigMap {
+	return helixsagaoperatorv1.HelixSagaConfigMap{
+		Volume: corev1.Volume{
+			Name: c.Volume.Name,
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: c.Volume.Name,
+					},
+					Items: covertProtoToKeyToPath(c.Volume.ConfigMap.Items),
+				},
+			},
+		},
+		VolumeMount: corev1.VolumeMount{
+			Name:      c.VolumeMount.Name,
+			MountPath: c.VolumeMount.MountPath,
+		},
+	}
+}
+
+func covertKeyToPathToProto(k []corev1.KeyToPath) []proto.KeyToPath {
+	res := make([]proto.KeyToPath, 0)
+	for _, v := range k {
+		res = append(res, proto.KeyToPath{
+			Key:  v.Key,
+			Path: v.Path,
+			Mode: v.Mode,
+		})
+	}
+	return res
+}
+
+func covertProtoToKeyToPath(k []proto.KeyToPath) []corev1.KeyToPath {
+	res := make([]corev1.KeyToPath, 0)
+	for _, v := range k {
+		res = append(res, corev1.KeyToPath{
+			Key:  v.Key,
+			Path: v.Path,
+			Mode: v.Mode,
+		})
+	}
+	return res
 }
