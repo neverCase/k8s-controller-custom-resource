@@ -396,9 +396,13 @@ type Volume struct {
 // Represents the source of a volume to mount.
 // Only one of its members may be specified.
 type VolumeSource struct {
+	// ConfigMap's name.
+	// Must be a DNS_LABEL and unique within the pod.
+	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+	Name string `json:"name" protobuf:"bytes,1,opt,name=name"`
 	// ConfigMap represents a configMap that should populate this volume
 	// +optional
-	ConfigMap *ConfigMapVolumeSource `json:"configMap,omitempty" protobuf:"bytes,1,opt,name=configMap"`
+	ConfigMap *ConfigMapVolumeSource `json:"configMap,omitempty" protobuf:"bytes,2,opt,name=configMap"`
 }
 
 // Adapts a ConfigMap into a volume.
