@@ -1,6 +1,8 @@
 package handle
 
 import (
+	"fmt"
+
 	harbor "github.com/nevercase/harbor-api"
 	"github.com/nevercase/k8s-controller-custom-resource/api/group"
 	"github.com/nevercase/k8s-controller-custom-resource/api/proto"
@@ -30,26 +32,25 @@ type harborApi struct {
 }
 
 func (ha *harborApi) Core(req proto.Param, obj []byte) (res []byte, err error) {
-	var hr proto.HarborRequest
-	if err = hr.Unmarshal(obj); err != nil {
+	if req.HarborRequest.Command != proto.Hubs && req.HarborRequest.HarborUrl == "" {
+		err = fmt.Errorf("no hr.HarborUrl")
 		klog.V(2).Info(err)
 		return nil, err
 	}
-	switch hr.Command {
+	switch req.HarborRequest.Command {
 	case proto.Hubs:
 		res, err = ha.Hubs()
 	case proto.Projects:
-		res, err = ha.Projects(hr.HarborUrl)
+		res, err = ha.Projects(req.HarborRequest.HarborUrl)
 	case proto.Repositories:
-		res, err = ha.Repositories(hr.HarborUrl, int(hr.ProjectID))
+		res, err = ha.Repositories(req.HarborRequest.HarborUrl, int(req.HarborRequest.ProjectID))
 	case proto.Tags:
-		res, err = ha.Tags(hr.HarborUrl, hr.ImageName)
+		res, err = ha.Tags(req.HarborRequest.HarborUrl, req.HarborRequest.ImageName)
 	}
 	if err != nil {
 		klog.V(2).Info(err)
 		return nil, err
 	}
-	req.Command = hr.Command
 	return proto.GetResponse(req, res)
 }
 

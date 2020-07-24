@@ -36,7 +36,10 @@ type Param struct {
 	Service      string             `json:"service" protobuf:"bytes,1,opt,name=service"`
 	ResourceType group.ResourceType `json:"resourceType" protobuf:"bytes,2,opt,name=resourceType"`
 	NameSpace    string             `json:"nameSpace" protobuf:"bytes,3,opt,name=nameSpace"`
-	Command      HarborCommand      `json:"command" protobuf:"bytes,4,opt,name=command"`
+
+	// The request parameters of the HarborApi
+	// only used for HarborApi
+	HarborRequest HarborRequest `json:"harborRequest" protobuf:"bytes,4,opt,name=harborRequest"`
 }
 
 type Request struct {

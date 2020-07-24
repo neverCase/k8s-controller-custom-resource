@@ -313,7 +313,9 @@ message Param {
 
   optional string nameSpace = 3;
 
-  optional string command = 4;
+  // The request parameters of the HarborApi
+  // only used for HarborApi
+  optional HarborRequest harborRequest = 4;
 }
 
 // PodResourceRequirements describes the compute resource requirements.
