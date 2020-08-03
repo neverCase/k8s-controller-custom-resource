@@ -385,8 +385,9 @@ func convertProtoToResourceRequirements(rl corev1.ResourceRequirements) proto.Po
 func convertMysqlCrdToProto(req proto.Param, mysqlCrd proto.MysqlCrd) *mysqloperatorv1.MysqlOperator {
 	return &mysqloperatorv1.MysqlOperator{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      mysqlCrd.Name,
-			Namespace: req.NameSpace,
+			Name:            mysqlCrd.Name,
+			Namespace:       req.NameSpace,
+			ResourceVersion: mysqlCrd.ResourceVersion,
 		},
 		Spec: mysqloperatorv1.MysqlOperatorSpec{
 			MasterSpec: mysqloperatorv1.MysqlCore{
@@ -429,7 +430,8 @@ func convertMysqlCrdToProto(req proto.Param, mysqlCrd proto.MysqlCrd) *mysqloper
 
 func convertProtoToMysqlCrd(m *mysqloperatorv1.MysqlOperator) proto.MysqlCrd {
 	return proto.MysqlCrd{
-		Name: m.Name,
+		Name:            m.Name,
+		ResourceVersion: m.ResourceVersion,
 		Master: proto.NodeSpec{
 			Name:             m.Spec.MasterSpec.Spec.Name,
 			Replicas:         *m.Spec.MasterSpec.Spec.Replicas,
@@ -458,8 +460,9 @@ func convertProtoToMysqlCrd(m *mysqloperatorv1.MysqlOperator) proto.MysqlCrd {
 func convertProtoToRedisCrd(req proto.Param, redisCrd proto.RedisCrd) *redisoperatorv1.RedisOperator {
 	return &redisoperatorv1.RedisOperator{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      redisCrd.Name,
-			Namespace: req.NameSpace,
+			Name:            redisCrd.Name,
+			Namespace:       req.NameSpace,
+			ResourceVersion: redisCrd.ResourceVersion,
 		},
 		Spec: redisoperatorv1.RedisOperatorSpec{
 			MasterSpec: redisoperatorv1.RedisCore{
@@ -502,7 +505,8 @@ func convertProtoToRedisCrd(req proto.Param, redisCrd proto.RedisCrd) *redisoper
 
 func convertRedisCrdToProto(v *redisoperatorv1.RedisOperator) proto.RedisCrd {
 	return proto.RedisCrd{
-		Name: v.Name,
+		Name:            v.Name,
+		ResourceVersion: v.ResourceVersion,
 		Master: proto.NodeSpec{
 			Name:             v.Spec.MasterSpec.Spec.Name,
 			Replicas:         *v.Spec.MasterSpec.Spec.Replicas,
@@ -688,17 +692,19 @@ func convertEnvVarToProto(e []corev1.EnvVar) []proto.EnvVar {
 
 func covertHelixSagaCrdToProto(hs *helixsagaoperatorv1.HelixSaga) proto.HelixSagaCrd {
 	return proto.HelixSagaCrd{
-		Name:         hs.Name,
-		ConfigMap:    covertHelixSagaConfigMapVolumeToProto(hs.Spec.ConfigMap),
-		Applications: convertHelixSagaAppToProto(hs.Spec.Applications),
+		Name:            hs.Name,
+		ResourceVersion: hs.ResourceVersion,
+		ConfigMap:       covertHelixSagaConfigMapVolumeToProto(hs.Spec.ConfigMap),
+		Applications:    convertHelixSagaAppToProto(hs.Spec.Applications),
 	}
 }
 
 func convertProtoToHelixSagaCrd(req proto.Param, hs proto.HelixSagaCrd) *helixsagaoperatorv1.HelixSaga {
 	return &helixsagaoperatorv1.HelixSaga{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      hs.Name,
-			Namespace: req.NameSpace,
+			Name:            hs.Name,
+			Namespace:       req.NameSpace,
+			ResourceVersion: hs.ResourceVersion,
 		},
 		Spec: helixsagaoperatorv1.HelixSagaSpec{
 			ConfigMap:    covertProtoToHelixSagaConfigMapVolume(hs.ConfigMap),

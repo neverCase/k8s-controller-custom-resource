@@ -203,9 +203,22 @@ message HelixSagaConfigMapVolume {
 message HelixSagaCrd {
   optional string name = 1;
 
-  optional HelixSagaConfigMapVolume configMap = 2;
+  // An opaque value that represents the internal version of this object that can
+  // be used by clients to determine when objects have changed. May be used for optimistic
+  // concurrency, change detection, and the watch operation on a resource or set of resources.
+  // Clients must treat these values as opaque and passed unmodified back to the server.
+  // They may only be valid for a particular resource or set of resources.
+  //
+  // Populated by the system.
+  // Read-only.
+  // Value must be treated as opaque by clients and .
+  // More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
+  // +optional
+  optional string resourceVersion = 2;
 
-  repeated HelixSagaApp applications = 3;
+  optional HelixSagaConfigMapVolume configMap = 3;
+
+  repeated HelixSagaApp applications = 4;
 }
 
 message HelixSagaCrdList {
@@ -242,9 +255,22 @@ message KeyToPath {
 message MysqlCrd {
   optional string name = 1;
 
-  optional NodeSpec master = 2;
+  // An opaque value that represents the internal version of this object that can
+  // be used by clients to determine when objects have changed. May be used for optimistic
+  // concurrency, change detection, and the watch operation on a resource or set of resources.
+  // Clients must treat these values as opaque and passed unmodified back to the server.
+  // They may only be valid for a particular resource or set of resources.
+  //
+  // Populated by the system.
+  // Read-only.
+  // Value must be treated as opaque by clients and .
+  // More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
+  // +optional
+  optional string resourceVersion = 2;
 
-  optional NodeSpec slave = 3;
+  optional NodeSpec master = 3;
+
+  optional NodeSpec slave = 4;
 }
 
 message MysqlCrdList {
@@ -336,9 +362,22 @@ message PodResourceRequirements {
 message RedisCrd {
   optional string name = 1;
 
-  optional NodeSpec master = 2;
+  // An opaque value that represents the internal version of this object that can
+  // be used by clients to determine when objects have changed. May be used for optimistic
+  // concurrency, change detection, and the watch operation on a resource or set of resources.
+  // Clients must treat these values as opaque and passed unmodified back to the server.
+  // They may only be valid for a particular resource or set of resources.
+  //
+  // Populated by the system.
+  // Read-only.
+  // Value must be treated as opaque by clients and .
+  // More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
+  // +optional
+  optional string resourceVersion = 2;
 
-  optional NodeSpec slave = 3;
+  optional NodeSpec master = 3;
+
+  optional NodeSpec slave = 4;
 }
 
 message RedisCrdList {
