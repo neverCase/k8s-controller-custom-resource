@@ -247,6 +247,9 @@ func (c *wsConn) Close() {
 	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	if c.status == connClosed {
+		return
+	}
 	c.status = connClosed
 	if err := c.conn.Close(); err != nil {
 		klog.V(2).Info(err)
