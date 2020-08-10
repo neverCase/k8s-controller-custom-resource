@@ -786,7 +786,7 @@ func covertProtoToHelixSagaConfigMapVolume(c proto.HelixSagaConfigMapVolume) hel
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: c.Volume.Name,
+						Name: c.Volume.VolumeSource.Name,
 					},
 					Items: covertProtoToKeyToPath(c.Volume.ConfigMap.Items),
 				},
