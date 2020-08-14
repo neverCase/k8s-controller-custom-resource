@@ -21,7 +21,7 @@ func NewStatefulSet(foo *redisOperatorV1.RedisOperator, rds *redisOperatorV1.Red
 	t := coreV1.HostPathDirectoryOrCreate
 	hostPath := &coreV1.HostPathVolumeSource{
 		Type: &t,
-		Path: fmt.Sprintf("%s/redis/%s", rds.VolumePath, rds.Name),
+		Path: fmt.Sprintf("%s/%s/redis/%s", rds.VolumePath, foo.Namespace, rds.Name),
 	}
 	ports := []coreV1.ContainerPort{
 		{
