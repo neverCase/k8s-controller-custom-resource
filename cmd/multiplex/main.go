@@ -9,9 +9,11 @@ import (
 	// Uncomment the following line to load the gcp plugin (only required to authenticate against GKE clusters).
 	// _ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 
+	"github.com/Shanghai-Lunara/helixsaga-operator/pkg/controllers/helixsaga"
 	k8sCoreV1 "github.com/nevercase/k8s-controller-custom-resource/core/v1"
 	mysql "github.com/nevercase/k8s-controller-custom-resource/pkg/controller/mysqloperator"
 	redis "github.com/nevercase/k8s-controller-custom-resource/pkg/controller/redisoperator"
+
 	"github.com/nevercase/k8s-controller-custom-resource/pkg/signals"
 )
 
@@ -46,7 +48,8 @@ func main() {
 	opts := k8sCoreV1.NewOptions()
 	mysqlOpt := mysql.NewOption(controllerName, cfg, stopCh)
 	redisOpt := redis.NewOption(controllerName, cfg, stopCh)
-	if err := opts.Add(mysqlOpt, redisOpt); err != nil {
+	helixSagaOpt := helixsaga.NewOption(controllerName, cfg, stopCh)
+	if err := opts.Add(mysqlOpt, redisOpt, helixSagaOpt); err != nil {
 		klog.Fatal(err)
 	}
 
