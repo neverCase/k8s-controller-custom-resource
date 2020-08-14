@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	GroupName = "redisoperator.nevercase.io"
+	GroupName = "nevercase.io"
 	Version   = "v1"
 )
 

@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	GroupName = "mysqloperator.nevercase.io"
+	GroupName = "nevercase.io"
 	Version   = "v1"
 )
 
