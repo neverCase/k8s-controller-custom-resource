@@ -9,11 +9,11 @@ func GetResponse(param Param, data []byte) ([]byte, error) {
 	return r.Marshal()
 }
 
-func ErrorResponse(param Param) ([]byte, error) {
+func ErrorResponse(param Param, errMessage string) ([]byte, error) {
 	r := Response{
-		Code:  CodeErr,
-		Param: param,
-		//Result: "",
+		Code:   CodeErr,
+		Param:  param,
+		Result: []byte(errMessage),
 	}
 	return r.Marshal()
 }

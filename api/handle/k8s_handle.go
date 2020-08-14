@@ -23,6 +23,7 @@ type KubernetesApiGetter interface {
 
 type KubernetesApiInterface interface {
 	Create(req proto.Param, obj []byte) (res []byte, err error)
+	Update(req proto.Param, obj []byte) (res []byte, err error)
 	Delete(req proto.Param, obj []byte) (err error)
 	Get(req proto.Param, obj []byte) (res []byte, err error)
 	List(req proto.Param) ([]byte, error)
@@ -48,7 +49,7 @@ func (h *k8sHandle) Create(req proto.Param, obj []byte) (res []byte, err error) 
 			break
 		}
 		m := convertProtoToConfigMap(req, e)
-		if n, err = resourceCreateOrUpdate(h.group, req, m.Name, m); err != nil {
+		if n, err = resourceCreate(h.group, req, m.Name, m); err != nil {
 			break
 		}
 		e = convertConfigMapToProto(n.(*corev1.ConfigMap))
@@ -59,7 +60,7 @@ func (h *k8sHandle) Create(req proto.Param, obj []byte) (res []byte, err error) 
 			break
 		}
 		m := convertProtoToNameSpace(e)
-		if n, err = resourceCreateOrUpdate(h.group, req, m.Name, m); err != nil {
+		if n, err = resourceCreate(h.group, req, m.Name, m); err != nil {
 			break
 		}
 		e = convertNameSpaceToProto(n.(*corev1.Namespace))
@@ -70,7 +71,7 @@ func (h *k8sHandle) Create(req proto.Param, obj []byte) (res []byte, err error) 
 			break
 		}
 		m := convertProtoToService(req, e)
-		if n, err = resourceCreateOrUpdate(h.group, req, m.Name, m); err != nil {
+		if n, err = resourceCreate(h.group, req, m.Name, m); err != nil {
 			break
 		}
 		e = convertServiceToProto(n.(*corev1.Service))
@@ -81,7 +82,7 @@ func (h *k8sHandle) Create(req proto.Param, obj []byte) (res []byte, err error) 
 			break
 		}
 		m := convertMysqlCrdToProto(req, e)
-		if n, err = resourceCreateOrUpdate(h.group, req, m.Name, m); err != nil {
+		if n, err = resourceCreate(h.group, req, m.Name, m); err != nil {
 			break
 		}
 		e = convertProtoToMysqlCrd(n.(*mysqloperatorv1.MysqlOperator))
@@ -92,7 +93,7 @@ func (h *k8sHandle) Create(req proto.Param, obj []byte) (res []byte, err error) 
 			break
 		}
 		m := convertProtoToRedisCrd(req, e)
-		if n, err = resourceCreateOrUpdate(h.group, req, m.Name, m); err != nil {
+		if n, err = resourceCreate(h.group, req, m.Name, m); err != nil {
 			break
 		}
 		e = convertRedisCrdToProto(n.(*redisoperatorv1.RedisOperator))
@@ -103,11 +104,92 @@ func (h *k8sHandle) Create(req proto.Param, obj []byte) (res []byte, err error) 
 			break
 		}
 		m := convertProtoToHelixSagaCrd(req, e)
-		if n, err = resourceCreateOrUpdate(h.group, req, m.Name, m); err != nil {
+		if n, err = resourceCreate(h.group, req, m.Name, m); err != nil {
 			break
 		}
 		e = covertHelixSagaCrdToProto(n.(*helixsagaoperatorv1.HelixSaga))
 		res, err = e.Marshal()
+	}
+	if err != nil {
+		klog.V(2).Info(err)
+		return nil, err
+	}
+	return proto.GetResponse(req, res)
+}
+
+func (h *k8sHandle) Update(req proto.Param, obj []byte) (res []byte, err error) {
+	var n interface{}
+	switch req.ResourceType {
+	case group.ConfigMap:
+		var e proto.ConfigMap
+		if err = e.Unmarshal(obj); err != nil {
+			break
+		}
+		m := convertProtoToConfigMap(req, e)
+		if n, err = resourceUpdate(h.group, req, m.Name, m); err != nil {
+			break
+		}
+		e = convertConfigMapToProto(n.(*corev1.ConfigMap))
+		res, err = e.Marshal()
+	case group.NameSpace:
+		var e proto.NameSpace
+		if err = e.Unmarshal(obj); err != nil {
+			break
+		}
+		m := convertProtoToNameSpace(e)
+		if n, err = resourceUpdate(h.group, req, m.Name, m); err != nil {
+			break
+		}
+		e = convertNameSpaceToProto(n.(*corev1.Namespace))
+		res, err = e.Marshal()
+	case group.Service:
+		var e proto.Service
+		if err = e.Unmarshal(obj); err != nil {
+			break
+		}
+		m := convertProtoToService(req, e)
+		if n, err = resourceUpdate(h.group, req, m.Name, m); err != nil {
+			break
+		}
+		e = convertServiceToProto(n.(*corev1.Service))
+		res, err = e.Marshal()
+	case group.MysqlOperator:
+		var e proto.MysqlCrd
+		if err = e.Unmarshal(obj); err != nil {
+			break
+		}
+		m := convertMysqlCrdToProto(req, e)
+		if n, err = resourceUpdate(h.group, req, m.Name, m); err != nil {
+			break
+		}
+		e = convertProtoToMysqlCrd(n.(*mysqloperatorv1.MysqlOperator))
+		res, err = e.Marshal()
+	case group.RedisOperator:
+		var e proto.RedisCrd
+		if err = e.Unmarshal(obj); err != nil {
+			break
+		}
+		m := convertProtoToRedisCrd(req, e)
+		if n, err = resourceUpdate(h.group, req, m.Name, m); err != nil {
+			break
+		}
+		e = convertRedisCrdToProto(n.(*redisoperatorv1.RedisOperator))
+		res, err = e.Marshal()
+	case group.HelixSagaOperator:
+		var e proto.HelixSagaCrd
+		if err = e.Unmarshal(obj); err != nil {
+			break
+		}
+		m := convertProtoToHelixSagaCrd(req, e)
+		if n, err = resourceUpdate(h.group, req, m.Name, m); err != nil {
+			break
+		}
+		e = covertHelixSagaCrdToProto(n.(*helixsagaoperatorv1.HelixSaga))
+		res, err = e.Marshal()
+	}
+	if err != nil {
+		klog.V(2).Info(err)
+		return nil, err
 	}
 	return proto.GetResponse(req, res)
 }
@@ -313,6 +395,7 @@ func (h *k8sHandle) List(req proto.Param) (res []byte, err error) {
 		res, err = m.Marshal()
 	}
 	if err != nil {
+		klog.V(2).Info(err)
 		return nil, err
 	}
 	return proto.GetResponse(req, res)
@@ -324,6 +407,7 @@ func (h *k8sHandle) Resources(req proto.Param) (res []byte, err error) {
 	}
 	o, err := m.Marshal()
 	if err != nil {
+		klog.V(2).Info(err)
 		return nil, err
 	}
 	return proto.GetResponse(req, o)
@@ -345,6 +429,27 @@ func resourceCreateOrUpdate(g group.Group, req proto.Param, specName string, m i
 		}
 	}
 	return
+}
+
+func resourceCreate(g group.Group, req proto.Param, specName string, m interface{}) (res interface{}, err error) {
+	_, err = g.Resource().Get(req.ResourceType, req.NameSpace, specName)
+	if err != nil {
+		if !errors.IsNotFound(err) {
+			return res, err
+		}
+	}
+	return g.Resource().Create(req.ResourceType, req.NameSpace, m)
+}
+
+func resourceUpdate(g group.Group, req proto.Param, specName string, m interface{}) (res interface{}, err error) {
+	_, err = g.Resource().Get(req.ResourceType, req.NameSpace, specName)
+	if err != nil {
+		//if !errors.IsNotFound(err) {
+		//	return
+		//}
+		return nil, err
+	}
+	return g.Resource().Update(req.ResourceType, req.NameSpace, m)
 }
 
 func convertPodResourceLimitsToProto(res proto.PodResourceList) corev1.ResourceList {

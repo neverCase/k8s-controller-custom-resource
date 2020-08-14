@@ -143,17 +143,24 @@ func (c *wsConn) ReadPump() (err error) {
 			if res, err = proto.GetResponse(msg.Param, []byte("ping success")); err != nil {
 				return err
 			}
-		case proto.SvcCreate, proto.SvcUpdate:
+		case proto.SvcCreate:
 			if res, err = c.handle.KubernetesApi().Create(msg.Param, msg.Data); err != nil {
 				klog.V(2).Info(err)
-				if res, err = proto.ErrorResponse(msg.Param); err != nil {
+				if res, err = proto.ErrorResponse(msg.Param, err.Error()); err != nil {
+					klog.V(2).Info(err)
+				}
+			}
+		case proto.SvcUpdate:
+			if res, err = c.handle.KubernetesApi().Update(msg.Param, msg.Data); err != nil {
+				klog.V(2).Info(err)
+				if res, err = proto.ErrorResponse(msg.Param, err.Error()); err != nil {
 					klog.V(2).Info(err)
 				}
 			}
 		case proto.SvcDelete:
 			if err = c.handle.KubernetesApi().Delete(msg.Param, msg.Data); err != nil {
 				klog.V(2).Info(err)
-				if res, err = proto.ErrorResponse(msg.Param); err != nil {
+				if res, err = proto.ErrorResponse(msg.Param, err.Error()); err != nil {
 					klog.V(2).Info(err)
 				}
 			} else {
@@ -164,14 +171,14 @@ func (c *wsConn) ReadPump() (err error) {
 		case proto.SvcGet:
 			if res, err = c.handle.KubernetesApi().Get(msg.Param, msg.Data); err != nil {
 				klog.V(2).Info(err)
-				if res, err = proto.ErrorResponse(msg.Param); err != nil {
+				if res, err = proto.ErrorResponse(msg.Param, err.Error()); err != nil {
 					klog.V(2).Info(err)
 				}
 			}
 		case proto.SvcList:
 			if res, err = c.handle.KubernetesApi().List(msg.Param); err != nil {
 				klog.V(2).Info(err)
-				if res, err = proto.ErrorResponse(msg.Param); err != nil {
+				if res, err = proto.ErrorResponse(msg.Param, err.Error()); err != nil {
 					klog.V(2).Info(err)
 				}
 			}
@@ -179,14 +186,14 @@ func (c *wsConn) ReadPump() (err error) {
 		case proto.SvcResource:
 			if res, err = c.handle.KubernetesApi().Resources(msg.Param); err != nil {
 				klog.V(2).Info(err)
-				if res, err = proto.ErrorResponse(msg.Param); err != nil {
+				if res, err = proto.ErrorResponse(msg.Param, err.Error()); err != nil {
 					klog.V(2).Info(err)
 				}
 			}
 		case proto.SvcHarbor:
 			if res, err = c.handle.HarborApi().Core(msg.Param, msg.Data); err != nil {
 				klog.V(2).Info(err)
-				if res, err = proto.ErrorResponse(msg.Param); err != nil {
+				if res, err = proto.ErrorResponse(msg.Param, err.Error()); err != nil {
 					klog.V(2).Info(err)
 				}
 			}
