@@ -3,7 +3,7 @@ module github.com/nevercase/k8s-controller-custom-resource
 go 1.14
 
 require (
-	github.com/Shanghai-Lunara/helixsaga-operator v0.0.0-20200721022948-cf1a16054b62
+	github.com/Shanghai-Lunara/helixsaga-operator v0.0.0-20200814042007-be3103b89b40
 	github.com/gogo/protobuf v1.3.1
 	github.com/gorilla/websocket v1.4.2
 	github.com/imdario/mergo v0.3.8 // indirect
