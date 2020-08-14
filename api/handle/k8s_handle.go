@@ -413,24 +413,6 @@ func (h *k8sHandle) Resources(req proto.Param) (res []byte, err error) {
 	return proto.GetResponse(req, o)
 }
 
-func resourceCreateOrUpdate(g group.Group, req proto.Param, specName string, m interface{}) (res interface{}, err error) {
-	_, err = g.Resource().Get(req.ResourceType, req.NameSpace, specName)
-	if err != nil {
-		if !errors.IsNotFound(err) {
-			return
-		}
-		err = nil
-		if res, err = g.Resource().Create(req.ResourceType, req.NameSpace, m); err != nil {
-			return
-		}
-	} else {
-		if res, err = g.Resource().Update(req.ResourceType, req.NameSpace, m); err != nil {
-			return
-		}
-	}
-	return
-}
-
 func resourceCreate(g group.Group, req proto.Param, specName string, m interface{}) (res interface{}, err error) {
 	_, err = g.Resource().Get(req.ResourceType, req.NameSpace, specName)
 	if err != nil {
@@ -444,9 +426,6 @@ func resourceCreate(g group.Group, req proto.Param, specName string, m interface
 func resourceUpdate(g group.Group, req proto.Param, specName string, m interface{}) (res interface{}, err error) {
 	_, err = g.Resource().Get(req.ResourceType, req.NameSpace, specName)
 	if err != nil {
-		//if !errors.IsNotFound(err) {
-		//	return
-		//}
 		return nil, err
 	}
 	return g.Resource().Update(req.ResourceType, req.NameSpace, m)
