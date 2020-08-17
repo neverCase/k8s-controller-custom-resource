@@ -1,8 +1,9 @@
 .PHONY: mysq redis
 
 push := true
-mysql_image := "harbor.domain.com/helix_saga/mysql-slave:v1.0.0"
-redis_image := "harbor.domain.com/helix_saga/redis-slave:v1.0.0"
+domain := harbor.domain.com
+mysql_image := "$(domain)/helix_saga/mysql-slave:v1.0.0"
+redis_image := "$(domain)/helix_saga/redis-slave:v1.0.0"
 
 mysql:
 	cd dockerfile/mysql && docker build -t $(mysql_image) .
