@@ -1,9 +1,12 @@
 package group
 
 import (
+	"context"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog"
@@ -56,10 +59,11 @@ type ResourceInterface interface {
 	Delete(rt ResourceType, nameSpace, specName string) (err error)
 	Get(rt ResourceType, nameSpace, specName string) (res interface{}, err error)
 	List(rt ResourceType, nameSpace string, selector labels.Selector) (res interface{}, err error)
+	Watch(rt ResourceType, nameSpace string, selector labels.Selector, eventsChan chan watch.Event) (err error)
 	ResourceTypes() []ResourceType
 }
 
-func NewResource(masterUrl, kubeconfigPath string) ResourceInterface {
+func NewResource(ctx context.Context, masterUrl, kubeconfigPath string, eventsChan chan watch.Event) ResourceInterface {
 	cfg, err := clientcmd.BuildConfigFromFlags(masterUrl, kubeconfigPath)
 	if err != nil {
 		klog.Fatalf("Error building kubeconfig: %s", err.Error())
@@ -91,9 +95,17 @@ func NewResource(masterUrl, kubeconfigPath string) ResourceInterface {
 		NewOption(RedisOperator, redis),
 		NewOption(HelixSagaOperator, helixsaga),
 	)
+	ctx2, cancel := context.WithCancel(ctx)
 	var r = &resource{
 		kubeClientSet: kubeClient,
 		options:       opts,
+		ctx:           ctx2,
+		cancel:        cancel,
+	}
+	for _, v := range opts.GetOptionTypeList() {
+		if err := r.Watch(v, "", labels.NewSelector(), eventsChan); err != nil {
+			klog.Fatalf("Error watching ResourceType:%v err: %s", v, err)
+		}
 	}
 	return r
 }
@@ -101,6 +113,9 @@ func NewResource(masterUrl, kubeconfigPath string) ResourceInterface {
 type resource struct {
 	kubeClientSet kubernetes.Interface
 	options       Options
+
+	ctx    context.Context
+	cancel context.CancelFunc
 }
 
 func (r *resource) Create(rt ResourceType, nameSpace string, obj interface{}) (res interface{}, err error) {
@@ -265,6 +280,61 @@ func (r *resource) List(rt ResourceType, nameSpace string, selector labels.Selec
 		klog.V(2).Info(err)
 	}
 	return res, err
+}
+
+func (r *resource) Watch(rt ResourceType, nameSpace string, selector labels.Selector, eventsChan chan watch.Event) (err error) {
+	var opt Option
+	var opts = metav1.ListOptions{
+		LabelSelector: selector.String(),
+	}
+	var res watch.Interface
+	switch rt {
+	case ConfigMap:
+		res, err = r.kubeClientSet.CoreV1().ConfigMaps(nameSpace).Watch(opts)
+	case Node:
+		res, err = r.kubeClientSet.CoreV1().Nodes().Watch(opts)
+	case NameSpace:
+		res, err = r.kubeClientSet.CoreV1().Namespaces().Watch(opts)
+	case Service:
+		res, err = r.kubeClientSet.CoreV1().Services(nameSpace).Watch(opts)
+	case Secret:
+		res, err = r.kubeClientSet.CoreV1().Secrets(nameSpace).Watch(opts)
+	case MysqlOperator:
+		if opt, err = r.options.Get(rt); err != nil {
+			break
+		}
+		res, err = opt.Get().(*mysqlclientset.Clientset).MysqloperatorV1().MysqlOperators(nameSpace).Watch(opts)
+	case RedisOperator:
+		if opt, err = r.options.Get(rt); err != nil {
+			break
+		}
+		res, err = opt.Get().(*redisclientset.Clientset).RedisoperatorV1().RedisOperators(nameSpace).Watch(opts)
+	case HelixSagaOperator:
+		if opt, err = r.options.Get(rt); err != nil {
+			break
+		}
+		res, err = opt.Get().(*helixsagaclientset.Clientset).HelixsagaV1().HelixSagas(nameSpace).Watch(opts)
+	}
+	if err != nil {
+		klog.V(2).Info(err)
+		return err
+	}
+	go func() {
+		for {
+			select {
+			case e, isClosed := <-res.ResultChan():
+				klog.Info("Watch:", e)
+				if !isClosed {
+					return
+				}
+				eventsChan <- e
+			case <-r.ctx.Done():
+				res.Stop()
+				return
+			}
+		}
+	}()
+	return nil
 }
 
 func (r *resource) ResourceTypes() []ResourceType {

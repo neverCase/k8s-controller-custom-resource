@@ -1,6 +1,8 @@
 package handle
 
 import (
+	"reflect"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -27,13 +29,16 @@ type KubernetesApiInterface interface {
 	Delete(req proto.Param, obj []byte) (err error)
 	Get(req proto.Param, obj []byte) (res []byte, err error)
 	List(req proto.Param) ([]byte, error)
+	Watch()
 	Resources(req proto.Param) (res []byte, err error)
 }
 
 func NewKubernetesApiHandle(g group.Group) KubernetesApiInterface {
-	return &k8sHandle{
+	kh := &k8sHandle{
 		group: g,
 	}
+	go kh.Watch()
+	return kh
 }
 
 type k8sHandle struct {
@@ -399,6 +404,85 @@ func (h *k8sHandle) List(req proto.Param) (res []byte, err error) {
 		return nil, err
 	}
 	return proto.GetResponse(req, res)
+}
+
+func (h *k8sHandle) convertObjFromEvent(obj interface{}) (res []byte, err error) {
+	req := proto.Param{
+		Service: string(proto.SvcWatch),
+	}
+	switch reflect.TypeOf(obj) {
+	case reflect.TypeOf(&corev1.ConfigMap{}):
+		var e proto.ConfigMap
+		n := obj.(*corev1.ConfigMap)
+		req.ResourceType = group.ConfigMap
+		req.NameSpace = n.Namespace
+		e = convertConfigMapToProto(n)
+		res, err = e.Marshal()
+	case reflect.TypeOf(&corev1.Namespace{}):
+		var e proto.NameSpace
+		n := obj.(*corev1.Namespace)
+		req.ResourceType = group.NameSpace
+		e = convertNameSpaceToProto(n)
+		res, err = e.Marshal()
+	case reflect.TypeOf(&corev1.Service{}):
+		var e proto.Service
+		n := obj.(*corev1.Service)
+		req.ResourceType = group.Service
+		req.NameSpace = n.Namespace
+		e = convertServiceToProto(n)
+		res, err = e.Marshal()
+	case reflect.TypeOf(&corev1.Secret{}):
+		var e proto.Secret
+		n := obj.(*corev1.Secret)
+		req.ResourceType = group.Secret
+		req.NameSpace = n.Namespace
+		e = convertSecretToProto(n)
+		res, err = e.Marshal()
+	case reflect.TypeOf(&mysqloperatorv1.MysqlOperator{}):
+		var e proto.MysqlCrd
+		n := obj.(*mysqloperatorv1.MysqlOperator)
+		req.ResourceType = group.MysqlOperator
+		req.NameSpace = n.Namespace
+		e = convertProtoToMysqlCrd(n)
+		res, err = e.Marshal()
+	case reflect.TypeOf(&redisoperatorv1.RedisOperator{}):
+		var e proto.RedisCrd
+		n := obj.(*redisoperatorv1.RedisOperator)
+		req.ResourceType = group.RedisOperator
+		req.NameSpace = n.Namespace
+		e = convertRedisCrdToProto(n)
+		res, err = e.Marshal()
+	case reflect.TypeOf(&helixsagaoperatorv1.HelixSaga{}):
+		var e proto.HelixSagaCrd
+		n := obj.(*helixsagaoperatorv1.HelixSaga)
+		req.ResourceType = group.HelixSagaOperator
+		req.NameSpace = n.Namespace
+		e = covertHelixSagaCrdToProto(n)
+		res, err = e.Marshal()
+	}
+	if err != nil {
+		klog.V(2).Info(err)
+		return nil, err
+	}
+	return proto.GetResponse(req, res)
+}
+
+func (h *k8sHandle) Watch() {
+	for {
+		select {
+		case e, isClosed := <-h.group.WatchEvents():
+			klog.Info("watch h.group.WatchEvents:", e)
+			if !isClosed {
+				return
+			}
+			res, err := h.convertObjFromEvent(e.Object)
+			if err != nil {
+				klog.V(2).Info(err)
+				continue
+			}
+			klog.Info("watch obj:", res)
+		}
+	}
 }
 
 func (h *k8sHandle) Resources(req proto.Param) (res []byte, err error) {
