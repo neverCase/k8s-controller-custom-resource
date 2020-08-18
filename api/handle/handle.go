@@ -7,10 +7,10 @@ type Handle interface {
 	HarborApiGetter
 }
 
-func NewHandle(g group.Group) Handle {
+func NewHandle(g group.Group, broadcast chan []byte) Handle {
 	return &handle{
 		group:  g,
-		k8s:    NewKubernetesApiHandle(g),
+		k8s:    NewKubernetesApiHandle(g, broadcast),
 		harbor: NewHarborApi(g),
 	}
 }

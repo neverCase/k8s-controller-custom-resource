@@ -323,7 +323,6 @@ func (r *resource) Watch(rt ResourceType, nameSpace string, selector labels.Sele
 		for {
 			select {
 			case e, isClosed := <-res.ResultChan():
-				klog.Info("Watch:", e)
 				if !isClosed {
 					return
 				}

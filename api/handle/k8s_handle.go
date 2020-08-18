@@ -29,15 +29,15 @@ type KubernetesApiInterface interface {
 	Delete(req proto.Param, obj []byte) (err error)
 	Get(req proto.Param, obj []byte) (res []byte, err error)
 	List(req proto.Param) ([]byte, error)
-	Watch()
+	Watch(broadcast chan []byte)
 	Resources(req proto.Param) (res []byte, err error)
 }
 
-func NewKubernetesApiHandle(g group.Group) KubernetesApiInterface {
+func NewKubernetesApiHandle(g group.Group, broadcast chan []byte) KubernetesApiInterface {
 	kh := &k8sHandle{
 		group: g,
 	}
-	go kh.Watch()
+	go kh.Watch(broadcast)
 	return kh
 }
 
@@ -467,7 +467,7 @@ func (h *k8sHandle) convertObjFromEvent(obj interface{}) (res []byte, err error)
 	return proto.GetResponse(req, res)
 }
 
-func (h *k8sHandle) Watch() {
+func (h *k8sHandle) Watch(broadcast chan []byte) {
 	for {
 		select {
 		case e, isClosed := <-h.group.WatchEvents():
@@ -480,6 +480,7 @@ func (h *k8sHandle) Watch() {
 				klog.V(2).Info(err)
 				continue
 			}
+			broadcast <- res
 			klog.Info("watch obj:", res)
 		}
 	}

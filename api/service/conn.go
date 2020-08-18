@@ -8,10 +8,11 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"k8s.io/klog"
+
 	"github.com/nevercase/k8s-controller-custom-resource/api/group"
 	"github.com/nevercase/k8s-controller-custom-resource/api/handle"
 	"github.com/nevercase/k8s-controller-custom-resource/api/proto"
-	"k8s.io/klog"
 )
 
 type ConnHub interface {
@@ -19,19 +20,23 @@ type ConnHub interface {
 }
 
 type connHub struct {
-	group group.Group
+	group  group.Group
+	handle handle.Handle
 
 	mu           sync.RWMutex
 	autoClientId int32
 	connections  map[int32]WsConn
-	ctx          context.Context
+
+	broadcast chan []byte
+
+	ctx context.Context
 }
 
 func (ch *connHub) NewConn(conn *websocket.Conn) {
 	ch.mu.Lock()
 	defer ch.mu.Unlock()
 	id := atomic.AddInt32(&ch.autoClientId, 1)
-	ch.connections[id] = NewConn(id, ch.ctx, conn, ch.group)
+	ch.connections[id] = NewConn(id, ch.ctx, conn, ch.group, ch.handle)
 	go func() {
 		if err := ch.connections[id].ReadPump(); err != nil {
 			klog.V(2).Info(err)
@@ -45,13 +50,33 @@ func (ch *connHub) NewConn(conn *websocket.Conn) {
 	go ch.connections[id].KeepAlive()
 }
 
+func (ch *connHub) BroadcastWatch() {
+	for {
+		select {
+		case msg := <-ch.broadcast:
+			ch.mu.RLock()
+			for _, v := range ch.connections {
+				if err := v.SendToChannel(msg); err != nil {
+					klog.V(2).Info("BroadcastWatch err:%v", err)
+				}
+			}
+			ch.mu.RUnlock()
+		}
+	}
+}
+
 func NewConnHub(ctx context.Context, g group.Group) ConnHub {
-	return &connHub{
+	b := make(chan []byte, 4096)
+	ch :=  &connHub{
 		group:        g,
+		handle:       handle.NewHandle(g, b),
 		autoClientId: 0,
 		connections:  make(map[int32]WsConn, 0),
+		broadcast:    b,
 		ctx:          ctx,
 	}
+	go ch.BroadcastWatch()
+	return ch
 }
 
 type WsConn interface {
@@ -63,9 +88,9 @@ type WsConn interface {
 	Close()
 }
 
-func NewConn(clientId int32, ctx context.Context, ws *websocket.Conn, g group.Group) WsConn {
+func NewConn(clientId int32, ctx context.Context, ws *websocket.Conn, g group.Group, h handle.Handle) WsConn {
 	c := &wsConn{
-		handle:            handle.NewHandle(g),
+		handle:            h,
 		group:             g,
 		clientId:          clientId,
 		conn:              ws,
