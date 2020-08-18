@@ -7,6 +7,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/apimachinery/pkg/watch"
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	appslistersv1 "k8s.io/client-go/listers/apps/v1"
@@ -19,6 +20,7 @@ type KubernetesStatefulSet interface {
 	Update(nameSpace string, d *appsV1.StatefulSet) (*appsV1.StatefulSet, error)
 	Delete(nameSpace, specName string) error
 	List(nameSpace, filterName string) (dl *appsV1.StatefulSetList, err error)
+	Watch(nameSpace, filterName string) (w watch.Interface, err error)
 }
 
 func NewKubernetesStatefulSet(kubeClientSet kubernetes.Interface, kubeInformerFactory kubeinformers.SharedInformerFactory) KubernetesStatefulSet {
@@ -92,4 +94,15 @@ func (kss *kubernetesStatefulSet) List(nameSpace, filterName string) (ssl *appsV
 		klog.V(2).Info(err)
 	}
 	return ssl, err
+}
+
+func (kss *kubernetesStatefulSet) Watch(nameSpace, filterName string) (w watch.Interface, err error) {
+	opts := metaV1.ListOptions{
+		LabelSelector: filterName,
+	}
+	w, err = kss.kubeClientSet.AppsV1().StatefulSets(nameSpace).Watch(opts)
+	if err != nil {
+		klog.V(2).Info(err)
+	}
+	return w, err
 }

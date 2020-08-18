@@ -390,12 +390,3 @@ func (kc *kubernetesController) HandleObject(obj interface{}) {
 		return
 	}
 }
-
-//func (kc *kubernetesController) GetKindName(obj interface{}) string {
-//	switch reflect.TypeOf(obj) {
-//	case *(appsv1.Deployment):
-//
-//	default:
-//		return kc.operator.Options().Get(reflect.TypeOf(obj)).GetKindName()
-//	}
-//}

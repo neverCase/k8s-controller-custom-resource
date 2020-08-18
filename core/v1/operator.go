@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"fmt"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
@@ -18,6 +19,7 @@ type KubernetesOperator interface {
 	Resource() KubernetesResource
 	AgentName() string
 	Options() Options
+	Watch()
 }
 
 func NewKubernetesOperator(kubeClientset kubernetes.Interface,
@@ -34,7 +36,7 @@ func NewKubernetesOperator(kubeClientset kubernetes.Interface,
 
 	kubeInformerFactory := kubeinformers.NewSharedInformerFactory(kubeClientset, time.Second*30)
 
-	var ko KubernetesOperator = &kubernetesOperator{
+	var ko = &kubernetesOperator{
 		kubeClientSet:       kubeClientset,
 		kubeInformerFactory: kubeInformerFactory,
 		recorder:            recorder,
@@ -42,6 +44,8 @@ func NewKubernetesOperator(kubeClientset kubernetes.Interface,
 		agentName:           agentName,
 		options:             opts,
 	}
+
+	ko.Watch()
 
 	// notice that there is no need to run Start methods in a separate goroutine. (i.e. go kubeInformerFactory.Start(stopCh)
 	// Start method is non-blocking and runs all registered informers in a dedicated goroutine
@@ -77,4 +81,28 @@ func (ko *kubernetesOperator) AgentName() string {
 
 func (ko *kubernetesOperator) Options() Options {
 	return ko.options
+}
+
+const LabelsFilterNameTemplate = "app=%s"
+
+func (ko *kubernetesOperator) Watch() {
+	for _, opt := range ko.Options().List() {
+		go func(opt Option) {
+			res, err := ko.kubernetesResource.StatefulSet().Watch("", fmt.Sprintf(LabelsFilterNameTemplate, opt.KindName()))
+			if err != nil {
+				klog.Fatal(err)
+			}
+			for {
+				select {
+				case e, isClosed := <-res.ResultChan():
+					if !isClosed {
+						return
+					}
+					if err := opt.WriteWatchChan(e, ko.kubernetesResource, ko.recorder); err != nil {
+						klog.V(2).Info(err)
+					}
+				}
+			}
+		}(opt)
+	}
 }

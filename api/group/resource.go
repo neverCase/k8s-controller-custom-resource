@@ -103,6 +103,9 @@ func NewResource(ctx context.Context, masterUrl, kubeconfigPath string, eventsCh
 		cancel:        cancel,
 	}
 	for _, v := range opts.GetOptionTypeList() {
+		if v == ConfigMap {
+			continue
+		}
 		if err := r.Watch(v, "", labels.NewSelector(), eventsChan); err != nil {
 			klog.Fatalf("Error watching ResourceType:%v err: %s", v, err)
 		}
@@ -131,12 +134,12 @@ func (r *resource) Create(rt ResourceType, nameSpace string, obj interface{}) (r
 		if opt, err = r.options.Get(rt); err != nil {
 			break
 		}
-		res, err = opt.Get().(*mysqlclientset.Clientset).MysqloperatorV1().MysqlOperators(nameSpace).Create(obj.(*mysqloperatorv1.MysqlOperator))
+		res, err = opt.Get().(*mysqlclientset.Clientset).NevercaseV1().MysqlOperators(nameSpace).Create(obj.(*mysqloperatorv1.MysqlOperator))
 	case RedisOperator:
 		if opt, err = r.options.Get(rt); err != nil {
 			break
 		}
-		res, err = opt.Get().(*redisclientset.Clientset).RedisoperatorV1().RedisOperators(nameSpace).Create(obj.(*redisoperatorv1.RedisOperator))
+		res, err = opt.Get().(*redisclientset.Clientset).NevercaseV1().RedisOperators(nameSpace).Create(obj.(*redisoperatorv1.RedisOperator))
 	case HelixSagaOperator:
 		if opt, err = r.options.Get(rt); err != nil {
 			break
@@ -160,12 +163,12 @@ func (r *resource) Update(rt ResourceType, nameSpace string, obj interface{}) (r
 		if opt, err = r.options.Get(rt); err != nil {
 			break
 		}
-		res, err = opt.Get().(*mysqlclientset.Clientset).MysqloperatorV1().MysqlOperators(nameSpace).Update(obj.(*mysqloperatorv1.MysqlOperator))
+		res, err = opt.Get().(*mysqlclientset.Clientset).NevercaseV1().MysqlOperators(nameSpace).Update(obj.(*mysqloperatorv1.MysqlOperator))
 	case RedisOperator:
 		if opt, err = r.options.Get(rt); err != nil {
 			break
 		}
-		res, err = opt.Get().(*redisclientset.Clientset).RedisoperatorV1().RedisOperators(nameSpace).Update(obj.(*redisoperatorv1.RedisOperator))
+		res, err = opt.Get().(*redisclientset.Clientset).NevercaseV1().RedisOperators(nameSpace).Update(obj.(*redisoperatorv1.RedisOperator))
 	case HelixSagaOperator:
 		if opt, err = r.options.Get(rt); err != nil {
 			break
@@ -192,12 +195,12 @@ func (r *resource) Delete(rt ResourceType, nameSpace, specName string) (err erro
 		if opt, err = r.options.Get(rt); err != nil {
 			break
 		}
-		err = opt.Get().(*mysqlclientset.Clientset).MysqloperatorV1().MysqlOperators(nameSpace).Delete(specName, delOpts)
+		err = opt.Get().(*mysqlclientset.Clientset).NevercaseV1().MysqlOperators(nameSpace).Delete(specName, delOpts)
 	case RedisOperator:
 		if opt, err = r.options.Get(rt); err != nil {
 			break
 		}
-		err = opt.Get().(*redisclientset.Clientset).RedisoperatorV1().RedisOperators(nameSpace).Delete(specName, delOpts)
+		err = opt.Get().(*redisclientset.Clientset).NevercaseV1().RedisOperators(nameSpace).Delete(specName, delOpts)
 	case HelixSagaOperator:
 		if opt, err = r.options.Get(rt); err != nil {
 			break
@@ -226,12 +229,12 @@ func (r *resource) Get(rt ResourceType, nameSpace, specName string) (res interfa
 		if opt, err = r.options.Get(rt); err != nil {
 			break
 		}
-		res, err = opt.Get().(*mysqlclientset.Clientset).MysqloperatorV1().MysqlOperators(nameSpace).Get(specName, getOpts)
+		res, err = opt.Get().(*mysqlclientset.Clientset).NevercaseV1().MysqlOperators(nameSpace).Get(specName, getOpts)
 	case RedisOperator:
 		if opt, err = r.options.Get(rt); err != nil {
 			break
 		}
-		res, err = opt.Get().(*redisclientset.Clientset).RedisoperatorV1().RedisOperators(nameSpace).Get(specName, getOpts)
+		res, err = opt.Get().(*redisclientset.Clientset).NevercaseV1().RedisOperators(nameSpace).Get(specName, getOpts)
 	case HelixSagaOperator:
 		if opt, err = r.options.Get(rt); err != nil {
 			break
@@ -264,12 +267,12 @@ func (r *resource) List(rt ResourceType, nameSpace string, selector labels.Selec
 		if opt, err = r.options.Get(rt); err != nil {
 			break
 		}
-		res, err = opt.Get().(*mysqlclientset.Clientset).MysqloperatorV1().MysqlOperators(nameSpace).List(opts)
+		res, err = opt.Get().(*mysqlclientset.Clientset).NevercaseV1().MysqlOperators(nameSpace).List(opts)
 	case RedisOperator:
 		if opt, err = r.options.Get(rt); err != nil {
 			break
 		}
-		res, err = opt.Get().(*redisclientset.Clientset).RedisoperatorV1().RedisOperators(nameSpace).List(opts)
+		res, err = opt.Get().(*redisclientset.Clientset).NevercaseV1().RedisOperators(nameSpace).List(opts)
 	case HelixSagaOperator:
 		if opt, err = r.options.Get(rt); err != nil {
 			break
@@ -303,12 +306,12 @@ func (r *resource) Watch(rt ResourceType, nameSpace string, selector labels.Sele
 		if opt, err = r.options.Get(rt); err != nil {
 			break
 		}
-		res, err = opt.Get().(*mysqlclientset.Clientset).MysqloperatorV1().MysqlOperators(nameSpace).Watch(opts)
+		res, err = opt.Get().(*mysqlclientset.Clientset).NevercaseV1().MysqlOperators(nameSpace).Watch(opts)
 	case RedisOperator:
 		if opt, err = r.options.Get(rt); err != nil {
 			break
 		}
-		res, err = opt.Get().(*redisclientset.Clientset).RedisoperatorV1().RedisOperators(nameSpace).Watch(opts)
+		res, err = opt.Get().(*redisclientset.Clientset).NevercaseV1().RedisOperators(nameSpace).Watch(opts)
 	case HelixSagaOperator:
 		if opt, err = r.options.Get(rt); err != nil {
 			break

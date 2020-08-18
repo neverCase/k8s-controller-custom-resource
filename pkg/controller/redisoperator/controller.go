@@ -18,11 +18,13 @@ package redisoperator
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	appsV1 "k8s.io/api/apps/v1"
 	coreV1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
@@ -53,7 +55,8 @@ func NewController(
 		fooInformer.Informer(),
 		CompareResourceVersion,
 		Get,
-		Sync)
+		Sync,
+		SyncStatus)
 	opts := k8sCoreV1.NewOptions()
 	if err := opts.Add(opt); err != nil {
 		klog.Fatal(err)
@@ -80,7 +83,8 @@ func NewOption(controllerName string, cfg *rest.Config, stopCh <-chan struct{}) 
 		fooInformer.Informer(),
 		CompareResourceVersion,
 		Get,
-		Sync)
+		Sync,
+		SyncStatus)
 	informerFactory.Start(stopCh)
 	return opt
 }
@@ -176,16 +180,30 @@ func statefulSet(ks k8sCoreV1.KubernetesResource,
 	return nil
 }
 
-func updateFooStatus(foo *redisOperatorV1.RedisOperator, clientSet redisOperatorClientSet.Interface, ss *appsV1.StatefulSet, isMaster bool) error {
+func updateFooStatus(foo *redisOperatorV1.RedisOperator, clientSet redisOperatorClientSet.Interface, statefulSet *appsV1.StatefulSet, isMaster bool) error {
 	// NEVER modify objects from the store. It's a read-only, local cache.
 	// You can use DeepCopy() to make a deep copy of original object and modify this copy
 	// Or create a copy manually for better performance
 	fooCopy := foo.DeepCopy()
 	klog.Info("fooCopy: ", *fooCopy)
 	if isMaster == true {
-		fooCopy.Spec.MasterSpec.Status.Replicas = ss.Status.Replicas
+		fooCopy.Spec.MasterSpec.Status.ObservedGeneration = statefulSet.Status.ObservedGeneration
+		fooCopy.Spec.MasterSpec.Status.Replicas = statefulSet.Status.Replicas
+		fooCopy.Spec.MasterSpec.Status.ReadyReplicas = statefulSet.Status.ReadyReplicas
+		fooCopy.Spec.MasterSpec.Status.CurrentReplicas = statefulSet.Status.CurrentReplicas
+		fooCopy.Spec.MasterSpec.Status.UpdatedReplicas = statefulSet.Status.UpdatedReplicas
+		fooCopy.Spec.MasterSpec.Status.CurrentRevision = statefulSet.Status.CurrentRevision
+		fooCopy.Spec.MasterSpec.Status.UpdateRevision = statefulSet.Status.UpdateRevision
+		fooCopy.Spec.MasterSpec.Status.CollisionCount = statefulSet.Status.CollisionCount
 	} else {
-		fooCopy.Spec.SlaveSpec.Status.Replicas = ss.Status.Replicas
+		fooCopy.Spec.SlaveSpec.Status.ObservedGeneration = statefulSet.Status.ObservedGeneration
+		fooCopy.Spec.SlaveSpec.Status.Replicas = statefulSet.Status.Replicas
+		fooCopy.Spec.SlaveSpec.Status.ReadyReplicas = statefulSet.Status.ReadyReplicas
+		fooCopy.Spec.SlaveSpec.Status.CurrentReplicas = statefulSet.Status.CurrentReplicas
+		fooCopy.Spec.SlaveSpec.Status.UpdatedReplicas = statefulSet.Status.UpdatedReplicas
+		fooCopy.Spec.SlaveSpec.Status.CurrentRevision = statefulSet.Status.CurrentRevision
+		fooCopy.Spec.SlaveSpec.Status.UpdateRevision = statefulSet.Status.UpdateRevision
+		fooCopy.Spec.SlaveSpec.Status.CollisionCount = statefulSet.Status.CollisionCount
 	}
 	// If the CustomResourceSubResources feature gate is not enabled,
 	// we must use Update instead of UpdateStatus to update the Status block of the RedisOperator resource.
@@ -217,5 +235,35 @@ func service(ks k8sCoreV1.KubernetesResource,
 		//	return err
 		//}
 	}
+	return nil
+}
+
+func SyncStatus(obj interface{}, clientObj interface{}, ks k8sCoreV1.KubernetesResource, recorder record.EventRecorder) error {
+	//foo := crd.(*mysqlOperatorV1.MysqlOperator)
+	clientSet := clientObj.(redisOperatorClientSet.Interface)
+	ss := obj.(*appsV1.StatefulSet)
+	var isMaster bool
+	var suffix string
+	if t, ok := ss.Labels["role"]; ok {
+		if t == k8sCoreV1.MasterName {
+			isMaster = true
+			suffix = fmt.Sprintf("-%s", k8sCoreV1.MasterName)
+		} else {
+			isMaster = false
+			suffix = fmt.Sprintf("-%s", k8sCoreV1.SlaveName)
+		}
+	} else {
+		return fmt.Errorf(ErrResourceNotMatch)
+	}
+	specName := strings.ReplaceAll(ss.Name, k8sCoreV1.StatefulSetNameTemplate, "")
+	specName = strings.ReplaceAll(specName, suffix, "")
+	mysql, err := clientSet.NevercaseV1().RedisOperators(ss.Namespace).Get(specName, metaV1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	if err := updateFooStatus(mysql, clientSet, ss, isMaster); err != nil {
+		return err
+	}
+	recorder.Event(mysql, coreV1.EventTypeNormal, SuccessSynced, MessageResourceSynced)
 	return nil
 }

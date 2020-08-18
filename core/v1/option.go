@@ -2,8 +2,11 @@ package v1
 
 import (
 	"fmt"
+	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/klog"
 	"reflect"
 	"sync"
+	"time"
 
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/cache"
@@ -16,6 +19,8 @@ const (
 	ErrOptionExists = "ErrOptionExists"
 
 	ErrOptionKindDoesNotExisted = "ErrOptionKindDoesNotExisted"
+
+	ErrOptionWriteWatchChanTimeout = "ErrOptionWriteWatchChanTimeout"
 )
 
 type Options interface {
@@ -77,6 +82,9 @@ type Option interface {
 	SyncHandleObject(obj interface{}, ks KubernetesResource, recorder record.EventRecorder) error
 	CompareResourceVersion(old, new interface{}) bool
 	Get(nameSpace, ownerRefName string) (obj interface{}, err error)
+	SyncObjectStatus(obj interface{}, ks KubernetesResource, recorder record.EventRecorder) error
+	WriteWatchChan(e watch.Event, ks KubernetesResource, recorder record.EventRecorder) (err error)
+	Watch()
 }
 
 type option struct {
@@ -89,6 +97,9 @@ type option struct {
 	compareResourceVersionFunc func(old, new interface{}) bool
 	getFunc                    func(informer interface{}, nameSpace, ownerRefName string) (obj interface{}, err error)
 	syncFunc                   func(obj interface{}, agentClientSet interface{}, ks KubernetesResource, opt record.EventRecorder) error
+	syncStatusFunc             func(obj interface{}, agentClientSet interface{}, ks KubernetesResource, recorder record.EventRecorder) error
+
+	watchChan chan OptionWatch
 }
 
 func NewOption(operator interface{},
@@ -99,7 +110,8 @@ func NewOption(operator interface{},
 	informer cache.SharedIndexInformer,
 	compareResourceVersionFunc func(old, new interface{}) bool,
 	getFunc func(informer interface{}, nameSpace, ownerRefName string) (obj interface{}, err error),
-	syncFunc func(obj interface{}, agentClientSet interface{}, ks KubernetesResource, opt record.EventRecorder) error) Option {
+	syncFunc func(obj interface{}, agentClientSet interface{}, ks KubernetesResource, opt record.EventRecorder) error,
+	syncStatusFunc func(obj interface{}, agentClientSet interface{}, ks KubernetesResource, recorder record.EventRecorder) error) Option {
 
 	utilruntime.Must(err)
 
@@ -113,6 +125,8 @@ func NewOption(operator interface{},
 		compareResourceVersionFunc: compareResourceVersionFunc,
 		getFunc:                    getFunc,
 		syncFunc:                   syncFunc,
+		syncStatusFunc:             syncStatusFunc,
+		watchChan:                  make(chan OptionWatch, 4096),
 	}
 	return opt
 }
@@ -143,4 +157,39 @@ func (opt *option) CompareResourceVersion(old, new interface{}) bool {
 
 func (opt *option) Get(nameSpace, ownerRefName string) (obj interface{}, err error) {
 	return opt.getFunc(opt.agent, nameSpace, ownerRefName)
+}
+
+func (opt *option) SyncObjectStatus(obj interface{}, ks KubernetesResource, recorder record.EventRecorder) error {
+	return opt.syncStatusFunc(obj, opt.agentClientSet, ks, recorder)
+}
+
+type OptionWatch struct {
+	Resource KubernetesResource
+	Recorder record.EventRecorder
+	Event    watch.Event
+}
+
+func (opt *option) WriteWatchChan(e watch.Event, ks KubernetesResource, recorder record.EventRecorder) (err error) {
+	after := time.After(time.Millisecond * 500)
+	for {
+		select {
+		case <-after:
+			return fmt.Errorf("%s kind:%v", ErrOptionWriteWatchChanTimeout, opt.kindName)
+		case opt.watchChan <- OptionWatch{Event: e, Resource: ks, Recorder: recorder}:
+		}
+	}
+}
+
+func (opt *option) Watch() {
+	for {
+		select {
+		case ow, isClosed := <-opt.watchChan:
+			if !isClosed {
+				return
+			}
+			if err := opt.syncStatusFunc(ow.Event, opt.agentClientSet, ow.Resource, ow.Recorder); err != nil {
+				klog.V(2).Info(err)
+			}
+		}
+	}
 }
