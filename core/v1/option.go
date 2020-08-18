@@ -2,15 +2,15 @@ package v1
 
 import (
 	"fmt"
-	"k8s.io/apimachinery/pkg/watch"
-	"k8s.io/klog"
 	"reflect"
 	"sync"
 	"time"
 
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/klog"
 )
 
 const (
