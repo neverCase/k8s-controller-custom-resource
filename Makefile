@@ -1,4 +1,4 @@
-.PHONY: mysq redis
+.PHONY: mysql redis
 
 push := true
 domain := harbor.domain.com
