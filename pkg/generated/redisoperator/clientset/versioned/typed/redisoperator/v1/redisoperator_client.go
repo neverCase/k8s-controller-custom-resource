@@ -24,22 +24,22 @@ import (
 	rest "k8s.io/client-go/rest"
 )
 
-type RedisoperatorV1Interface interface {
+type NevercaseV1Interface interface {
 	RESTClient() rest.Interface
 	RedisOperatorsGetter
 }
 
-// RedisoperatorV1Client is used to interact with features provided by the redisoperator.nevercase.io group.
-type RedisoperatorV1Client struct {
+// NevercaseV1Client is used to interact with features provided by the nevercase.io group.
+type NevercaseV1Client struct {
 	restClient rest.Interface
 }
 
-func (c *RedisoperatorV1Client) RedisOperators(namespace string) RedisOperatorInterface {
+func (c *NevercaseV1Client) RedisOperators(namespace string) RedisOperatorInterface {
 	return newRedisOperators(c, namespace)
 }
 
-// NewForConfig creates a new RedisoperatorV1Client for the given config.
-func NewForConfig(c *rest.Config) (*RedisoperatorV1Client, error) {
+// NewForConfig creates a new NevercaseV1Client for the given config.
+func NewForConfig(c *rest.Config) (*NevercaseV1Client, error) {
 	config := *c
 	if err := setConfigDefaults(&config); err != nil {
 		return nil, err
@@ -48,12 +48,12 @@ func NewForConfig(c *rest.Config) (*RedisoperatorV1Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &RedisoperatorV1Client{client}, nil
+	return &NevercaseV1Client{client}, nil
 }
 
-// NewForConfigOrDie creates a new RedisoperatorV1Client for the given config and
+// NewForConfigOrDie creates a new NevercaseV1Client for the given config and
 // panics if there is an error in the config.
-func NewForConfigOrDie(c *rest.Config) *RedisoperatorV1Client {
+func NewForConfigOrDie(c *rest.Config) *NevercaseV1Client {
 	client, err := NewForConfig(c)
 	if err != nil {
 		panic(err)
@@ -61,9 +61,9 @@ func NewForConfigOrDie(c *rest.Config) *RedisoperatorV1Client {
 	return client
 }
 
-// New creates a new RedisoperatorV1Client for the given RESTClient.
-func New(c rest.Interface) *RedisoperatorV1Client {
-	return &RedisoperatorV1Client{c}
+// New creates a new NevercaseV1Client for the given RESTClient.
+func New(c rest.Interface) *NevercaseV1Client {
+	return &NevercaseV1Client{c}
 }
 
 func setConfigDefaults(config *rest.Config) error {
@@ -81,7 +81,7 @@ func setConfigDefaults(config *rest.Config) error {
 
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
-func (c *RedisoperatorV1Client) RESTClient() rest.Interface {
+func (c *NevercaseV1Client) RESTClient() rest.Interface {
 	if c == nil {
 		return nil
 	}

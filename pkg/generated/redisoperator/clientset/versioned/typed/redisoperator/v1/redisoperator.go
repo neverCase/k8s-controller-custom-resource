@@ -55,7 +55,7 @@ type redisOperators struct {
 }
 
 // newRedisOperators returns a RedisOperators
-func newRedisOperators(c *RedisoperatorV1Client, namespace string) *redisOperators {
+func newRedisOperators(c *NevercaseV1Client, namespace string) *redisOperators {
 	return &redisOperators{
 		client: c.RESTClient(),
 		ns:     namespace,

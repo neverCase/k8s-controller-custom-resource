@@ -55,7 +55,7 @@ type mysqlOperators struct {
 }
 
 // newMysqlOperators returns a MysqlOperators
-func newMysqlOperators(c *MysqloperatorV1Client, namespace string) *mysqlOperators {
+func newMysqlOperators(c *NevercaseV1Client, namespace string) *mysqlOperators {
 	return &mysqlOperators{
 		client: c.RESTClient(),
 		ns:     namespace,

@@ -61,13 +61,13 @@ func NewFilteredMysqlOperatorInformer(client versioned.Interface, namespace stri
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.MysqloperatorV1().MysqlOperators(namespace).List(options)
+				return client.NevercaseV1().MysqlOperators(namespace).List(options)
 			},
 			WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.MysqloperatorV1().MysqlOperators(namespace).Watch(options)
+				return client.NevercaseV1().MysqlOperators(namespace).Watch(options)
 			},
 		},
 		&mysqloperatorv1.MysqlOperator{},

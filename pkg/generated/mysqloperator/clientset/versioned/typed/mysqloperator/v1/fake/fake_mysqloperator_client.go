@@ -24,17 +24,17 @@ import (
 	testing "k8s.io/client-go/testing"
 )
 
-type FakeMysqloperatorV1 struct {
+type FakeNevercaseV1 struct {
 	*testing.Fake
 }
 
-func (c *FakeMysqloperatorV1) MysqlOperators(namespace string) v1.MysqlOperatorInterface {
+func (c *FakeNevercaseV1) MysqlOperators(namespace string) v1.MysqlOperatorInterface {
 	return &FakeMysqlOperators{c, namespace}
 }
 
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
-func (c *FakeMysqloperatorV1) RESTClient() rest.Interface {
+func (c *FakeNevercaseV1) RESTClient() rest.Interface {
 	var ret *rest.RESTClient
 	return ret
 }

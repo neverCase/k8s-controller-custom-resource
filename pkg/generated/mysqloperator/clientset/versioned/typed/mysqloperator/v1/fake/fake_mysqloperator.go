@@ -30,13 +30,13 @@ import (
 
 // FakeMysqlOperators implements MysqlOperatorInterface
 type FakeMysqlOperators struct {
-	Fake *FakeMysqloperatorV1
+	Fake *FakeNevercaseV1
 	ns   string
 }
 
-var mysqloperatorsResource = schema.GroupVersionResource{Group: "mysqloperator.nevercase.io", Version: "v1", Resource: "mysqloperators"}
+var mysqloperatorsResource = schema.GroupVersionResource{Group: "nevercase.io", Version: "v1", Resource: "mysqloperators"}
 
-var mysqloperatorsKind = schema.GroupVersionKind{Group: "mysqloperator.nevercase.io", Version: "v1", Kind: "MysqlOperator"}
+var mysqloperatorsKind = schema.GroupVersionKind{Group: "nevercase.io", Version: "v1", Kind: "MysqlOperator"}
 
 // Get takes name of the mysqlOperator, and returns the corresponding mysqlOperator object, and an error if there is any.
 func (c *FakeMysqlOperators) Get(name string, options v1.GetOptions) (result *mysqloperatorv1.MysqlOperator, err error) {

@@ -61,13 +61,13 @@ func NewFilteredRedisOperatorInformer(client versioned.Interface, namespace stri
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.RedisoperatorV1().RedisOperators(namespace).List(options)
+				return client.NevercaseV1().RedisOperators(namespace).List(options)
 			},
 			WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.RedisoperatorV1().RedisOperators(namespace).Watch(options)
+				return client.NevercaseV1().RedisOperators(namespace).Watch(options)
 			},
 		},
 		&redisoperatorv1.RedisOperator{},

@@ -172,9 +172,9 @@ type SharedInformerFactory interface {
 	ForResource(resource schema.GroupVersionResource) (GenericInformer, error)
 	WaitForCacheSync(stopCh <-chan struct{}) map[reflect.Type]bool
 
-	Redisoperator() redisoperator.Interface
+	Nevercase() redisoperator.Interface
 }
 
-func (f *sharedInformerFactory) Redisoperator() redisoperator.Interface {
+func (f *sharedInformerFactory) Nevercase() redisoperator.Interface {
 	return redisoperator.New(f, f.namespace, f.tweakListOptions)
 }

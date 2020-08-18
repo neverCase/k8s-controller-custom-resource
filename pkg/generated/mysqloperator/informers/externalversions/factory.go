@@ -172,9 +172,9 @@ type SharedInformerFactory interface {
 	ForResource(resource schema.GroupVersionResource) (GenericInformer, error)
 	WaitForCacheSync(stopCh <-chan struct{}) map[reflect.Type]bool
 
-	Mysqloperator() mysqloperator.Interface
+	Nevercase() mysqloperator.Interface
 }
 
-func (f *sharedInformerFactory) Mysqloperator() mysqloperator.Interface {
+func (f *sharedInformerFactory) Nevercase() mysqloperator.Interface {
 	return mysqloperator.New(f, f.namespace, f.tweakListOptions)
 }

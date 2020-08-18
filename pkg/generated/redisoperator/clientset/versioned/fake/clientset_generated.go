@@ -20,8 +20,8 @@ package fake
 
 import (
 	clientset "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/redisoperator/clientset/versioned"
-	redisoperatorv1 "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/redisoperator/clientset/versioned/typed/redisoperator/v1"
-	fakeredisoperatorv1 "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/redisoperator/clientset/versioned/typed/redisoperator/v1/fake"
+	nevercasev1 "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/redisoperator/clientset/versioned/typed/redisoperator/v1"
+	fakenevercasev1 "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/redisoperator/clientset/versioned/typed/redisoperator/v1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"
@@ -76,7 +76,7 @@ func (c *Clientset) Tracker() testing.ObjectTracker {
 
 var _ clientset.Interface = &Clientset{}
 
-// RedisoperatorV1 retrieves the RedisoperatorV1Client
-func (c *Clientset) RedisoperatorV1() redisoperatorv1.RedisoperatorV1Interface {
-	return &fakeredisoperatorv1.FakeRedisoperatorV1{Fake: &c.Fake}
+// NevercaseV1 retrieves the NevercaseV1Client
+func (c *Clientset) NevercaseV1() nevercasev1.NevercaseV1Interface {
+	return &fakenevercasev1.FakeNevercaseV1{Fake: &c.Fake}
 }

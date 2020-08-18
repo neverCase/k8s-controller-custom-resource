@@ -151,31 +151,38 @@ message MysqlSpec {
 
 // MysqlSpecStatus is the status for a MysqlOperator resource
 message MysqlStatus {
-  // The generation observed by the deployment controller.
+  // observedGeneration is the most recent generation observed for this StatefulSet. It corresponds to the
+  // StatefulSet's generation, which is updated on mutation by the API Server.
   // +optional
   optional int64 observedGeneration = 1;
 
-  // Total number of non-terminated pods targeted by this deployment (their labels match the selector).
-  // +optional
+  // replicas is the number of Pods created by the StatefulSet controller.
   optional int32 replicas = 2;
 
-  // Total number of non-terminated pods targeted by this deployment that have the desired template spec.
-  // +optional
-  optional int32 updatedReplicas = 3;
+  // readyReplicas is the number of Pods created by the StatefulSet controller that have a Ready Condition.
+  optional int32 readyReplicas = 3;
 
-  // Total number of ready pods targeted by this deployment.
-  // +optional
-  optional int32 readyReplicas = 4;
+  // currentReplicas is the number of Pods created by the StatefulSet controller from the StatefulSet version
+  // indicated by currentRevision.
+  optional int32 currentReplicas = 4;
 
-  // Total number of available pods (ready for at least minReadySeconds) targeted by this deployment.
-  // +optional
-  optional int32 availableReplicas = 5;
+  // updatedReplicas is the number of Pods created by the StatefulSet controller from the StatefulSet version
+  // indicated by updateRevision.
+  optional int32 updatedReplicas = 5;
 
-  // Total number of unavailable pods targeted by this deployment. This is the total number of
-  // pods that are still required for the deployment to have 100% available capacity. They may
-  // either be pods that are running but not yet available or pods that still have not been created.
+  // currentRevision, if not empty, indicates the version of the StatefulSet used to generate Pods in the
+  // sequence [0,currentReplicas).
+  optional string currentRevision = 6;
+
+  // updateRevision, if not empty, indicates the version of the StatefulSet used to generate Pods in the sequence
+  // [replicas-updatedReplicas,replicas)
+  optional string updateRevision = 7;
+
+  // collisionCount is the count of hash collisions for the StatefulSet. The StatefulSet controller
+  // uses this field as a collision avoidance mechanism when it needs to create the name for the
+  // newest ControllerRevision.
   // +optional
-  optional int32 unavailableReplicas = 6;
+  optional int32 collisionCount = 9;
 }
 
 // ServerConfig is the configuration for a MysqlDeploymentSpec of a MysqlOperator resource

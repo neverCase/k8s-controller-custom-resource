@@ -43,7 +43,7 @@ func NewController(
 	clientSet redisOperatorClientSet.Interface,
 	stopCh <-chan struct{}) k8sCoreV1.KubernetesControllerV1 {
 	informerFactory := informersext.NewSharedInformerFactory(clientSet, time.Second*30)
-	fooInformer := informerFactory.Redisoperator().V1().RedisOperators()
+	fooInformer := informerFactory.Nevercase().V1().RedisOperators()
 	opt := k8sCoreV1.NewOption(&redisOperatorV1.RedisOperator{},
 		controllerName,
 		OperatorKindName,
@@ -70,7 +70,7 @@ func NewOption(controllerName string, cfg *rest.Config, stopCh <-chan struct{}) 
 		klog.Fatalf("Error building clientSet: %s", err.Error())
 	}
 	informerFactory := informersext.NewSharedInformerFactory(c, time.Second*30)
-	fooInformer := informerFactory.Redisoperator().V1().RedisOperators()
+	fooInformer := informerFactory.Nevercase().V1().RedisOperators()
 	opt := k8sCoreV1.NewOption(&redisOperatorV1.RedisOperator{},
 		controllerName,
 		OperatorKindName,
@@ -183,15 +183,15 @@ func updateFooStatus(foo *redisOperatorV1.RedisOperator, clientSet redisOperator
 	fooCopy := foo.DeepCopy()
 	klog.Info("fooCopy: ", *fooCopy)
 	if isMaster == true {
-		fooCopy.Spec.MasterSpec.Status.AvailableReplicas = ss.Status.Replicas
+		fooCopy.Spec.MasterSpec.Status.Replicas = ss.Status.Replicas
 	} else {
-		fooCopy.Spec.SlaveSpec.Status.AvailableReplicas = ss.Status.Replicas
+		fooCopy.Spec.SlaveSpec.Status.Replicas = ss.Status.Replicas
 	}
 	// If the CustomResourceSubResources feature gate is not enabled,
 	// we must use Update instead of UpdateStatus to update the Status block of the RedisOperator resource.
 	// UpdateStatus will not allow changes to the Spec of the resource,
 	// which is ideal for ensuring nothing other than resource status has been updated.
-	_, err := clientSet.RedisoperatorV1().RedisOperators(foo.Namespace).Update(fooCopy)
+	_, err := clientSet.NevercaseV1().RedisOperators(foo.Namespace).Update(fooCopy)
 	return err
 }
 

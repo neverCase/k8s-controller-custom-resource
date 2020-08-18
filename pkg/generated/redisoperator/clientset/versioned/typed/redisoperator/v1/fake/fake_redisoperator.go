@@ -30,13 +30,13 @@ import (
 
 // FakeRedisOperators implements RedisOperatorInterface
 type FakeRedisOperators struct {
-	Fake *FakeRedisoperatorV1
+	Fake *FakeNevercaseV1
 	ns   string
 }
 
-var redisoperatorsResource = schema.GroupVersionResource{Group: "redisoperator.nevercase.io", Version: "v1", Resource: "redisoperators"}
+var redisoperatorsResource = schema.GroupVersionResource{Group: "nevercase.io", Version: "v1", Resource: "redisoperators"}
 
-var redisoperatorsKind = schema.GroupVersionKind{Group: "redisoperator.nevercase.io", Version: "v1", Kind: "RedisOperator"}
+var redisoperatorsKind = schema.GroupVersionKind{Group: "nevercase.io", Version: "v1", Kind: "RedisOperator"}
 
 // Get takes name of the redisOperator, and returns the corresponding redisOperator object, and an error if there is any.
 func (c *FakeRedisOperators) Get(name string, options v1.GetOptions) (result *redisoperatorv1.RedisOperator, err error) {

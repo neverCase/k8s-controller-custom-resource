@@ -20,8 +20,8 @@ package fake
 
 import (
 	clientset "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/mysqloperator/clientset/versioned"
-	mysqloperatorv1 "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/mysqloperator/clientset/versioned/typed/mysqloperator/v1"
-	fakemysqloperatorv1 "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/mysqloperator/clientset/versioned/typed/mysqloperator/v1/fake"
+	nevercasev1 "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/mysqloperator/clientset/versioned/typed/mysqloperator/v1"
+	fakenevercasev1 "github.com/nevercase/k8s-controller-custom-resource/pkg/generated/mysqloperator/clientset/versioned/typed/mysqloperator/v1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"
@@ -76,7 +76,7 @@ func (c *Clientset) Tracker() testing.ObjectTracker {
 
 var _ clientset.Interface = &Clientset{}
 
-// MysqloperatorV1 retrieves the MysqloperatorV1Client
-func (c *Clientset) MysqloperatorV1() mysqloperatorv1.MysqloperatorV1Interface {
-	return &fakemysqloperatorv1.FakeMysqloperatorV1{Fake: &c.Fake}
+// NevercaseV1 retrieves the NevercaseV1Client
+func (c *Clientset) NevercaseV1() nevercasev1.NevercaseV1Interface {
+	return &fakenevercasev1.FakeNevercaseV1{Fake: &c.Fake}
 }
