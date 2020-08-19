@@ -10,7 +10,7 @@ const (
 	// to sync due to a Deployment of the same name already existing.
 	ErrResourceExists = "ErrResourceExists"
 
-	ErrResourceNotMatch = "ErrResourceNotMatch"
+	ErrResourceNotMatch = "ErrResourceNotMatch err:%s"
 
 	// MessageResourceExists is the message used for Events when a resource
 	// fails to sync due to a Deployment already existing

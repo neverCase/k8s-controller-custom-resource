@@ -13,9 +13,9 @@ import (
 func NewService(foo *redisOperatorV1.RedisOperator, rds *redisOperatorV1.RedisSpec) *coreV1.Service {
 	var serviceName string
 	var labels = map[string]string{
-		"app":        OperatorKindName,
-		"controller": foo.Name,
-		"role":       rds.Role,
+		k8sCoreV1.LabelApp:        OperatorKindName,
+		k8sCoreV1.LabelController: foo.Name,
+		k8sCoreV1.LabelRole:       rds.Role,
 	}
 	serviceName = fmt.Sprintf(k8sCoreV1.ServiceNameTemplate, rds.Name)
 	ports := []coreV1.ServicePort{

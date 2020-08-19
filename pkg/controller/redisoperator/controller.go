@@ -18,7 +18,6 @@ package redisoperator
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	appsV1 "k8s.io/api/apps/v1"
@@ -239,31 +238,31 @@ func service(ks k8sCoreV1.KubernetesResource,
 }
 
 func SyncStatus(obj interface{}, clientObj interface{}, ks k8sCoreV1.KubernetesResource, recorder record.EventRecorder) error {
-	//foo := crd.(*mysqlOperatorV1.MysqlOperator)
 	clientSet := clientObj.(redisOperatorClientSet.Interface)
 	ss := obj.(*appsV1.StatefulSet)
 	var isMaster bool
-	var suffix string
-	if t, ok := ss.Labels["role"]; ok {
+	if t, ok := ss.Labels[k8sCoreV1.LabelRole]; ok {
 		if t == k8sCoreV1.MasterName {
 			isMaster = true
-			suffix = fmt.Sprintf("-%s", k8sCoreV1.MasterName)
 		} else {
 			isMaster = false
-			suffix = fmt.Sprintf("-%s", k8sCoreV1.SlaveName)
 		}
 	} else {
-		return fmt.Errorf(ErrResourceNotMatch)
+		return fmt.Errorf(ErrResourceNotMatch, "no role")
 	}
-	specName := strings.ReplaceAll(ss.Name, k8sCoreV1.StatefulSetNameTemplate, "")
-	specName = strings.ReplaceAll(specName, suffix, "")
-	mysql, err := clientSet.NevercaseV1().RedisOperators(ss.Namespace).Get(specName, metaV1.GetOptions{})
+	var specName string
+	if t, ok := ss.Labels[k8sCoreV1.LabelName]; ok {
+		specName = t
+	} else {
+		return fmt.Errorf(ErrResourceNotMatch, "no name")
+	}
+	redis, err := clientSet.NevercaseV1().RedisOperators(ss.Namespace).Get(specName, metaV1.GetOptions{})
 	if err != nil {
 		return err
 	}
-	if err := updateFooStatus(mysql, clientSet, ss, isMaster); err != nil {
+	if err := updateFooStatus(redis, clientSet, ss, isMaster); err != nil {
 		return err
 	}
-	recorder.Event(mysql, coreV1.EventTypeNormal, SuccessSynced, MessageResourceSynced)
+	recorder.Event(redis, coreV1.EventTypeNormal, SuccessSynced, MessageResourceSynced)
 	return nil
 }

@@ -13,9 +13,9 @@ import (
 func NewService(foo *mysqlOperatorV1.MysqlOperator, rds *mysqlOperatorV1.MysqlSpec) *coreV1.Service {
 	var serviceName string
 	var labels = map[string]string{
-		"app":        OperatorKindName,
-		"controller": foo.Name,
-		"role":       rds.Role,
+		k8sCoreV1.LabelApp:        OperatorKindName,
+		k8sCoreV1.LabelController: foo.Name,
+		k8sCoreV1.LabelRole:       rds.Role,
 	}
 	serviceName = fmt.Sprintf(k8sCoreV1.ServiceNameTemplate, rds.Name)
 	ports := []coreV1.ServicePort{

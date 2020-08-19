@@ -14,9 +14,10 @@ import (
 
 func NewStatefulSet(foo *redisOperatorV1.RedisOperator, rds *redisOperatorV1.RedisSpec) *appsV1.StatefulSet {
 	labels := map[string]string{
-		"app":        OperatorKindName,
-		"controller": foo.Name,
-		"role":       rds.Role,
+		k8sCoreV1.LabelApp:        OperatorKindName,
+		k8sCoreV1.LabelController: foo.Name,
+		k8sCoreV1.LabelRole:       rds.Role,
+		k8sCoreV1.LabelName:       foo.Name,
 	}
 	t := coreV1.HostPathDirectoryOrCreate
 	hostPath := &coreV1.HostPathVolumeSource{

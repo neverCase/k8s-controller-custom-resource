@@ -83,8 +83,6 @@ func (ko *kubernetesOperator) Options() Options {
 	return ko.options
 }
 
-const LabelsFilterNameTemplate = "app=%s"
-
 func (ko *kubernetesOperator) Watch() {
 	for _, opt := range ko.Options().List() {
 		go func(opt Option) {
