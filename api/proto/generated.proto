@@ -330,6 +330,10 @@ message NodeSpec {
   // +patchMergeKey=name
   // +patchStrategy=merge
   repeated EnvVar env = 9;
+
+  // The status of the specific StatefulSet which was owned by the crd
+  // +optional
+  optional Status status = 10;
 }
 
 message Param {
@@ -501,6 +505,42 @@ message ServicePort {
   // More info: https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport
   // +optional
   optional int32 nodePort = 5;
+}
+
+// Status
+message Status {
+  // observedGeneration is the most recent generation observed for this StatefulSet. It corresponds to the
+  // StatefulSet's generation, which is updated on mutation by the API Server.
+  // +optional
+  optional int64 observedGeneration = 1;
+
+  // replicas is the number of Pods created by the StatefulSet controller.
+  optional int32 replicas = 2;
+
+  // readyReplicas is the number of Pods created by the StatefulSet controller that have a Ready Condition.
+  optional int32 readyReplicas = 3;
+
+  // currentReplicas is the number of Pods created by the StatefulSet controller from the StatefulSet version
+  // indicated by currentRevision.
+  optional int32 currentReplicas = 4;
+
+  // updatedReplicas is the number of Pods created by the StatefulSet controller from the StatefulSet version
+  // indicated by updateRevision.
+  optional int32 updatedReplicas = 5;
+
+  // currentRevision, if not empty, indicates the version of the StatefulSet used to generate Pods in the
+  // sequence [0,currentReplicas).
+  optional string currentRevision = 6;
+
+  // updateRevision, if not empty, indicates the version of the StatefulSet used to generate Pods in the sequence
+  // [replicas-updatedReplicas,replicas)
+  optional string updateRevision = 7;
+
+  // collisionCount is the count of hash collisions for the StatefulSet. The StatefulSet controller
+  // uses this field as a collision avoidance mechanism when it needs to create the name for the
+  // newest ControllerRevision.
+  // +optional
+  optional int32 collisionCount = 9;
 }
 
 // Volume represents a named volume in a pod that may be accessed by any container in the pod.
