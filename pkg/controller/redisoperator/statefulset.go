@@ -17,7 +17,6 @@ func NewStatefulSet(foo *redisOperatorV1.RedisOperator, rds *redisOperatorV1.Red
 		k8sCoreV1.LabelApp:        OperatorKindName,
 		k8sCoreV1.LabelController: foo.Name,
 		k8sCoreV1.LabelRole:       rds.Role,
-		k8sCoreV1.LabelName:       foo.Name,
 	}
 	t := coreV1.HostPathDirectoryOrCreate
 	hostPath := &coreV1.HostPathVolumeSource{

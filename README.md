@@ -17,9 +17,8 @@ $ git clone https://github.com/neverCase/k8s-controller-custom-resource.git
 $ cd k8s-controller-custom-resource 
 
 # build image
-$ cd dockerfile/redis
-$ export CLOUD_REGISTRY="domain.harbor.com"
-$ bash makefile.sh
+$ make mysql
+$ make redis
 
 # compile controller
 $ CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o multiplexcrd cmd/multiplex/main.go
@@ -31,9 +30,9 @@ $ cat > redis-resource.yaml <<EOF
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  name: redisoperators.redisoperator.nevercase.io
+  name: redisoperators.nevercase.io
 spec:
-  group: redisoperator.nevercase.io
+  group: nevercase.io
   version: v1
   names:
     kind: RedisOperator
@@ -48,7 +47,7 @@ customresourcedefinition.apiextensions.k8s.io/redisoperators.redisoperator.never
 ### define demo file
 ```sh
 $ cat > example-redis.yaml <<EOF
-apiVersion: redisoperator.nevercase.io/v1
+apiVersion: nevercase.io/v1
 kind: RedisOperator
 metadata:
   name: example-redis
@@ -100,12 +99,12 @@ spec:
 EOF
 
 $ kubectl apply -f example-redis.yaml
-redisoperator.redisoperator.nevercase.io/example-redis created
+redisoperator.nevercase.io/example-redis created
 ```
 
 ### run the controller
 ```sh
-$ ./redisoperatorcrd -kubeconfig=$HOME/.kube/config -alsologtostderr=true
+$ ./multiplexcrd -kubeconfig=$HOME/.kube/config -alsologtostderr=true
 I0603 14:48:38.844075   20412 controller.go:72] Setting up event handlers
 I0603 14:48:38.844243   20412 controller.go:195] Starting Foo controller
 I0603 14:48:38.844249   20412 controller.go:198] Waiting for informer caches to sync
@@ -153,7 +152,8 @@ opt := k8sCoreV1.NewOption(&mysqlOperatorV1.MysqlOperator{},
     fooInformer.Informer().AddEventHandler,
     CompareResourceVersion,
     Get,
-    Sync)
+    Sync,
+    SyncStatus)
 opts := k8sCoreV1.NewOptions()
 if err := opts.Add(opt); err != nil {
     klog.Fatal(err)

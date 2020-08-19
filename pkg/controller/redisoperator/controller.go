@@ -251,10 +251,10 @@ func SyncStatus(obj interface{}, clientObj interface{}, ks k8sCoreV1.KubernetesR
 		return fmt.Errorf(ErrResourceNotMatch, "no role")
 	}
 	var specName string
-	if t, ok := ss.Labels[k8sCoreV1.LabelName]; ok {
+	if t, ok := ss.Labels[k8sCoreV1.LabelController]; ok {
 		specName = t
 	} else {
-		return fmt.Errorf(ErrResourceNotMatch, "no name")
+		return fmt.Errorf(ErrResourceNotMatch, "no controller")
 	}
 	redis, err := clientSet.NevercaseV1().RedisOperators(ss.Namespace).Get(specName, metaV1.GetOptions{})
 	if err != nil {

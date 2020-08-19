@@ -1,10 +1,11 @@
 package v1
 
 import (
-	"fmt"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -86,13 +87,18 @@ func (ko *kubernetesOperator) Options() Options {
 func (ko *kubernetesOperator) Watch() {
 	for _, opt := range ko.Options().List() {
 		go func(opt Option) {
-			res, err := ko.kubernetesResource.StatefulSet().Watch("", fmt.Sprintf(LabelsFilterNameTemplate, opt.KindName()))
+			req, err := labels.NewRequirement(LabelApp, selection.Equals, []string{opt.KindName()})
+			if err != nil {
+				klog.Fatal(err)
+			}
+			res, err := ko.kubernetesResource.StatefulSet().Watch("", req.String())
 			if err != nil {
 				klog.Fatal(err)
 			}
 			for {
 				select {
 				case e, isClosed := <-res.ResultChan():
+					klog.Infof("watch kindName:%v StatefulSet ========= e:", opt.KindName(), e)
 					if !isClosed {
 						return
 					}

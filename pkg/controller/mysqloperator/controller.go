@@ -2,7 +2,6 @@ package mysqloperator
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	appsV1 "k8s.io/api/apps/v1"
@@ -247,10 +246,10 @@ func SyncStatus(obj interface{}, clientObj interface{}, ks k8sCoreV1.KubernetesR
 		return fmt.Errorf(ErrResourceNotMatch, "no role")
 	}
 	var specName string
-	if t, ok := ss.Labels[k8sCoreV1.LabelName]; ok {
+	if t, ok := ss.Labels[k8sCoreV1.LabelController]; ok {
 		specName = t
 	} else {
-		return fmt.Errorf(ErrResourceNotMatch, "no name")
+		return fmt.Errorf(ErrResourceNotMatch, "no controller")
 	}
 	mysql, err := clientSet.NevercaseV1().MysqlOperators(ss.Namespace).Get(specName, metaV1.GetOptions{})
 	if err != nil {

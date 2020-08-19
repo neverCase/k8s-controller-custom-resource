@@ -144,7 +144,7 @@ func (r *resource) Create(rt ResourceType, nameSpace string, obj interface{}) (r
 		if opt, err = r.options.Get(rt); err != nil {
 			break
 		}
-		res, err = opt.Get().(*helixsagaclientset.Clientset).HelixsagaV1().HelixSagas(nameSpace).Create(obj.(*helixsagaoperatorv1.HelixSaga))
+		res, err = opt.Get().(*helixsagaclientset.Clientset).NevercaseV1().HelixSagas(nameSpace).Create(obj.(*helixsagaoperatorv1.HelixSaga))
 	}
 	if err != nil {
 		klog.V(2).Info(err)
@@ -173,7 +173,7 @@ func (r *resource) Update(rt ResourceType, nameSpace string, obj interface{}) (r
 		if opt, err = r.options.Get(rt); err != nil {
 			break
 		}
-		res, err = opt.Get().(*helixsagaclientset.Clientset).HelixsagaV1().HelixSagas(nameSpace).Update(obj.(*helixsagaoperatorv1.HelixSaga))
+		res, err = opt.Get().(*helixsagaclientset.Clientset).NevercaseV1().HelixSagas(nameSpace).Update(obj.(*helixsagaoperatorv1.HelixSaga))
 	}
 	if err != nil {
 		klog.V(2).Info(err)
@@ -205,7 +205,7 @@ func (r *resource) Delete(rt ResourceType, nameSpace, specName string) (err erro
 		if opt, err = r.options.Get(rt); err != nil {
 			break
 		}
-		err = opt.Get().(*helixsagaclientset.Clientset).HelixsagaV1().HelixSagas(nameSpace).Delete(specName, delOpts)
+		err = opt.Get().(*helixsagaclientset.Clientset).NevercaseV1().HelixSagas(nameSpace).Delete(specName, delOpts)
 	}
 	if err != nil {
 		klog.V(2).Info(err)
@@ -239,7 +239,7 @@ func (r *resource) Get(rt ResourceType, nameSpace, specName string) (res interfa
 		if opt, err = r.options.Get(rt); err != nil {
 			break
 		}
-		res, err = opt.Get().(*helixsagaclientset.Clientset).HelixsagaV1().HelixSagas(nameSpace).Get(specName, getOpts)
+		res, err = opt.Get().(*helixsagaclientset.Clientset).NevercaseV1().HelixSagas(nameSpace).Get(specName, getOpts)
 	}
 	if err != nil {
 		klog.V(2).Info(err)
@@ -277,7 +277,7 @@ func (r *resource) List(rt ResourceType, nameSpace string, selector labels.Selec
 		if opt, err = r.options.Get(rt); err != nil {
 			break
 		}
-		res, err = opt.Get().(*helixsagaclientset.Clientset).HelixsagaV1().HelixSagas(nameSpace).List(opts)
+		res, err = opt.Get().(*helixsagaclientset.Clientset).NevercaseV1().HelixSagas(nameSpace).List(opts)
 	}
 	if err != nil {
 		klog.V(2).Info(err)
@@ -316,7 +316,7 @@ func (r *resource) Watch(rt ResourceType, nameSpace string, selector labels.Sele
 		if opt, err = r.options.Get(rt); err != nil {
 			break
 		}
-		res, err = opt.Get().(*helixsagaclientset.Clientset).HelixsagaV1().HelixSagas(nameSpace).Watch(opts)
+		res, err = opt.Get().(*helixsagaclientset.Clientset).NevercaseV1().HelixSagas(nameSpace).Watch(opts)
 	}
 	if err != nil {
 		klog.V(2).Info(err)

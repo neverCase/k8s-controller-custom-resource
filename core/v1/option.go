@@ -128,6 +128,7 @@ func NewOption(operator interface{},
 		syncStatusFunc:             syncStatusFunc,
 		watchChan:                  make(chan OptionWatch, 4096),
 	}
+	go opt.Watch()
 	return opt
 }
 
@@ -171,23 +172,24 @@ type OptionWatch struct {
 
 func (opt *option) WriteWatchChan(e watch.Event, ks KubernetesResource, recorder record.EventRecorder) (err error) {
 	after := time.After(time.Millisecond * 500)
-	for {
-		select {
-		case <-after:
-			return fmt.Errorf("%s kind:%v", ErrOptionWriteWatchChanTimeout, opt.kindName)
-		case opt.watchChan <- OptionWatch{Event: e, Resource: ks, Recorder: recorder}:
-		}
+	select {
+	case <-after:
+		return fmt.Errorf("%s kind:%v", ErrOptionWriteWatchChanTimeout, opt.kindName)
+	case opt.watchChan <- OptionWatch{Event: e, Resource: ks, Recorder: recorder}:
+		klog.Info("WriteWatchChan +++++++")
 	}
+	return nil
 }
 
 func (opt *option) Watch() {
 	for {
 		select {
 		case ow, isClosed := <-opt.watchChan:
+			klog.Info("Receive WatchChan ----------- e:", ow)
 			if !isClosed {
 				return
 			}
-			if err := opt.syncStatusFunc(ow.Event, opt.agentClientSet, ow.Resource, ow.Recorder); err != nil {
+			if err := opt.syncStatusFunc(ow.Event.Object, opt.agentClientSet, ow.Resource, ow.Recorder); err != nil {
 				klog.V(2).Info(err)
 			}
 		}

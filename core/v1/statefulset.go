@@ -20,7 +20,7 @@ type KubernetesStatefulSet interface {
 	Update(nameSpace string, d *appsV1.StatefulSet) (*appsV1.StatefulSet, error)
 	Delete(nameSpace, specName string) error
 	List(nameSpace, filterName string) (dl *appsV1.StatefulSetList, err error)
-	Watch(nameSpace, filterName string) (w watch.Interface, err error)
+	Watch(nameSpace string, filter string) (w watch.Interface, err error)
 }
 
 func NewKubernetesStatefulSet(kubeClientSet kubernetes.Interface, kubeInformerFactory kubeinformers.SharedInformerFactory) KubernetesStatefulSet {
@@ -96,7 +96,7 @@ func (kss *kubernetesStatefulSet) List(nameSpace, filterName string) (ssl *appsV
 	return ssl, err
 }
 
-func (kss *kubernetesStatefulSet) Watch(nameSpace, filterName string) (w watch.Interface, err error) {
+func (kss *kubernetesStatefulSet) Watch(nameSpace string, filterName string) (w watch.Interface, err error) {
 	opts := metaV1.ListOptions{
 		LabelSelector: filterName,
 	}
