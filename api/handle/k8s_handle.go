@@ -471,7 +471,6 @@ func (h *k8sHandle) Watch(broadcast chan []byte) {
 	for {
 		select {
 		case e, isClosed := <-h.group.WatchEvents():
-			klog.Info("watch h.group.WatchEvents:", e)
 			if !isClosed {
 				return
 			}
@@ -481,7 +480,6 @@ func (h *k8sHandle) Watch(broadcast chan []byte) {
 				continue
 			}
 			broadcast <- res
-			klog.Info("watch obj:", res)
 		}
 	}
 }

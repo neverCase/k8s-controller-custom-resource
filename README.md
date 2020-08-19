@@ -41,7 +41,7 @@ spec:
 EOF
 
 $ kubectl apply -f redis-resource.yaml
-customresourcedefinition.apiextensions.k8s.io/redisoperators.redisoperator.nevercase.io created
+customresourcedefinition.apiextensions.k8s.io/redisoperators.nevercase.io created
 ```
 
 ### define demo file
