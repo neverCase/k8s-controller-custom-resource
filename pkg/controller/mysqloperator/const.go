@@ -31,6 +31,7 @@ const (
 	MysqlDataDir      = "MYSQL_DATA_DIR"
 
 	MysqlMasterHost        = "MYSQL_MASTER_HOST"
+	MysqlMasterPort        = "MYSQL_MASTER_PORT"
 	MysqlMasterUser        = "MYSQL_MASTER_USER"
 	MysqlMasterPassword    = "MYSQL_MASTER_USER"
 	MysqlMasterLogFile     = "MYSQL_MASTER_LOG_FILE"

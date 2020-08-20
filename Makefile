@@ -1,4 +1,4 @@
-.PHONY: mysql redis
+.PHONY: mysql redis crd api
 
 domain := harbor.domain.com
 project := lunara-common
@@ -12,3 +12,9 @@ mysql:
 redis:
 	cd dockerfile/redis && docker build -t $(redis_image) .
 	docker push $(redis_image)
+
+crd:
+	bash ./make.sh
+
+api:
+	cd api/cmd && bash ./make.sh

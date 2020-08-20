@@ -34,6 +34,10 @@ func NewStatefulSet(foo *mysqlOperatorV1.MysqlOperator, rds *mysqlOperatorV1.Mys
 	if len(rds.ContainerPorts) > 0 {
 		ports = rds.ContainerPorts
 	}
+	masterPort := strconv.Itoa(MysqlDefaultPort)
+	if len(foo.Spec.MasterSpec.Spec.ServicePorts) > 0 {
+		masterPort = strconv.Itoa(int(foo.Spec.MasterSpec.Spec.ServicePorts[0].Port))
+	}
 	standard := &appsV1.StatefulSet{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      objectName,
@@ -90,6 +94,10 @@ func NewStatefulSet(foo *mysqlOperatorV1.MysqlOperator, rds *mysqlOperatorV1.Mys
 								{
 									Name:  MysqlMasterHost,
 									Value: fmt.Sprintf(k8sCoreV1.ServiceNameTemplate, masterName),
+								},
+								{
+									Name:  MysqlMasterPort,
+									Value: masterPort,
 								},
 								{
 									Name:  MysqlMasterUser,

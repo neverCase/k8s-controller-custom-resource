@@ -49,6 +49,10 @@ func NewStatefulSet(foo *redisOperatorV1.RedisOperator, rds *redisOperatorV1.Red
 	}
 
 	if rds.Role == k8sCoreV1.SlaveName {
+		masterPort := strconv.Itoa(RedisDefaultPort)
+		if len(foo.Spec.MasterSpec.Spec.ServicePorts) > 0 {
+			masterPort = strconv.Itoa(int(foo.Spec.MasterSpec.Spec.ServicePorts[0].Port))
+		}
 		masterName := fmt.Sprintf("%s-%s", foo.Spec.MasterSpec.Spec.Name, k8sCoreV1.MasterName)
 		ext := []coreV1.EnvVar{
 			{
@@ -61,7 +65,7 @@ func NewStatefulSet(foo *redisOperatorV1.RedisOperator, rds *redisOperatorV1.Red
 			},
 			{
 				Name:  EnvRedisMasterPort,
-				Value: strconv.Itoa(RedisDefaultPort),
+				Value: masterPort,
 			},
 		}
 		envs = append(envs, ext...)
