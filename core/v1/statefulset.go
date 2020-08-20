@@ -86,8 +86,10 @@ func (kss *kubernetesStatefulSet) Delete(nameSpace, specName string) error {
 }
 
 func (kss *kubernetesStatefulSet) List(nameSpace, filterName string) (ssl *appsV1.StatefulSetList, err error) {
+	timeout := int64(300)
 	opts := metaV1.ListOptions{
-		LabelSelector: filterName,
+		LabelSelector:  filterName,
+		TimeoutSeconds: &timeout,
 	}
 	ssl, err = kss.kubeClientSet.AppsV1().StatefulSets(nameSpace).List(opts)
 	if err != nil {
@@ -97,8 +99,10 @@ func (kss *kubernetesStatefulSet) List(nameSpace, filterName string) (ssl *appsV
 }
 
 func (kss *kubernetesStatefulSet) Watch(nameSpace string, filterName string) (w watch.Interface, err error) {
+	timeout := int64(300)
 	opts := metaV1.ListOptions{
-		LabelSelector: filterName,
+		LabelSelector:  filterName,
+		TimeoutSeconds: &timeout,
 	}
 	w, err = kss.kubeClientSet.AppsV1().StatefulSets(nameSpace).Watch(opts)
 	if err != nil {

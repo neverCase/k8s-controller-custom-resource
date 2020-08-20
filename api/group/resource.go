@@ -287,8 +287,10 @@ func (r *resource) List(rt ResourceType, nameSpace string, selector labels.Selec
 
 func (r *resource) Watch(rt ResourceType, nameSpace string, selector labels.Selector, eventsChan chan watch.Event) (err error) {
 	var opt Option
+	timeout := int64(300)
 	var opts = metav1.ListOptions{
-		LabelSelector: selector.String(),
+		LabelSelector:  selector.String(),
+		TimeoutSeconds: &timeout,
 	}
 	var res watch.Interface
 	switch rt {
@@ -323,11 +325,22 @@ func (r *resource) Watch(rt ResourceType, nameSpace string, selector labels.Sele
 		return err
 	}
 	go func() {
+		defer func() {
+			if err := r.Watch(rt, nameSpace, selector, eventsChan); err != nil {
+				klog.Fatal(err)
+			}
+		}()
 		for {
 			select {
 			case e, isClosed := <-res.ResultChan():
+				klog.Infof("resource watch resourceType:%v obj:%v", rt, e)
 				if !isClosed {
+					klog.Infof("resource watch resourceType:%v closed", rt)
+					res.Stop()
 					return
+				}
+				if e.Type == watch.Deleted {
+					continue
 				}
 				eventsChan <- e
 			case <-r.ctx.Done():

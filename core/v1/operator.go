@@ -86,27 +86,31 @@ func (ko *kubernetesOperator) Options() Options {
 
 func (ko *kubernetesOperator) Watch() {
 	for _, opt := range ko.Options().List() {
-		go func(opt Option) {
-			req, err := labels.NewRequirement(LabelApp, selection.Equals, []string{opt.KindName()})
-			if err != nil {
-				klog.Fatal(err)
+		go ko.OptionWatch(opt)
+	}
+}
+
+func (ko *kubernetesOperator) OptionWatch(opt Option) {
+	defer ko.OptionWatch(opt)
+	req, err := labels.NewRequirement(LabelApp, selection.Equals, []string{opt.KindName()})
+	if err != nil {
+		klog.Fatal(err)
+	}
+	res, err := ko.kubernetesResource.StatefulSet().Watch("", req.String())
+	if err != nil {
+		klog.Fatal(err)
+	}
+	for {
+		select {
+		case e, isClosed := <-res.ResultChan():
+			klog.Infof("watch kindName:%v StatefulSet ========= e:", opt.KindName(), e)
+			if !isClosed {
+				klog.Infof("watch closed kindName:%v StatefulSet ========= e:", opt.KindName(), e)
+				return
 			}
-			res, err := ko.kubernetesResource.StatefulSet().Watch("", req.String())
-			if err != nil {
-				klog.Fatal(err)
+			if err := opt.WriteWatchChan(e, ko.kubernetesResource, ko.recorder); err != nil {
+				klog.V(2).Info(err)
 			}
-			for {
-				select {
-				case e, isClosed := <-res.ResultChan():
-					klog.Infof("watch kindName:%v StatefulSet ========= e:", opt.KindName(), e)
-					if !isClosed {
-						return
-					}
-					if err := opt.WriteWatchChan(e, ko.kubernetesResource, ko.recorder); err != nil {
-						klog.V(2).Info(err)
-					}
-				}
-			}
-		}(opt)
+		}
 	}
 }
