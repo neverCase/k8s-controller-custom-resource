@@ -35,6 +35,11 @@ fi
 
 sed -i "s/bind 127.0.0.1/bind 0.0.0.0/g" ${ENV_REDIS_CONF}
 
+if [[ "$ENV_REDIS_PORT" ]]
+then
+	sed -i "s/port 6379/port ${ENV_REDIS_PORT}/g" ${ENV_REDIS_CONF}
+fi
+
 shutdownSave() {
    redis-cli shutdown save
 }

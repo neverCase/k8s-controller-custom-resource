@@ -23,6 +23,7 @@ func NewStatefulSet(foo *redisOperatorV1.RedisOperator, rds *redisOperatorV1.Red
 		Type: &t,
 		Path: fmt.Sprintf("%s/%s/redis/%s", rds.VolumePath, foo.Namespace, rds.Name),
 	}
+	port := strconv.Itoa(RedisDefaultPort)
 	ports := []coreV1.ContainerPort{
 		{
 			ContainerPort: RedisDefaultPort,
@@ -30,9 +31,11 @@ func NewStatefulSet(foo *redisOperatorV1.RedisOperator, rds *redisOperatorV1.Red
 	}
 	if len(rds.ContainerPorts) > 0 {
 		ports = rds.ContainerPorts
+		port = strconv.Itoa(int(rds.ContainerPorts[0].ContainerPort))
 	}
 	objectName := fmt.Sprintf(k8sCoreV1.StatefulSetNameTemplate, rds.Name)
 	containerName := fmt.Sprintf(k8sCoreV1.ContainerNameTemplate, rds.Name)
+
 	envs := []coreV1.EnvVar{
 		{
 			Name:  EnvRedisConf,
@@ -45,6 +48,10 @@ func NewStatefulSet(foo *redisOperatorV1.RedisOperator, rds *redisOperatorV1.Red
 		{
 			Name:  EnvRedisDbFileName,
 			Value: fmt.Sprintf(EnvRedisDbFileNameTemplate, rds.Name),
+		},
+		{
+			Name:  EnvRedisPort,
+			Value: port,
 		},
 	}
 
