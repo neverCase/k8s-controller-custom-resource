@@ -65,7 +65,7 @@ then
     mysql -uroot -proot -e "GRANT REPLICATION SLAVE ON *.* TO 'repl';"
 else
     echo "**********salve************"
-    mysql -uroot -proot -e "CHANGE MASTER TO MASTER_HOST='${MYSQL_MASTER_HOST}', MASTER_PORT='${MYSQL_MASTER_PORT}', MASTER_USER='repl', MASTER_PASSWORD='root', MASTER_CONNECT_RETRY=10, MASTER_LOG_FILE='', MASTER_LOG_POS=0;"
+    mysql -uroot -proot -e "CHANGE MASTER TO MASTER_HOST='${MYSQL_MASTER_HOST}', MASTER_PORT=${MYSQL_MASTER_PORT}, MASTER_USER='repl', MASTER_PASSWORD='root', MASTER_CONNECT_RETRY=10, MASTER_LOG_FILE='', MASTER_LOG_POS=0;"
     mysql -uroot -proot -e "START SLAVE;"
 fi
 
