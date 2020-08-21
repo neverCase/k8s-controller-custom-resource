@@ -9,6 +9,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/klog"
 
 	helixsagaoperatorv1 "github.com/Shanghai-Lunara/helixsaga-operator/pkg/apis/helixsaga/v1"
@@ -406,9 +407,10 @@ func (h *k8sHandle) List(req proto.Param) (res []byte, err error) {
 	return proto.GetResponse(req, res)
 }
 
-func (h *k8sHandle) convertObjFromEvent(obj interface{}) (res []byte, err error) {
+func (h *k8sHandle) convertObjFromEvent(obj interface{}, et watch.EventType) (res []byte, err error) {
 	req := proto.Param{
-		Service: string(proto.SvcWatch),
+		Service:        string(proto.SvcWatch),
+		WatchEventType: proto.EventType(et),
 	}
 	switch reflect.TypeOf(obj) {
 	case reflect.TypeOf(&corev1.ConfigMap{}):
@@ -474,7 +476,7 @@ func (h *k8sHandle) Watch(broadcast chan []byte) {
 			if !isClosed {
 				return
 			}
-			res, err := h.convertObjFromEvent(e.Object)
+			res, err := h.convertObjFromEvent(e.Object, e.Type)
 			if err != nil {
 				klog.V(2).Info(err)
 				continue

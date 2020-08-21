@@ -1,4 +1,4 @@
-.PHONY: mysql redis crd api
+.PHONY: mysql redis crd api gc ga
 
 domain := harbor.domain.com
 project := lunara-common
@@ -14,7 +14,20 @@ redis:
 	docker push $(redis_image)
 
 crd:
+	go mod vendor
 	bash ./make.sh
 
 api:
+	go mod vendor
 	cd api/cmd && bash ./make.sh
+
+# gen crd
+gc:
+	go mod vendor
+	bash ./gen.sh crd
+
+# gen api
+ga:
+	go mod vendor
+	bash ./gen.sh api
+

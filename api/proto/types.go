@@ -32,14 +32,27 @@ const (
 	CodeErr  = 10001
 )
 
+// EventType defines the possible types of events.
+type EventType string
+
+const (
+	EventAdded    EventType = "ADDED"
+	EventModified EventType = "MODIFIED"
+	EventDeleted  EventType = "DELETED"
+	EventBookmark EventType = "BOOKMARK"
+	EventError    EventType = "ERROR"
+)
+
 type Param struct {
 	Service      string             `json:"service" protobuf:"bytes,1,opt,name=service"`
 	ResourceType group.ResourceType `json:"resourceType" protobuf:"bytes,2,opt,name=resourceType"`
 	NameSpace    string             `json:"nameSpace" protobuf:"bytes,3,opt,name=nameSpace"`
 
+	WatchEventType EventType `json:"watchEventType" protobuf:"bytes,4,opt,name=watchEventType"`
+
 	// The request parameters of the HarborApi
 	// only used for HarborApi
-	HarborRequest HarborRequest `json:"harborRequest" protobuf:"bytes,4,opt,name=harborRequest"`
+	HarborRequest HarborRequest `json:"harborRequest" protobuf:"bytes,5,opt,name=harborRequest"`
 }
 
 type Request struct {
