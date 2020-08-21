@@ -4,10 +4,12 @@
 - redis-operator: including a simple master-slave mode which was main based on the resources of **k8s.StatefulSet** and **k8s.Service**
 - mysql-operator: the same with the redis-operator
 
-## todo
-1. core/v1/interfaces would add the storage plugins(e.g. nfs) later for dynamically creating pv and pvc
-2. core/v1/interfaces need to add api/client(just like kubernetes/client-go) for creating instances instead of creating yaml files and executing `kubectl apply -f *.yaml`
+## Operators to do
+- core/v1/interfaces would add the storage plugins(e.g. nfs) later for dynamically creating pv and pvc
 
+## Api to do
+- ingress controller
+ 
 
 ## RedisOperator
 
