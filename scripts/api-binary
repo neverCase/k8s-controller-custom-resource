@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+
+set -e
+
+FLAGS=()
+if [ -n "$VERBOSE" ]; then
+    FLAGS+=(-v)
+fi
+
+if [ -z "$VERSION" ]; then
+    VERSION=$(git rev-parse HEAD)
+fi
+
+if [ -z "$CODENAME" ]; then
+    CODENAME=cheddar
+fi
+
+if [ -z "$DATE" ]; then
+    DATE=$(date -u '+%Y-%m-%d_%I:%M:%S%p')
+fi
+
+
+CRD="api-server"
+rm -rf ${CRD}
+
+# Build binaries
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o ../api/${CRD} ../api/cmd/main.go

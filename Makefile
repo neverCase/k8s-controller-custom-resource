@@ -1,25 +1,29 @@
 .PHONY: mysql redis crd api gc ga
 
-domain := harbor.domain.com
-project := lunara-common
-mysql_image := "$(domain)/$(project)/mysql-slave:v1.0.0"
-redis_image := "$(domain)/$(project)/redis-slave:v1.0.0"
+HARBOR_DOMAIN := $(shell echo ${HARBOR})
+PROJECT := lunara-common
+MYSQL_IMAGE := "$(HARBOR_DOMAIN)/$(PROJECT)/mysql-slave:v1.0.0"
+REDIS_IMAGE := "$(HARBOR_DOMAIN)/$(PROJECT)/redis-slave:v1.0.0"
+API_SERVER_IMAGE := "$(HARBOR_DOMAIN)/$(PROJECT)/api-server:v1.0.0"
+MULTIPLE_CRD_IMAGE := "$(HARBOR_DOMAIN)/$(PROJECT)/mupliple-crd:v1.0.0"
 
 mysql:
-	cd dockerfile/mysql && docker build -t $(mysql_image) .
-	docker push $(mysql_image)
+	cd dockerfile/mysql && docker build -t $(MYSQL_IMAGE) .
+	docker push $(MYSQL_IMAGE)
 
 redis:
-	cd dockerfile/redis && docker build -t $(redis_image) .
-	docker push $(redis_image)
+	cd dockerfile/redis && docker build -t $(REDIS_IMAGE) .
+	docker push $(REDIS_IMAGE)
 
 crd:
 	go mod vendor
 	bash ./make.sh
 
 api:
-	go mod vendor
-	cd api/cmd && bash ./make.sh
+	cd scripts && bash ./make.sh
+	cd api && docker build -t $(API_SERVER_IMAGE) .
+	rm -rf api/api-server
+	docker push $(API_SERVER_IMAGE)
 
 # gen crd
 gc:

@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k8s-api-server
+  labels:
+    app: k8s-api-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: k8s-api-server
+  template:
+    metadata:
+      labels:
+        app: k8s-api-server
+    spec:
+      containers:
+        - name: k8s-api
+          image: harbor.domain.com/lunara-common/api-server:v1.0.0
+          ports:
+            - containerPort: 9000
+      imagePullSecrets:
+        - name: harbor-secret

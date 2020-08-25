@@ -1,12 +1,11 @@
+# mac
 .DS_Store
 
+# go
 vendor
 
-make.sh
-
 # bin files
-crd
 redisoperatorcrd
 mysqloperatorcrd
-
-*.js
+api-server
+mulitple-crd
