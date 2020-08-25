@@ -14,10 +14,20 @@ spec:
       labels:
         app: k8s-api-server
     spec:
+      serviceAccountName: k8s-api-controller
       containers:
         - name: k8s-api
           image: harbor.domain.com/lunara-common/api-server:v1.0.0
           ports:
             - containerPort: 9000
+          command: ["/data/api-server"]
+          args:
+            - -alsologtostderr=true
+            - --apiservice=0.0.0.0:9090
+            - -v
+            - "4"
+            - -dockerurl=http://harbor.domain.com
+            - -dockeradmin=admin
+            - -dockerpwd=password
       imagePullSecrets:
         - name: harbor-secret

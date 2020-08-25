@@ -1,0 +1,64 @@
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: k8s-api-controller
+  namespace: default
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - services
+      - endpoints
+      - secrets
+      - namespaces
+      - configmaps
+    verbs:
+      - get
+      - list
+      - watch
+      - delete
+      - update
+  - apiGroups:
+      - extensions
+    resources:
+      - ingresses
+    verbs:
+      - get
+      - list
+      - watch
+      - delete
+      - update
+  - apiGroups:
+      - nevercase.io
+    resources:
+      - mysqloperators
+      - redisoperators
+      - helixsagas
+    verbs:
+      - get
+      - list
+      - watch
+      - delte
+      - update
+
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: k8s-api-controller
+
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: k8s-api-controller
+subjects:
+  - kind: ServiceAccount
+    name: k8s-api-controller
+    namespace: default
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: k8s-api-controller
+  namespace: default
+secrets:

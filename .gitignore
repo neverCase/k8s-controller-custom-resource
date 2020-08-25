@@ -9,3 +9,6 @@ redisoperatorcrd
 mysqloperatorcrd
 api-server
 mulitple-crd
+
+# fake yaml
+fake-deploy.yaml
