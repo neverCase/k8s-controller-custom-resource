@@ -349,9 +349,6 @@ func (r *resource) Watch(rt ResourceType, nameSpace string, selector labels.Sele
 					res.Stop()
 					return
 				}
-				if e.Type == watch.Deleted {
-					continue
-				}
 				eventsChan <- e
 			case <-r.ctx.Done():
 				res.Stop()
