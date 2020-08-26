@@ -1,34 +1,28 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: k8s-multiple-crd
-  namspace: kube-api
+  name: k8s-multiplex-crd
+  namespace: kube-api
   labels:
-    app: k8s-multiple-crd
+    app: k8s-multiplex-crd
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: k8s-multiple-crd
+      app: k8s-multiplex-crd
   template:
     metadata:
       labels:
-        app: k8s-multiple-crd
+        app: k8s-multiplex-crd
     spec:
       serviceAccountName: k8s-api-controller
       containers:
-        - name: k8s-api
-          image: harbor.domain.com/lunara-common/multiple-crd:v1.0.0
-          ports:
-            - containerPort: 9000
-          command: ["/data/multiple-crd"]
+        - name: k8s-multiplex-crd
+          image: harbor.domain.com/lunara-common/multiplex-crd:v1.0.0
+          command: ["/data/multiplex-crd"]
           args:
             - -alsologtostderr=true
-            - --apiservice=0.0.0.0:9090
             - -v
             - "4"
-            - -dockerurl=http://harbor.domain.com
-            - -dockeradmin=admin
-            - -dockerpwd=password
       imagePullSecrets:
         - name: harbor-secret

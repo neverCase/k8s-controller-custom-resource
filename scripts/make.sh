@@ -7,6 +7,7 @@ export GOPROXY=https://goproxy.cn
 # List of bundles to create when no argument is passed
 DEFAULT_BUNDLES=(
 	api-binary
+	multiplexcrd-binary
 )
 
 SCRIPT_DIR="$(cd "$(dirname "${0}")" && pwd -P)"
