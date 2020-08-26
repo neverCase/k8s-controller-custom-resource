@@ -8,7 +8,7 @@ vendor
 redisoperatorcrd
 mysqloperatorcrd
 api-server
-mulitple-crd
+multiplex-crd
 
 # fake yaml
 fake-deploy.yaml

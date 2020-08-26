@@ -7,6 +7,7 @@ rules:
   - apiGroups:
       - ""
     resources:
+      - events
       - services
       - endpoints
       - secrets
@@ -17,32 +18,38 @@ rules:
       - persistentvolumes
       - persistentvolumeclaims
     verbs:
+      - create
       - get
       - list
       - watch
       - delete
       - update
+      - patch
   - apiGroups:
       - "apps"
     resources:
       - statefulsets
       - deployments
     verbs:
+      - create
       - get
       - list
       - watch
       - delete
       - update
+      - patch
   - apiGroups:
       - extensions
     resources:
       - ingresses
     verbs:
+      - create
       - get
       - list
       - watch
       - delete
       - update
+      - patch
   - apiGroups:
       - nevercase.io
     resources:
@@ -50,11 +57,13 @@ rules:
       - redisoperators
       - helixsagas
     verbs:
+      - create
       - get
       - list
       - watch
       - delete
       - update
+      - patch
 
 ---
 kind: ClusterRoleBinding

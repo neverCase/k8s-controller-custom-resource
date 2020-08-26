@@ -32,3 +32,18 @@ spec:
             - -dockerpwd=password
       imagePullSecrets:
         - name: harbor-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  nname: k8s-api-server
+  namespace: kube-api
+  labels:
+    app: k8s-api-server
+spec:
+  selector:
+    app: k8s-api-server
+  ports:
+    - protocol: TCP
+      port: 9091
+      targetPort: 9090
