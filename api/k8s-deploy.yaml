@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: k8s-api-server
+  namespace: kube-api
   labels:
     app: k8s-api-server
 spec:
