@@ -8,7 +8,6 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog"
 
@@ -65,18 +64,9 @@ type ResourceInterface interface {
 }
 
 func NewResource(ctx context.Context, masterUrl, kubeconfigPath string, eventsChan chan watch.Event) ResourceInterface {
-	var cfg *rest.Config
-	var err error
-	if masterUrl == "" && kubeconfigPath == "" {
-		cfg, err = rest.InClusterConfig()
-		if err != nil {
-			klog.Fatalf("Error rest.InClusterConfig: %s", err.Error())
-		}
-	} else {
-		cfg, err = clientcmd.BuildConfigFromFlags(masterUrl, kubeconfigPath)
-		if err != nil {
-			klog.Fatalf("Error building kubeconfig: %s", err.Error())
-		}
+	cfg, err := clientcmd.BuildConfigFromFlags(masterUrl, kubeconfigPath)
+	if err != nil {
+		klog.Fatalf("Error building kubeconfig: %s", err.Error())
 	}
 	kubeClient, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
