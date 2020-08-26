@@ -12,6 +12,21 @@ rules:
       - secrets
       - namespaces
       - configmaps
+      - pods
+      - nodes
+      - persistentvolumes
+      - persistentvolumeclaims
+    verbs:
+      - get
+      - list
+      - watch
+      - delete
+      - update
+  - apiGroups:
+      - "apps"
+    resources:
+      - statefulsets
+      - deployments
     verbs:
       - get
       - list
