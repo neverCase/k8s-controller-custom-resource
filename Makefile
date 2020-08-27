@@ -8,20 +8,24 @@ API_SERVER_IMAGE := "$(HARBOR_DOMAIN)/$(PROJECT)/api-server:latest"
 MULTIPLEX_CRD_IMAGE := "$(HARBOR_DOMAIN)/$(PROJECT)/multiplex-crd:latest"
 
 mysql:
+	-i docker image rm $(MYSQL_IMAGE)
 	cd dockerfile/mysql && docker build -t $(MYSQL_IMAGE) .
 	docker push $(MYSQL_IMAGE)
 
 redis:
+	-i docker image rm $(REDIS_IMAGE)
 	cd dockerfile/redis && docker build -t $(REDIS_IMAGE) .
 	docker push $(REDIS_IMAGE)
 
 crd:
+	-i docker image rm $(MULTIPLEX_CRD_IMAGE)
 	cd scripts && bash ./make.sh multiplexcrd-binary
 	cd cmd/multiplex && docker build -t $(MULTIPLEX_CRD_IMAGE) .
 	rm -rf cmd/multiplex/multiplex-crd
 	docker push $(MULTIPLEX_CRD_IMAGE)
 
 api:
+	-i docker image rm $(API_SERVER_IMAGE)
 	cd scripts && bash ./make.sh api-binary
 	cd api && docker build -t $(API_SERVER_IMAGE) .
 	rm -rf api/api-server
