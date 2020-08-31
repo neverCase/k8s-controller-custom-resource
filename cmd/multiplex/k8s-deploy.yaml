@@ -19,6 +19,7 @@ spec:
       containers:
         - name: k8s-multiplex-crd
           image: harbor.domain.com/lunara-common/multiplex-crd:v1.0.0
+          imagePullPolicy: Always
           command: ["/data/multiplex-crd"]
           args:
             - -alsologtostderr=true

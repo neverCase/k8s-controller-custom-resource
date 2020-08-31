@@ -19,6 +19,7 @@ spec:
       containers:
         - name: k8s-api
           image: harbor.domain.com/lunara-common/api-server:v1.0.0
+          imagePullPolicy: Always
           ports:
             - containerPort: 9000
           command: ["/data/api-server"]

@@ -103,7 +103,7 @@ func NewResource(ctx context.Context, masterUrl, kubeconfigPath string, eventsCh
 		cancel:        cancel,
 	}
 	for _, v := range opts.GetOptionTypeList() {
-		if v != MysqlOperator && v != RedisOperator && v != HelixSagaOperator {
+		if v != ConfigMap && v != MysqlOperator && v != RedisOperator && v != HelixSagaOperator {
 			continue
 		}
 		if err := r.Watch(v, "", labels.NewSelector(), eventsChan); err != nil {
