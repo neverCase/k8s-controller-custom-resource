@@ -744,8 +744,9 @@ func convertRedisCrdToProto(v *redisoperatorv1.RedisOperator) proto.RedisCrd {
 func convertProtoToConfigMap(req proto.Param, v proto.ConfigMap) *corev1.ConfigMap {
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      v.Name,
-			Namespace: req.NameSpace,
+			Name:            v.Name,
+			Namespace:       req.NameSpace,
+			ResourceVersion: v.ResourceVersion,
 		},
 		Data: v.Data,
 	}
@@ -753,8 +754,9 @@ func convertProtoToConfigMap(req proto.Param, v proto.ConfigMap) *corev1.ConfigM
 
 func convertConfigMapToProto(c *corev1.ConfigMap) proto.ConfigMap {
 	return proto.ConfigMap{
-		Name: c.Name,
-		Data: c.Data,
+		Name:            c.Name,
+		ResourceVersion: c.ResourceVersion,
+		Data:            c.Data,
 	}
 }
 

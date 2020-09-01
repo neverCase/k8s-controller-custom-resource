@@ -200,13 +200,25 @@ type ConfigMapList struct {
 
 type ConfigMap struct {
 	Name string `json:"name" protobuf:"bytes,1,rep,name=Name"`
+	// An opaque value that represents the internal version of this object that can
+	// be used by clients to determine when objects have changed. May be used for optimistic
+	// concurrency, change detection, and the watch operation on a resource or set of resources.
+	// Clients must treat these values as opaque and passed unmodified back to the server.
+	// They may only be valid for a particular resource or set of resources.
+	//
+	// Populated by the system.
+	// Read-only.
+	// Value must be treated as opaque by clients and .
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
+	// +optional
+	ResourceVersion string `json:"resourceVersion,omitempty" protobuf:"bytes,2,opt,name=resourceVersion"`
 	// Data contains the configuration data.
 	// Each key must consist of alphanumeric characters, '-', '_' or '.'.
 	// Values with non-UTF-8 byte sequences must use the BinaryData field.
 	// The keys stored in Data must not overlap with the keys in
 	// the BinaryData field, this is enforced during validation process.
 	// +optional
-	Data map[string]string `json:"data" protobuf:"bytes,2,rep,name=data"`
+	Data map[string]string `json:"data" protobuf:"bytes,3,rep,name=data"`
 }
 
 type NameSpaceList struct {
