@@ -218,6 +218,9 @@ func service(ks k8sCoreV1.KubernetesResource,
 		if !errors.IsNotFound(err) {
 			return err
 		}
+		if len(rds.ServicePorts) == 0 {
+			return nil
+		}
 		klog.Info("new service")
 		if _, err = ks.Service().Create(foo.Namespace, NewService(foo, rds)); err != nil {
 			return err
@@ -228,6 +231,12 @@ func service(ks k8sCoreV1.KubernetesResource,
 		//	klog.Info(err)
 		//	return err
 		//}
+		if len(rds.ServicePorts) == 0 {
+			if err = ks.Service().Delete(foo.Namespace, k8sCoreV1.GetServiceName(rds.Name)); err != nil {
+				klog.V(2).Info(err)
+				return err
+			}
+		}
 	}
 	return nil
 }

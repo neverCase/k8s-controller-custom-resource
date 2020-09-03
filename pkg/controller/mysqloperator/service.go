@@ -1,8 +1,6 @@
 package mysqloperator
 
 import (
-	"fmt"
-
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -17,7 +15,7 @@ func NewService(foo *mysqlOperatorV1.MysqlOperator, rds *mysqlOperatorV1.MysqlSp
 		k8sCoreV1.LabelController: foo.Name,
 		k8sCoreV1.LabelRole:       rds.Role,
 	}
-	serviceName = fmt.Sprintf(k8sCoreV1.ServiceNameTemplate, rds.Name)
+	serviceName = k8sCoreV1.GetServiceName(rds.Name)
 	ports := []coreV1.ServicePort{
 		{
 			Port: MysqlDefaultPort,

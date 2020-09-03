@@ -33,8 +33,8 @@ func NewStatefulSet(foo *redisOperatorV1.RedisOperator, rds *redisOperatorV1.Red
 		ports = rds.ContainerPorts
 		port = strconv.Itoa(int(rds.ContainerPorts[0].ContainerPort))
 	}
-	objectName := fmt.Sprintf(k8sCoreV1.StatefulSetNameTemplate, rds.Name)
-	containerName := fmt.Sprintf(k8sCoreV1.ContainerNameTemplate, rds.Name)
+	objectName := k8sCoreV1.GetStatefulSetName(rds.Name)
+	containerName := k8sCoreV1.GetContainerName(rds.Name)
 
 	envs := []coreV1.EnvVar{
 		{
@@ -68,7 +68,7 @@ func NewStatefulSet(foo *redisOperatorV1.RedisOperator, rds *redisOperatorV1.Red
 			},
 			{
 				Name:  EnvRedisMaster,
-				Value: fmt.Sprintf(k8sCoreV1.ServiceNameTemplate, masterName),
+				Value: k8sCoreV1.GetServiceName(masterName),
 			},
 			{
 				Name:  EnvRedisMasterPort,
