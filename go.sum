@@ -26,6 +26,8 @@ github.com/Shanghai-Lunara/helixsaga-operator v0.0.0-20200819030844-966a05313a03
 github.com/Shanghai-Lunara/helixsaga-operator v0.0.0-20200819030844-966a05313a03/go.mod h1:vIc407KwSFJnSqRn6nM7nlZ8Bv+UCW4+qoxlrhtMnuQ=
 github.com/Shanghai-Lunara/helixsaga-operator v0.0.0-20200827085804-abf53816be1d h1:t0yGS3tweHtXnjgdRivjG8ag8YdWcBPw1Dx585Tccy4=
 github.com/Shanghai-Lunara/helixsaga-operator v0.0.0-20200827085804-abf53816be1d/go.mod h1:y/BiMiMBe5BfTU3nS4xmUm4RAwOUN5V7wTAzJejXpLo=
+github.com/Shanghai-Lunara/helixsaga-operator v0.0.0-20200903032042-809d675f137e h1:/ESxfsHaBNAcYpmpRgxD3w+9rtvmObM1uEkkvRpVAQc=
+github.com/Shanghai-Lunara/helixsaga-operator v0.0.0-20200903032042-809d675f137e/go.mod h1:UJDVz/uoZhhVNNGHDrc65cBq1JT6dc8JC7TGV6pa8pk=
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
 github.com/davecgh/go-spew v0.0.0-20151105211317-5215b55f46b2/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
@@ -124,6 +126,7 @@ github.com/nevercase/k8s-controller-custom-resource v0.0.0-20200717080405-ac4619
 github.com/nevercase/k8s-controller-custom-resource v0.0.0-20200814062711-3a466b2f7cf3/go.mod h1:mtoT/UOmYMYcqfSCT4VFLsb6xVvBQBykwAh6KQX86Xo=
 github.com/nevercase/k8s-controller-custom-resource v0.0.0-20200819024455-58f90d01a554/go.mod h1:yw57dsunJu6CpX1g3OHWrGmLI5o/iFM+aiVYwx1x154=
 github.com/nevercase/k8s-controller-custom-resource v0.0.0-20200827085315-676144f47bbf/go.mod h1:aFyOE1yIYJ8jNn+HVEbsswCrFeTSoAMlMB/bLinYbXY=
+github.com/nevercase/k8s-controller-custom-resource v0.0.0-20200903031135-33eb6f9412ea/go.mod h1:xRhb9loaeozuRiCT5HlCDncSuoK/45iiOeAy8UiTLQM=
 github.com/onsi/ginkgo v0.0.0-20170829012221-11459a886d9c/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=
 github.com/onsi/ginkgo v1.6.0/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=
 github.com/onsi/ginkgo v1.8.0/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=

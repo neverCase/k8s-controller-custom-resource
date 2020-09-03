@@ -123,6 +123,7 @@ func NewStatefulSet(foo *mysqlOperatorV1.MysqlOperator, rds *mysqlOperatorV1.Mys
 									Name:      "task-pv-storage",
 								},
 							},
+							ImagePullPolicy: coreV1.PullAlways,
 						},
 					},
 					ImagePullSecrets: rds.ImagePullSecrets,

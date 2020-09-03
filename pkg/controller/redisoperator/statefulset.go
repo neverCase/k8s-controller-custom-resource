@@ -120,6 +120,7 @@ func NewStatefulSet(foo *redisOperatorV1.RedisOperator, rds *redisOperatorV1.Red
 									Name:      "task-pv-storage",
 								},
 							},
+							ImagePullPolicy: coreV1.PullAlways,
 						},
 					},
 					ImagePullSecrets: rds.ImagePullSecrets,
