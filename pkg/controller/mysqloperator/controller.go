@@ -163,9 +163,9 @@ func statefulSet(ks k8sCoreV1.KubernetesResource,
 	}
 	klog.Info("rds:", *rds.Replicas)
 	klog.Info("statefulSet:", *ss.Spec.Replicas)
-	if rds.Replicas != nil && *rds.Replicas != *ss.Spec.Replicas {
+	if rds.Replicas != nil && *rds.Replicas != *ss.Spec.Replicas || rds.Image != ss.Spec.Template.Spec.Containers[0].Image {
 		if ss, err = ks.StatefulSet().Update(foo.Namespace, NewStatefulSet(foo, rds)); err != nil {
-			klog.Info(err)
+			klog.V(2).Info(err)
 			return err
 		}
 	}

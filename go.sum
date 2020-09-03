@@ -28,6 +28,8 @@ github.com/Shanghai-Lunara/helixsaga-operator v0.0.0-20200827085804-abf53816be1d
 github.com/Shanghai-Lunara/helixsaga-operator v0.0.0-20200827085804-abf53816be1d/go.mod h1:y/BiMiMBe5BfTU3nS4xmUm4RAwOUN5V7wTAzJejXpLo=
 github.com/Shanghai-Lunara/helixsaga-operator v0.0.0-20200903032042-809d675f137e h1:/ESxfsHaBNAcYpmpRgxD3w+9rtvmObM1uEkkvRpVAQc=
 github.com/Shanghai-Lunara/helixsaga-operator v0.0.0-20200903032042-809d675f137e/go.mod h1:UJDVz/uoZhhVNNGHDrc65cBq1JT6dc8JC7TGV6pa8pk=
+github.com/Shanghai-Lunara/helixsaga-operator v0.0.0-20200903053549-a312013e4cba h1:V/ayTojJgU+Su4PjzFwIQdFqZiZqfvC0vhnXPF2u8Q0=
+github.com/Shanghai-Lunara/helixsaga-operator v0.0.0-20200903053549-a312013e4cba/go.mod h1:UJDVz/uoZhhVNNGHDrc65cBq1JT6dc8JC7TGV6pa8pk=
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
 github.com/davecgh/go-spew v0.0.0-20151105211317-5215b55f46b2/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
