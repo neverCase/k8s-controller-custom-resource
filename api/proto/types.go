@@ -141,15 +141,17 @@ type NodeSpec struct {
 	// +listMapKey=port
 	// +listMapKey=protocol
 	ServicePorts []ServicePort `json:"servicePorts,omitempty" patchStrategy:"merge" patchMergeKey:"port" protobuf:"bytes,8,rep,name=servicePorts"`
+	// The list of services' types and names
+	ServiceTypeMetas []ServiceTypeMeta `json:"serviceTypeMetas" protobuf:"bytes,9,rep,name=serviceTypeMetas"`
 	// List of environment variables to set in the container.
 	// Cannot be updated.
 	// +optional
 	// +patchMergeKey=name
 	// +patchStrategy=merge
-	Env []EnvVar `json:"env,omitempty" patchStrategy:"merge" patchMergeKey:"name" protobuf:"bytes,9,rep,name=env"`
+	Env []EnvVar `json:"env,omitempty" patchStrategy:"merge" patchMergeKey:"name" protobuf:"bytes,10,rep,name=env"`
 	// The status of the specific StatefulSet which was owned by the crd
 	// +optional
-	Status Status `json:"status" protobuf:"bytes,10,rep,name=status"`
+	Status Status `json:"status" protobuf:"bytes,11,rep,name=status"`
 }
 
 type EnvVar struct {
@@ -335,6 +337,16 @@ type ServicePort struct {
 	// More info: https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport
 	// +optional
 	NodePort int32 `json:"nodePort,omitempty" protobuf:"varint,5,opt,name=nodePort"`
+}
+
+type ServiceTypeMeta struct {
+	// The name of this port within the service. This must be a DNS_LABEL.
+	// All ports within a ServiceSpec must have unique names. When considering
+	// the endpoints for a Service, this must match the 'name' field in the
+	// EndpointPort.
+	// Optional if only one ServicePort is defined on this service.
+	// +optional
+	Name string `json:"name,omitempty" protobuf:"bytes,1,opt,name=name"`
 	// type determines how the Service is exposed. Defaults to ClusterIP. Valid
 	// options are ExternalName, ClusterIP, NodePort, and LoadBalancer.
 	// "ExternalName" maps to the specified externalName.
@@ -350,7 +362,7 @@ type ServicePort struct {
 	// to the clusterIP.
 	// More info: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types
 	// +optional
-	Type ServiceType `json:"type,omitempty" protobuf:"bytes,6,opt,name=serviceType"`
+	Type ServiceType `json:"type,omitempty" protobuf:"bytes,2,opt,name=serviceType"`
 }
 
 // Service Type string describes ingress methods for a service
