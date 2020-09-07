@@ -335,7 +335,46 @@ type ServicePort struct {
 	// More info: https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport
 	// +optional
 	NodePort int32 `json:"nodePort,omitempty" protobuf:"varint,5,opt,name=nodePort"`
+	// type determines how the Service is exposed. Defaults to ClusterIP. Valid
+	// options are ExternalName, ClusterIP, NodePort, and LoadBalancer.
+	// "ExternalName" maps to the specified externalName.
+	// "ClusterIP" allocates a cluster-internal IP address for load-balancing to
+	// endpoints. Endpoints are determined by the selector or if that is not
+	// specified, by manual construction of an Endpoints object. If clusterIP is
+	// "None", no virtual IP is allocated and the endpoints are published as a
+	// set of endpoints rather than a stable IP.
+	// "NodePort" builds on ClusterIP and allocates a port on every node which
+	// routes to the clusterIP.
+	// "LoadBalancer" builds on NodePort and creates an
+	// external load-balancer (if supported in the current cloud) which routes
+	// to the clusterIP.
+	// More info: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types
+	// +optional
+	Type ServiceType `json:"type,omitempty" protobuf:"bytes,6,opt,name=serviceType"`
 }
+
+// Service Type string describes ingress methods for a service
+type ServiceType string
+
+const (
+	// ServiceTypeClusterIP means a service will only be accessible inside the
+	// cluster, via the cluster IP.
+	ServiceTypeClusterIP ServiceType = "ClusterIP"
+
+	// ServiceTypeNodePort means a service will be exposed on one port of
+	// every node, in addition to 'ClusterIP' type.
+	ServiceTypeNodePort ServiceType = "NodePort"
+
+	// ServiceTypeLoadBalancer means a service will be exposed via an
+	// external load balancer (if the cloud provider supports it), in addition
+	// to 'NodePort' type.
+	ServiceTypeLoadBalancer ServiceType = "LoadBalancer"
+
+	// ServiceTypeExternalName means a service consists of only a reference to
+	// an external name that kubedns or equivalent will return as a CNAME
+	// record, with no exposing or proxying of any pods involved.
+	ServiceTypeExternalName ServiceType = "ExternalName"
+)
 
 type IntOrString struct {
 	Type   int32  `protobuf:"varint,1,opt,name=type"`
