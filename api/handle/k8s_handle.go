@@ -959,6 +959,7 @@ func convertHelixSagaAppToProto(a []helixsagaoperatorv1.HelixSagaApp) []proto.He
 				PodResource:      convertProtoToResourceRequirements(v.Spec.Resources),
 				ContainerPorts:   convertContainerPortToProto(v.Spec.ContainerPorts),
 				ServicePorts:     convertServicePortToProto(v.Spec.ServicePorts),
+				ServiceType:      convertProtoToServiceType(v.Spec.ServiceType),
 				Env:              convertEnvVarToProto(v.Spec.Env),
 				Status: proto.Status{
 					ObservedGeneration: v.Status.ObservedGeneration,
@@ -995,6 +996,7 @@ func convertProtoToHelixSagaApp(a []proto.HelixSagaApp) []helixsagaoperatorv1.He
 				Resources:      convertResourceRequirementsToProto(v.Spec.PodResource),
 				ContainerPorts: convertProtoToContainerPort(v.Spec.ContainerPorts),
 				ServicePorts:   convertProtoToServicePort(v.Spec.ServicePorts),
+				ServiceType:    convertServiceTypeToProto(v.Spec.ServiceType),
 				Env:            convertProtoToEnvVar(v.Spec.Env),
 				Command:        v.Command,
 				Args:           v.Args,
