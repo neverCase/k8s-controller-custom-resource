@@ -337,7 +337,7 @@ message NodeSpec {
   // +listMapKey=protocol
   repeated ServicePort servicePorts = 8;
 
-  // The list of services' types and names
+  // The type of the service
   optional string serviceType = 9;
 
   // List of environment variables to set in the container.

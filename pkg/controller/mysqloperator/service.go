@@ -34,6 +34,7 @@ func NewService(foo *mysqlOperatorV1.MysqlOperator, rds *mysqlOperatorV1.MysqlSp
 			Labels: labels,
 		},
 		Spec: coreV1.ServiceSpec{
+			Type:     k8sCoreV1.GetServiceType(rds.ServiceType),
 			Ports:    ports,
 			Selector: labels,
 		},

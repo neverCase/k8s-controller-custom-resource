@@ -34,11 +34,11 @@ api:
 # gen crd
 gc:
 	go mod vendor
-	CRD=mysqloperator bash ./gen.sh crd
-	CRD=redisoperator bash ./gen.sh crd
+	cd scripts && CRD=mysqloperator bash ./gen.sh crd
+	cd scripts && CRD=redisoperator bash ./gen.sh crd
 
 # gen api
 ga:
 	go mod vendor
-	bash ./gen.sh api
+	cd scripts && bash ./gen.sh api
 

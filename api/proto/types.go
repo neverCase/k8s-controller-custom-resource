@@ -141,7 +141,7 @@ type NodeSpec struct {
 	// +listMapKey=port
 	// +listMapKey=protocol
 	ServicePorts []ServicePort `json:"servicePorts,omitempty" patchStrategy:"merge" patchMergeKey:"port" protobuf:"bytes,8,rep,name=servicePorts"`
-	// The list of services' types and names
+	// The type of the service
 	ServiceType ServiceType `json:"serviceType" protobuf:"bytes,9,rep,name=serviceType"`
 	// List of environment variables to set in the container.
 	// Cannot be updated.

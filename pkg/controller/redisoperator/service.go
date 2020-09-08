@@ -34,6 +34,7 @@ func NewService(foo *redisOperatorV1.RedisOperator, rds *redisOperatorV1.RedisSp
 			Labels: labels,
 		},
 		Spec: coreV1.ServiceSpec{
+			Type:     k8sCoreV1.GetServiceType(rds.ServiceType),
 			Ports:    ports,
 			Selector: labels,
 		},

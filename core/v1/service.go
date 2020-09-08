@@ -93,3 +93,10 @@ func (ks *kubernetesService) List(nameSpace, filterName string) (sl *corev1.Serv
 	}
 	return sl, err
 }
+
+func GetServiceType(st corev1.ServiceType) corev1.ServiceType {
+	if st == "" {
+		return corev1.ServiceTypeClusterIP
+	}
+	return st
+}
