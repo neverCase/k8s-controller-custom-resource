@@ -142,7 +142,7 @@ type NodeSpec struct {
 	// +listMapKey=protocol
 	ServicePorts []ServicePort `json:"servicePorts,omitempty" patchStrategy:"merge" patchMergeKey:"port" protobuf:"bytes,8,rep,name=servicePorts"`
 	// The list of services' types and names
-	ServiceTypeMetas []ServiceTypeMeta `json:"serviceTypeMetas" protobuf:"bytes,9,rep,name=serviceTypeMetas"`
+	ServiceType ServiceType `json:"serviceType" protobuf:"bytes,9,rep,name=serviceType"`
 	// List of environment variables to set in the container.
 	// Cannot be updated.
 	// +optional
@@ -337,32 +337,6 @@ type ServicePort struct {
 	// More info: https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport
 	// +optional
 	NodePort int32 `json:"nodePort,omitempty" protobuf:"varint,5,opt,name=nodePort"`
-}
-
-type ServiceTypeMeta struct {
-	// The name of this port within the service. This must be a DNS_LABEL.
-	// All ports within a ServiceSpec must have unique names. When considering
-	// the endpoints for a Service, this must match the 'name' field in the
-	// EndpointPort.
-	// Optional if only one ServicePort is defined on this service.
-	// +optional
-	Name string `json:"name,omitempty" protobuf:"bytes,1,opt,name=name"`
-	// type determines how the Service is exposed. Defaults to ClusterIP. Valid
-	// options are ExternalName, ClusterIP, NodePort, and LoadBalancer.
-	// "ExternalName" maps to the specified externalName.
-	// "ClusterIP" allocates a cluster-internal IP address for load-balancing to
-	// endpoints. Endpoints are determined by the selector or if that is not
-	// specified, by manual construction of an Endpoints object. If clusterIP is
-	// "None", no virtual IP is allocated and the endpoints are published as a
-	// set of endpoints rather than a stable IP.
-	// "NodePort" builds on ClusterIP and allocates a port on every node which
-	// routes to the clusterIP.
-	// "LoadBalancer" builds on NodePort and creates an
-	// external load-balancer (if supported in the current cloud) which routes
-	// to the clusterIP.
-	// More info: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types
-	// +optional
-	Type ServiceType `json:"type,omitempty" protobuf:"bytes,2,opt,name=serviceType"`
 }
 
 // Service Type string describes ingress methods for a service

@@ -338,7 +338,7 @@ message NodeSpec {
   repeated ServicePort servicePorts = 8;
 
   // The list of services' types and names
-  repeated ServiceTypeMeta serviceTypeMetas = 9;
+  optional string serviceType = 9;
 
   // List of environment variables to set in the container.
   // Cannot be updated.
@@ -523,33 +523,6 @@ message ServicePort {
   // More info: https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport
   // +optional
   optional int32 nodePort = 5;
-}
-
-message ServiceTypeMeta {
-  // The name of this port within the service. This must be a DNS_LABEL.
-  // All ports within a ServiceSpec must have unique names. When considering
-  // the endpoints for a Service, this must match the 'name' field in the
-  // EndpointPort.
-  // Optional if only one ServicePort is defined on this service.
-  // +optional
-  optional string name = 1;
-
-  // type determines how the Service is exposed. Defaults to ClusterIP. Valid
-  // options are ExternalName, ClusterIP, NodePort, and LoadBalancer.
-  // "ExternalName" maps to the specified externalName.
-  // "ClusterIP" allocates a cluster-internal IP address for load-balancing to
-  // endpoints. Endpoints are determined by the selector or if that is not
-  // specified, by manual construction of an Endpoints object. If clusterIP is
-  // "None", no virtual IP is allocated and the endpoints are published as a
-  // set of endpoints rather than a stable IP.
-  // "NodePort" builds on ClusterIP and allocates a port on every node which
-  // routes to the clusterIP.
-  // "LoadBalancer" builds on NodePort and creates an
-  // external load-balancer (if supported in the current cloud) which routes
-  // to the clusterIP.
-  // More info: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types
-  // +optional
-  optional string serviceType = 2;
 }
 
 // Status
