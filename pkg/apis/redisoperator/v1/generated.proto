@@ -139,12 +139,15 @@ message RedisSpec {
   // +listMapKey=protocol
   repeated k8s.io.api.core.v1.ServicePort servicePorts = 9;
 
+  // The type of services
+  optional string serviceType = 10;
+
   // The path of the nas disk which was mounted on the machine
-  optional string volumePath = 10;
+  optional string volumePath = 11;
 
   // The role of the server in the clusters.
   // such as: master, slave
-  optional string role = 11;
+  optional string role = 12;
 }
 
 // RedisSpecStatus is the status for a RedisOperator resource
