@@ -551,6 +551,20 @@ func convertProtoToResourceRequirements(rl corev1.ResourceRequirements) proto.Po
 	}
 }
 
+func convertProtoToServiceType(st corev1.ServiceType) proto.ServiceType {
+	if st == "" {
+		return proto.ServiceType(corev1.ServiceTypeClusterIP)
+	}
+	return proto.ServiceType(st)
+}
+
+func convertServiceTypeToProto(st proto.ServiceType) corev1.ServiceType {
+	if st == "" {
+		return corev1.ServiceTypeClusterIP
+	}
+	return corev1.ServiceType(st)
+}
+
 func convertMysqlCrdToProto(req proto.Param, mysqlCrd proto.MysqlCrd) *mysqloperatorv1.MysqlOperator {
 	return &mysqloperatorv1.MysqlOperator{
 		ObjectMeta: metav1.ObjectMeta{
@@ -573,6 +587,7 @@ func convertMysqlCrdToProto(req proto.Param, mysqlCrd proto.MysqlCrd) *mysqloper
 					Resources:      convertResourceRequirementsToProto(mysqlCrd.Master.PodResource),
 					ContainerPorts: convertProtoToContainerPort(mysqlCrd.Master.ContainerPorts),
 					ServicePorts:   convertProtoToServicePort(mysqlCrd.Master.ServicePorts),
+					ServiceType:    convertServiceTypeToProto(mysqlCrd.Master.ServiceType),
 					Env:            convertProtoToEnvVar(mysqlCrd.Master.Env),
 				},
 			},
@@ -590,6 +605,7 @@ func convertMysqlCrdToProto(req proto.Param, mysqlCrd proto.MysqlCrd) *mysqloper
 					Resources:      convertResourceRequirementsToProto(mysqlCrd.Slave.PodResource),
 					ContainerPorts: convertProtoToContainerPort(mysqlCrd.Slave.ContainerPorts),
 					ServicePorts:   convertProtoToServicePort(mysqlCrd.Slave.ServicePorts),
+					ServiceType:    convertServiceTypeToProto(mysqlCrd.Slave.ServiceType),
 					Env:            convertProtoToEnvVar(mysqlCrd.Slave.Env),
 				},
 			},
@@ -610,6 +626,7 @@ func convertProtoToMysqlCrd(m *mysqloperatorv1.MysqlOperator) proto.MysqlCrd {
 			PodResource:      convertProtoToResourceRequirements(m.Spec.MasterSpec.Spec.Resources),
 			ContainerPorts:   convertContainerPortToProto(m.Spec.MasterSpec.Spec.ContainerPorts),
 			ServicePorts:     convertServicePortToProto(m.Spec.MasterSpec.Spec.ServicePorts),
+			ServiceType:      convertProtoToServiceType(m.Spec.MasterSpec.Spec.ServiceType),
 			Env:              convertEnvVarToProto(m.Spec.MasterSpec.Spec.Env),
 			Status: proto.Status{
 				ObservedGeneration: m.Spec.MasterSpec.Status.ObservedGeneration,
@@ -631,6 +648,7 @@ func convertProtoToMysqlCrd(m *mysqloperatorv1.MysqlOperator) proto.MysqlCrd {
 			PodResource:      convertProtoToResourceRequirements(m.Spec.SlaveSpec.Spec.Resources),
 			ContainerPorts:   convertContainerPortToProto(m.Spec.SlaveSpec.Spec.ContainerPorts),
 			ServicePorts:     convertServicePortToProto(m.Spec.SlaveSpec.Spec.ServicePorts),
+			ServiceType:      convertProtoToServiceType(m.Spec.SlaveSpec.Spec.ServiceType),
 			Env:              convertEnvVarToProto(m.Spec.SlaveSpec.Spec.Env),
 			Status: proto.Status{
 				ObservedGeneration: m.Spec.SlaveSpec.Status.ObservedGeneration,
@@ -668,6 +686,7 @@ func convertProtoToRedisCrd(req proto.Param, redisCrd proto.RedisCrd) *redisoper
 					Resources:      convertResourceRequirementsToProto(redisCrd.Master.PodResource),
 					ContainerPorts: convertProtoToContainerPort(redisCrd.Master.ContainerPorts),
 					ServicePorts:   convertProtoToServicePort(redisCrd.Master.ServicePorts),
+					ServiceType:    convertServiceTypeToProto(redisCrd.Master.ServiceType),
 					Env:            convertProtoToEnvVar(redisCrd.Master.Env),
 				},
 			},
@@ -685,6 +704,7 @@ func convertProtoToRedisCrd(req proto.Param, redisCrd proto.RedisCrd) *redisoper
 					Resources:      convertResourceRequirementsToProto(redisCrd.Slave.PodResource),
 					ContainerPorts: convertProtoToContainerPort(redisCrd.Slave.ContainerPorts),
 					ServicePorts:   convertProtoToServicePort(redisCrd.Slave.ServicePorts),
+					ServiceType:    convertServiceTypeToProto(redisCrd.Slave.ServiceType),
 					Env:            convertProtoToEnvVar(redisCrd.Slave.Env),
 				},
 			},
@@ -705,6 +725,7 @@ func convertRedisCrdToProto(v *redisoperatorv1.RedisOperator) proto.RedisCrd {
 			PodResource:      convertProtoToResourceRequirements(v.Spec.MasterSpec.Spec.Resources),
 			ContainerPorts:   convertContainerPortToProto(v.Spec.MasterSpec.Spec.ContainerPorts),
 			ServicePorts:     convertServicePortToProto(v.Spec.MasterSpec.Spec.ServicePorts),
+			ServiceType:      convertProtoToServiceType(v.Spec.MasterSpec.Spec.ServiceType),
 			Env:              convertEnvVarToProto(v.Spec.MasterSpec.Spec.Env),
 			Status: proto.Status{
 				ObservedGeneration: v.Spec.MasterSpec.Status.ObservedGeneration,
@@ -726,6 +747,7 @@ func convertRedisCrdToProto(v *redisoperatorv1.RedisOperator) proto.RedisCrd {
 			PodResource:      convertProtoToResourceRequirements(v.Spec.SlaveSpec.Spec.Resources),
 			ContainerPorts:   convertContainerPortToProto(v.Spec.SlaveSpec.Spec.ContainerPorts),
 			ServicePorts:     convertServicePortToProto(v.Spec.SlaveSpec.Spec.ServicePorts),
+			ServiceType:      convertProtoToServiceType(v.Spec.SlaveSpec.Spec.ServiceType),
 			Env:              convertEnvVarToProto(v.Spec.SlaveSpec.Spec.Env),
 			Status: proto.Status{
 				ObservedGeneration: v.Spec.SlaveSpec.Status.ObservedGeneration,
