@@ -366,6 +366,55 @@ message Param {
   optional HarborRequest harborRequest = 5;
 }
 
+// Pod is a collection of containers that can run on a host. This resource is created
+// by clients and scheduled onto hosts.
+message Pod {
+  // Name must be unique within a namespace. Is required when creating resources, although
+  // some resources may allow a client to request the generation of an appropriate name
+  // automatically. Name is primarily intended for creation idempotence and configuration
+  // definition.
+  // Cannot be updated.
+  // More info: http://kubernetes.io/docs/user-guide/identifiers#names
+  // +optional
+  optional string name = 1;
+
+  // Namespace defines the space within each name must be unique. An empty namespace is
+  // equivalent to the "default" namespace, but "default" is the canonical representation.
+  // Not all objects are required to be scoped to a namespace - the value of this field for
+  // those objects will be empty.
+  //
+  // Must be a DNS_LABEL.
+  // Cannot be updated.
+  // More info: http://kubernetes.io/docs/user-guide/namespaces
+  // +optional
+  optional string namespace = 2;
+
+  // An opaque value that represents the internal version of this object that can
+  // be used by clients to determine when objects have changed. May be used for optimistic
+  // concurrency, change detection, and the watch operation on a resource or set of resources.
+  // Clients must treat these values as opaque and passed unmodified back to the server.
+  // They may only be valid for a particular resource or set of resources.
+  //
+  // Populated by the system.
+  // Read-only.
+  // Value must be treated as opaque by clients and .
+  // More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
+  // +optional
+  optional string resourceVersion = 3;
+
+  // Most recently observed status of the pod.
+  // This data may not be up to date.
+  // Populated by the system.
+  // Read-only.
+  // More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
+  // +optional
+  optional PodStatus status = 4;
+}
+
+message PodList {
+  repeated Pod items = 1;
+}
+
 // PodResourceRequirements describes the compute resource requirements.
 message PodResourceRequirements {
   // Limits describes the maximum amount of compute resources allowed.
@@ -379,6 +428,20 @@ message PodResourceRequirements {
   // More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
   // +optional
   map<string, string> requests = 2;
+}
+
+message PodStatus {
+  // +optional
+  optional string phase = 1;
+
+  // IP address of the host to which the pod is assigned. Empty if not yet scheduled.
+  // +optional
+  optional string hostIP = 2;
+
+  // IP address allocated to the pod. Routable at least within the cluster.
+  // Empty if not yet allocated.
+  // +optional
+  optional string podIP = 3;
 }
 
 message RedisCrd {

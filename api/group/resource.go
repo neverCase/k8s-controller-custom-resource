@@ -89,6 +89,7 @@ func NewResource(ctx context.Context, masterUrl, kubeconfigPath string, eventsCh
 	opts.Add(
 		NewOption(NameSpace, empty),
 		NewOption(ConfigMap, empty),
+		NewOption(Pod, empty),
 		NewOption(Secret, empty),
 		NewOption(Service, empty),
 		NewOption(MysqlOperator, mysql),
@@ -103,7 +104,7 @@ func NewResource(ctx context.Context, masterUrl, kubeconfigPath string, eventsCh
 		cancel:        cancel,
 	}
 	for _, v := range opts.GetOptionTypeList() {
-		if v != ConfigMap && v != MysqlOperator && v != RedisOperator && v != HelixSagaOperator {
+		if v != Pod && v != ConfigMap && v != MysqlOperator && v != RedisOperator && v != HelixSagaOperator {
 			continue
 		}
 		if err := r.Watch(v, "", labels.NewSelector(), eventsChan); err != nil {
@@ -221,6 +222,8 @@ func (r *resource) Get(rt ResourceType, nameSpace, specName string) (res interfa
 		res, err = r.kubeClientSet.CoreV1().ConfigMaps(nameSpace).Get(specName, getOpts)
 	case NameSpace:
 		res, err = r.kubeClientSet.CoreV1().Namespaces().Get(specName, getOpts)
+	case Pod:
+		res, err = r.kubeClientSet.CoreV1().Pods(nameSpace).Get(specName, getOpts)
 	case Service:
 		res, err = r.kubeClientSet.CoreV1().Services(nameSpace).Get(specName, getOpts)
 	case Secret:
@@ -259,6 +262,8 @@ func (r *resource) List(rt ResourceType, nameSpace string, selector labels.Selec
 		res, err = r.kubeClientSet.CoreV1().Nodes().List(opts)
 	case NameSpace:
 		res, err = r.kubeClientSet.CoreV1().Namespaces().List(opts)
+	case Pod:
+		res, err = r.kubeClientSet.CoreV1().Pods(nameSpace).List(opts)
 	case Service:
 		res, err = r.kubeClientSet.CoreV1().Services(nameSpace).List(opts)
 	case Secret:
@@ -300,6 +305,8 @@ func (r *resource) Watch(rt ResourceType, nameSpace string, selector labels.Sele
 		res, err = r.kubeClientSet.CoreV1().Nodes().Watch(opts)
 	case NameSpace:
 		res, err = r.kubeClientSet.CoreV1().Namespaces().Watch(opts)
+	case Pod:
+		res, err = r.kubeClientSet.CoreV1().Pods(nameSpace).Watch(opts)
 	case Service:
 		res, err = r.kubeClientSet.CoreV1().Services(nameSpace).Watch(opts)
 	case Secret:

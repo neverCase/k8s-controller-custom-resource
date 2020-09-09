@@ -87,11 +87,11 @@ func (h *k8sHandle) Create(req proto.Param, obj []byte) (res []byte, err error) 
 		if err = e.Unmarshal(obj); err != nil {
 			break
 		}
-		m := convertMysqlCrdToProto(req, e)
+		m := convertProtoToMysqlCrd(req, e)
 		if n, err = resourceCreate(h.group, req, m.Name, m); err != nil {
 			break
 		}
-		e = convertProtoToMysqlCrd(n.(*mysqloperatorv1.MysqlOperator))
+		e = convertMysqlCrdToProto(n.(*mysqloperatorv1.MysqlOperator))
 		res, err = e.Marshal()
 	case group.RedisOperator:
 		var e proto.RedisCrd
@@ -164,11 +164,11 @@ func (h *k8sHandle) Update(req proto.Param, obj []byte) (res []byte, err error) 
 		if err = e.Unmarshal(obj); err != nil {
 			break
 		}
-		m := convertMysqlCrdToProto(req, e)
+		m := convertProtoToMysqlCrd(req, e)
 		if n, err = resourceUpdate(h.group, req, m.Name, m); err != nil {
 			break
 		}
-		e = convertProtoToMysqlCrd(n.(*mysqloperatorv1.MysqlOperator))
+		e = convertMysqlCrdToProto(n.(*mysqloperatorv1.MysqlOperator))
 		res, err = e.Marshal()
 	case group.RedisOperator:
 		var e proto.RedisCrd
@@ -304,7 +304,7 @@ func (h *k8sHandle) Get(req proto.Param, obj []byte) (res []byte, err error) {
 		if err != nil {
 			break
 		}
-		e = convertProtoToMysqlCrd(n.(*mysqloperatorv1.MysqlOperator))
+		e = convertMysqlCrdToProto(n.(*mysqloperatorv1.MysqlOperator))
 		res, err = e.Marshal()
 	case group.RedisOperator:
 		var e proto.RedisCrd
@@ -359,6 +359,14 @@ func (h *k8sHandle) List(req proto.Param) (res []byte, err error) {
 			m.Items = append(m.Items, convertNameSpaceToProto(&v))
 		}
 		res, err = m.Marshal()
+	case group.Pod:
+		m := proto.PodList{
+			Items: make([]proto.Pod, 0),
+		}
+		for _, v := range d.(*corev1.PodList).Items {
+			m.Items = append(m.Items, convertPodToProto(&v))
+		}
+		res, err = m.Marshal()
 	case group.Service:
 		m := proto.ServiceList{
 			Items: make([]proto.Service, 0),
@@ -380,7 +388,7 @@ func (h *k8sHandle) List(req proto.Param) (res []byte, err error) {
 			Items: make([]proto.MysqlCrd, 0),
 		}
 		for _, v := range d.(*mysqloperatorv1.MysqlOperatorList).Items {
-			m.Items = append(m.Items, convertProtoToMysqlCrd(&v))
+			m.Items = append(m.Items, convertMysqlCrdToProto(&v))
 		}
 		res, err = m.Marshal()
 	case group.RedisOperator:
@@ -426,6 +434,12 @@ func (h *k8sHandle) convertObjFromEvent(obj interface{}, et watch.EventType) (re
 		req.ResourceType = group.NameSpace
 		e = convertNameSpaceToProto(n)
 		res, err = e.Marshal()
+	case reflect.TypeOf(&corev1.Pod{}):
+		var e proto.Pod
+		n := obj.(*corev1.Pod)
+		req.ResourceType = group.Pod
+		e = convertPodToProto(n)
+		res, err = e.Marshal()
 	case reflect.TypeOf(&corev1.Service{}):
 		var e proto.Service
 		n := obj.(*corev1.Service)
@@ -445,7 +459,7 @@ func (h *k8sHandle) convertObjFromEvent(obj interface{}, et watch.EventType) (re
 		n := obj.(*mysqloperatorv1.MysqlOperator)
 		req.ResourceType = group.MysqlOperator
 		req.NameSpace = n.Namespace
-		e = convertProtoToMysqlCrd(n)
+		e = convertMysqlCrdToProto(n)
 		res, err = e.Marshal()
 	case reflect.TypeOf(&redisoperatorv1.RedisOperator{}):
 		var e proto.RedisCrd
@@ -565,7 +579,20 @@ func convertServiceTypeToProto(st proto.ServiceType) corev1.ServiceType {
 	return corev1.ServiceType(st)
 }
 
-func convertMysqlCrdToProto(req proto.Param, mysqlCrd proto.MysqlCrd) *mysqloperatorv1.MysqlOperator {
+func convertPodToProto(p *corev1.Pod) proto.Pod {
+	return proto.Pod{
+		Name:            p.Name,
+		Namespace:       p.Namespace,
+		ResourceVersion: p.ResourceVersion,
+		Status: proto.PodStatus{
+			Phase:  proto.PodPhase(p.Status.Phase),
+			HostIP: p.Status.HostIP,
+			PodIP:  p.Status.PodIP,
+		},
+	}
+}
+
+func convertProtoToMysqlCrd(req proto.Param, mysqlCrd proto.MysqlCrd) *mysqloperatorv1.MysqlOperator {
 	return &mysqloperatorv1.MysqlOperator{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            mysqlCrd.Name,
@@ -613,7 +640,7 @@ func convertMysqlCrdToProto(req proto.Param, mysqlCrd proto.MysqlCrd) *mysqloper
 	}
 }
 
-func convertProtoToMysqlCrd(m *mysqloperatorv1.MysqlOperator) proto.MysqlCrd {
+func convertMysqlCrdToProto(m *mysqloperatorv1.MysqlOperator) proto.MysqlCrd {
 	return proto.MysqlCrd{
 		Name:            m.Name,
 		ResourceVersion: m.ResourceVersion,
@@ -816,7 +843,7 @@ func convertServiceToProto(s *corev1.Service) proto.Service {
 		Name:        s.Name,
 		Ports:       convertServicePortToProto(s.Spec.Ports),
 		ClusterIP:   s.Spec.ClusterIP,
-		Type:        string(s.Spec.Type),
+		Type:        proto.ServiceType(s.Spec.Type),
 		ExternalIPs: s.Spec.ExternalIPs,
 	}
 }
