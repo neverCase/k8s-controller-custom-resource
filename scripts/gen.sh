@@ -20,8 +20,7 @@ if [ "${GENS}" = "api" ] || grep -qw "api" <<<"${GENS}"; then
      --only-idl=false \
      --keep-gogoproto=false \
      --verify-only=false \
-     --proto-import ${GOPATH}/src/k8s.io/api/core/v1 \
-     --proto-import ${GOPATH}/src/github.com/nevercase/k8s-controller-custom-resource/pkg/apis/mysqloperator/v1
+     --proto-import ${GOPATH}/src/k8s.io/api/core/v1
 fi
 
 if [ "${GENS}" = "crd" ] || grep -qw "crd" <<<"${GENS}"; then

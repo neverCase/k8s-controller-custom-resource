@@ -580,10 +580,15 @@ func convertServiceTypeToProto(st proto.ServiceType) corev1.ServiceType {
 }
 
 func convertPodToProto(p *corev1.Pod) proto.Pod {
+	names := make([]string, 0)
+	for _, v := range p.Spec.Containers {
+		names = append(names, v.Name)
+	}
 	return proto.Pod{
 		Name:            p.Name,
 		Namespace:       p.Namespace,
 		ResourceVersion: p.ResourceVersion,
+		ContainerNames:  names,
 		Status: proto.PodStatus{
 			Phase:  proto.PodPhase(p.Status.Phase),
 			HostIP: p.Status.HostIP,

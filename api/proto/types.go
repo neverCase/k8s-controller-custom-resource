@@ -642,13 +642,15 @@ type Pod struct {
 	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
 	// +optional
 	ResourceVersion string `json:"resourceVersion,omitempty" protobuf:"bytes,3,opt,name=resourceVersion"`
+	// ContainerNames are the list of all the containers' names inside the pod
+	ContainerNames []string `json:"containerNames" protobuf:"bytes,4,opt,name=containerNames"`
 	// Most recently observed status of the pod.
 	// This data may not be up to date.
 	// Populated by the system.
 	// Read-only.
 	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
 	// +optional
-	Status PodStatus `json:"status" protobuf:"bytes,4,opt,name=status"`
+	Status PodStatus `json:"status" protobuf:"bytes,5,opt,name=status"`
 }
 
 type PodStatus struct {
