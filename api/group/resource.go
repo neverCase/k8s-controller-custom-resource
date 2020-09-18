@@ -292,7 +292,7 @@ func (r *resource) List(rt ResourceType, nameSpace string, selector labels.Selec
 
 func (r *resource) Watch(rt ResourceType, nameSpace string, selector labels.Selector, eventsChan chan watch.Event) (err error) {
 	var opt Option
-	timeout := int64(30)
+	timeout := int64(3600)
 	var opts = metav1.ListOptions{
 		LabelSelector:  selector.String(),
 		TimeoutSeconds: &timeout,

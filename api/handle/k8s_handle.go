@@ -598,6 +598,10 @@ func convertPodToProto(p *corev1.Pod) proto.Pod {
 }
 
 func convertProtoToMysqlCrd(req proto.Param, mysqlCrd proto.MysqlCrd) *mysqloperatorv1.MysqlOperator {
+	masterReplicas := mysqlCrd.Master.Replicas
+	masterCollisionCount := *mysqlCrd.Master.Status.CollisionCount
+	slaveReplicas := mysqlCrd.Slave.Replicas
+	slaveCollisionCount := *mysqlCrd.Slave.Status.CollisionCount
 	return &mysqloperatorv1.MysqlOperator{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            mysqlCrd.Name,
@@ -608,7 +612,7 @@ func convertProtoToMysqlCrd(req proto.Param, mysqlCrd proto.MysqlCrd) *mysqloper
 			MasterSpec: mysqloperatorv1.MysqlCore{
 				Spec: mysqloperatorv1.MysqlSpec{
 					Name:     mysqlCrd.Master.Name,
-					Replicas: &mysqlCrd.Master.Replicas,
+					Replicas: &masterReplicas,
 					Image:    mysqlCrd.Master.Image,
 					ImagePullSecrets: []corev1.LocalObjectReference{
 						{
@@ -622,11 +626,21 @@ func convertProtoToMysqlCrd(req proto.Param, mysqlCrd proto.MysqlCrd) *mysqloper
 					ServiceType:    convertServiceTypeToProto(mysqlCrd.Master.ServiceType),
 					Env:            convertProtoToEnvVar(mysqlCrd.Master.Env),
 				},
+				Status: mysqloperatorv1.MysqlStatus{
+					ObservedGeneration: mysqlCrd.Master.Status.ObservedGeneration,
+					Replicas:           mysqlCrd.Master.Status.Replicas,
+					ReadyReplicas:      mysqlCrd.Master.Status.ReadyReplicas,
+					CurrentReplicas:    mysqlCrd.Master.Status.CurrentReplicas,
+					UpdatedReplicas:    mysqlCrd.Master.Status.UpdatedReplicas,
+					CurrentRevision:    mysqlCrd.Master.Status.CurrentRevision,
+					UpdateRevision:     mysqlCrd.Master.Status.UpdateRevision,
+					CollisionCount:     &masterCollisionCount,
+				},
 			},
 			SlaveSpec: mysqloperatorv1.MysqlCore{
 				Spec: mysqloperatorv1.MysqlSpec{
 					Name:     mysqlCrd.Slave.Name,
-					Replicas: &mysqlCrd.Slave.Replicas,
+					Replicas: &slaveReplicas,
 					Image:    mysqlCrd.Slave.Image,
 					ImagePullSecrets: []corev1.LocalObjectReference{
 						{
@@ -639,6 +653,16 @@ func convertProtoToMysqlCrd(req proto.Param, mysqlCrd proto.MysqlCrd) *mysqloper
 					ServicePorts:   convertProtoToServicePort(mysqlCrd.Slave.ServicePorts),
 					ServiceType:    convertServiceTypeToProto(mysqlCrd.Slave.ServiceType),
 					Env:            convertProtoToEnvVar(mysqlCrd.Slave.Env),
+				},
+				Status: mysqloperatorv1.MysqlStatus{
+					ObservedGeneration: mysqlCrd.Slave.Status.ObservedGeneration,
+					Replicas:           mysqlCrd.Slave.Status.Replicas,
+					ReadyReplicas:      mysqlCrd.Slave.Status.ReadyReplicas,
+					CurrentReplicas:    mysqlCrd.Slave.Status.CurrentReplicas,
+					UpdatedReplicas:    mysqlCrd.Slave.Status.UpdatedReplicas,
+					CurrentRevision:    mysqlCrd.Slave.Status.CurrentRevision,
+					UpdateRevision:     mysqlCrd.Slave.Status.UpdateRevision,
+					CollisionCount:     &slaveCollisionCount,
 				},
 			},
 		},
@@ -697,6 +721,10 @@ func convertMysqlCrdToProto(m *mysqloperatorv1.MysqlOperator) proto.MysqlCrd {
 }
 
 func convertProtoToRedisCrd(req proto.Param, redisCrd proto.RedisCrd) *redisoperatorv1.RedisOperator {
+	masterReplicas := redisCrd.Master.Replicas
+	masterCollisionCount := *redisCrd.Master.Status.CollisionCount
+	slaveReplicas := redisCrd.Slave.Replicas
+	slaveCollisionCount := *redisCrd.Slave.Status.CollisionCount
 	return &redisoperatorv1.RedisOperator{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            redisCrd.Name,
@@ -707,7 +735,7 @@ func convertProtoToRedisCrd(req proto.Param, redisCrd proto.RedisCrd) *redisoper
 			MasterSpec: redisoperatorv1.RedisCore{
 				Spec: redisoperatorv1.RedisSpec{
 					Name:     redisCrd.Master.Name,
-					Replicas: &redisCrd.Master.Replicas,
+					Replicas: &masterReplicas,
 					Image:    redisCrd.Master.Image,
 					ImagePullSecrets: []corev1.LocalObjectReference{
 						{
@@ -721,11 +749,21 @@ func convertProtoToRedisCrd(req proto.Param, redisCrd proto.RedisCrd) *redisoper
 					ServiceType:    convertServiceTypeToProto(redisCrd.Master.ServiceType),
 					Env:            convertProtoToEnvVar(redisCrd.Master.Env),
 				},
+				Status: redisoperatorv1.RedisStatus{
+					ObservedGeneration: redisCrd.Master.Status.ObservedGeneration,
+					Replicas:           redisCrd.Master.Status.Replicas,
+					ReadyReplicas:      redisCrd.Master.Status.ReadyReplicas,
+					CurrentReplicas:    redisCrd.Master.Status.CurrentReplicas,
+					UpdatedReplicas:    redisCrd.Master.Status.UpdatedReplicas,
+					CurrentRevision:    redisCrd.Master.Status.CurrentRevision,
+					UpdateRevision:     redisCrd.Master.Status.UpdateRevision,
+					CollisionCount:     &masterCollisionCount,
+				},
 			},
 			SlaveSpec: redisoperatorv1.RedisCore{
 				Spec: redisoperatorv1.RedisSpec{
 					Name:     redisCrd.Slave.Name,
-					Replicas: &redisCrd.Slave.Replicas,
+					Replicas: &slaveReplicas,
 					Image:    redisCrd.Slave.Image,
 					ImagePullSecrets: []corev1.LocalObjectReference{
 						{
@@ -738,6 +776,16 @@ func convertProtoToRedisCrd(req proto.Param, redisCrd proto.RedisCrd) *redisoper
 					ServicePorts:   convertProtoToServicePort(redisCrd.Slave.ServicePorts),
 					ServiceType:    convertServiceTypeToProto(redisCrd.Slave.ServiceType),
 					Env:            convertProtoToEnvVar(redisCrd.Slave.Env),
+				},
+				Status: redisoperatorv1.RedisStatus{
+					ObservedGeneration: redisCrd.Slave.Status.ObservedGeneration,
+					Replicas:           redisCrd.Slave.Status.Replicas,
+					ReadyReplicas:      redisCrd.Slave.Status.ReadyReplicas,
+					CurrentReplicas:    redisCrd.Slave.Status.CurrentReplicas,
+					UpdatedReplicas:    redisCrd.Slave.Status.UpdatedReplicas,
+					CurrentRevision:    redisCrd.Slave.Status.CurrentRevision,
+					UpdateRevision:     redisCrd.Slave.Status.UpdateRevision,
+					CollisionCount:     &slaveCollisionCount,
 				},
 			},
 		},
@@ -1014,10 +1062,14 @@ func convertHelixSagaAppToProto(a []helixsagaoperatorv1.HelixSagaApp) []proto.He
 func convertProtoToHelixSagaApp(a []proto.HelixSagaApp) []helixsagaoperatorv1.HelixSagaApp {
 	res := make([]helixsagaoperatorv1.HelixSagaApp, 0)
 	for _, v := range a {
+		klog.Infof("convertProtoToHelixSagaApp name:%v replicas:%v", v.Spec.Name, v.Spec.Replicas)
+		a := v.Spec.Replicas
+		c := *v.Spec.Status.CollisionCount
+		klog.Info("sepc replicas:", a)
 		res = append(res, helixsagaoperatorv1.HelixSagaApp{
 			Spec: helixsagaoperatorv1.HelixSagaAppSpec{
 				Name:     v.Spec.Name,
-				Replicas: &v.Spec.Replicas,
+				Replicas: &a,
 				Image:    v.Spec.Image,
 				ImagePullSecrets: []corev1.LocalObjectReference{
 					{
@@ -1032,6 +1084,16 @@ func convertProtoToHelixSagaApp(a []proto.HelixSagaApp) []helixsagaoperatorv1.He
 				Env:            convertProtoToEnvVar(v.Spec.Env),
 				Command:        v.Command,
 				Args:           v.Args,
+			},
+			Status: helixsagaoperatorv1.HelixSagaAppStatus{
+				ObservedGeneration: v.Spec.Status.ObservedGeneration,
+				Replicas:           v.Spec.Status.Replicas,
+				ReadyReplicas:      v.Spec.Status.ReadyReplicas,
+				CurrentReplicas:    v.Spec.Status.CurrentReplicas,
+				UpdatedReplicas:    v.Spec.Status.UpdatedReplicas,
+				CurrentRevision:    v.Spec.Status.CurrentRevision,
+				UpdateRevision:     v.Spec.Status.UpdateRevision,
+				CollisionCount:     &c,
 			},
 		})
 	}
