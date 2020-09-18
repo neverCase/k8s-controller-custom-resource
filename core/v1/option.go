@@ -128,7 +128,7 @@ func NewOption(operator interface{},
 		syncStatusFunc:             syncStatusFunc,
 		watchChan:                  make(chan OptionWatch, 4096),
 	}
-	go opt.Watch()
+	//go opt.Watch()
 	return opt
 }
 
