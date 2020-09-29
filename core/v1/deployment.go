@@ -97,5 +97,5 @@ func (kd *kubernetesDeployment) List(nameSpace, filterName string) (dl *appsv1.D
 }
 
 func (kd *kubernetesDeployment) Patch(nameSpace string, name string, pt types.PatchType, data []byte, subResources ...string) (*appsv1.Deployment, error) {
-	return kd.kubeClientSet.AppsV1().DaemonSets(nameSpace).Patch(nameSpace, pt, data, subResources...)
+	return kd.kubeClientSet.AppsV1().Deployments(nameSpace).Patch(nameSpace, pt, data, subResources...)
 }
