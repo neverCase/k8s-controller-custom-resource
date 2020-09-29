@@ -49,10 +49,13 @@ const (
 	HelixSagaOperator ResourceType = "HelixSagaOperator"
 )
 
+// ResourceGetter has a method to return a ResourceInterface.
+// A group's client should implement this interface.
 type ResourceGetter interface {
 	Resource() ResourceInterface
 }
 
+// ResourceInterface has methods to work with all Kubernetes resources include custom resource definitions.
 type ResourceInterface interface {
 	Create(rt ResourceType, nameSpace string, obj interface{}) (res interface{}, err error)
 	Update(rt ResourceType, nameSpace string, obj interface{}) (res interface{}, err error)
@@ -63,6 +66,7 @@ type ResourceInterface interface {
 	ResourceTypes() []ResourceType
 }
 
+// NewResource returns a ResourceInterface
 func NewResource(ctx context.Context, masterUrl, kubeconfigPath string, eventsChan chan watch.Event) ResourceInterface {
 	cfg, err := clientcmd.BuildConfigFromFlags(masterUrl, kubeconfigPath)
 	if err != nil {
@@ -108,12 +112,13 @@ func NewResource(ctx context.Context, masterUrl, kubeconfigPath string, eventsCh
 			continue
 		}
 		if err := r.Watch(v, "", labels.NewSelector(), eventsChan); err != nil {
-			klog.Fatalf("Error watching ResourceType:%v err: %s", v, err)
+			klog.V(2).Infof("Error watching ResourceType:%v err: %s", v, err)
 		}
 	}
 	return r
 }
 
+// resource implements ResourceInterface
 type resource struct {
 	kubeClientSet kubernetes.Interface
 	options       Options
