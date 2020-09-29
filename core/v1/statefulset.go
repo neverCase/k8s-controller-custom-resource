@@ -6,6 +6,7 @@ import (
 	appsV1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	kubeinformers "k8s.io/client-go/informers"
@@ -21,6 +22,7 @@ type KubernetesStatefulSet interface {
 	Delete(nameSpace, specName string) error
 	List(nameSpace, filterName string) (dl *appsV1.StatefulSetList, err error)
 	Watch(nameSpace string, filter string) (w watch.Interface, err error)
+	Patch(nameSpace string, name string, pt types.PatchType, data []byte, subResources ...string) (*appsV1.StatefulSet, error)
 }
 
 func NewKubernetesStatefulSet(kubeClientSet kubernetes.Interface, kubeInformerFactory kubeinformers.SharedInformerFactory) KubernetesStatefulSet {
@@ -109,4 +111,8 @@ func (kss *kubernetesStatefulSet) Watch(nameSpace string, filterName string) (w 
 		klog.V(2).Info(err)
 	}
 	return w, err
+}
+
+func (kss *kubernetesStatefulSet) Patch(nameSpace string, name string, pt types.PatchType, data []byte, subResources ...string) (*appsV1.StatefulSet, error) {
+	return kss.kubeClientSet.AppsV1().StatefulSets(nameSpace).Patch(name, pt, data, subResources...)
 }

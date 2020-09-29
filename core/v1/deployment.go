@@ -6,6 +6,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
@@ -19,6 +20,7 @@ type KubernetesDeployment interface {
 	Update(nameSpace string, d *appsv1.Deployment) (*appsv1.Deployment, error)
 	Delete(nameSpace, specName string) error
 	List(nameSpace, filterName string) (dl *appsv1.DeploymentList, err error)
+	Patch(nameSpace string, name string, pt types.PatchType, data []byte, subResources ...string) (*appsv1.Deployment, error)
 }
 
 func NewKubernetesDeployment(kubeClientSet kubernetes.Interface, kubeInformerFactory kubeinformers.SharedInformerFactory) KubernetesDeployment {
@@ -92,4 +94,8 @@ func (kd *kubernetesDeployment) List(nameSpace, filterName string) (dl *appsv1.D
 		klog.V(2).Info(err)
 	}
 	return dl, err
+}
+
+func (kd *kubernetesDeployment) Patch(nameSpace string, name string, pt types.PatchType, data []byte, subResources ...string) (*appsv1.Deployment, error) {
+	return kd.kubeClientSet.AppsV1().DaemonSets(nameSpace).Patch(nameSpace, pt, data, subResources...)
 }
