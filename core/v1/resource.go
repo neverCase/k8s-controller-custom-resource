@@ -6,6 +6,7 @@ import (
 )
 
 type KubernetesResource interface {
+	ClientSet() kubernetes.Interface
 	Deployment() KubernetesDeployment
 	Service() KubernetesService
 	StatefulSet() KubernetesStatefulSet
@@ -32,6 +33,10 @@ func NewKubernetesResource(kubeClientSet kubernetes.Interface, kubeInformerFacto
 		configMap:           NewKubernetesConfigMap(kubeClientSet, kubeInformerFactory),
 	}
 	return kr
+}
+
+func (kr *kubernetesResource) ClientSet() kubernetes.Interface {
+	return kr.kubeClientSet
 }
 
 func (kr *kubernetesResource) Deployment() KubernetesDeployment {
