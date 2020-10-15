@@ -204,6 +204,11 @@ message HelixSagaApp {
   // More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell
   // +optional
   repeated string args = 3;
+
+  // Watch policy for the present app.
+  // One of Auto, Manual.
+  // Default to Manual.
+  optional string watchPolicy = 4;
 }
 
 message HelixSagaConfigMapVolume {

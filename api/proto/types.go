@@ -440,6 +440,13 @@ type HelixSagaCrd struct {
 	Applications    []HelixSagaApp           `json:"applications" protobuf:"bytes,4,rep,name=applications"`
 }
 
+type WatchPolicy string
+
+const (
+	WatchPolicyAuto   WatchPolicy = "auto"
+	WatchPolicyManual WatchPolicy = "manual"
+)
+
 type HelixSagaApp struct {
 	Spec NodeSpec `json:"spec" protobuf:"bytes,1,rep,name=spec"`
 	// Entrypoint array. Not executed within a shell.
@@ -462,6 +469,10 @@ type HelixSagaApp struct {
 	// More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell
 	// +optional
 	Args []string `json:"args,omitempty" protobuf:"bytes,3,rep,name=args"`
+	// Watch policy for the present app.
+	// One of Auto, Manual.
+	// Default to Manual.
+	WatchPolicy WatchPolicy `json:"watchPolicy" protobuf:"bytes,4,rep,name=watchPolicy"`
 }
 
 type HelixSagaCrdList struct {

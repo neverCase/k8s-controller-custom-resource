@@ -1029,6 +1029,10 @@ func convertProtoToHelixSagaCrd(req proto.Param, hs proto.HelixSagaCrd) *helixsa
 func convertHelixSagaAppToProto(a []helixsagaoperatorv1.HelixSagaApp) []proto.HelixSagaApp {
 	res := make([]proto.HelixSagaApp, 0)
 	for _, v := range a {
+		policy := helixsagaoperatorv1.WatchPolicyManual
+		if v.Spec.WatchPolicy == helixsagaoperatorv1.WatchPolicyAuto {
+			policy = helixsagaoperatorv1.WatchPolicyAuto
+		}
 		res = append(res, proto.HelixSagaApp{
 			Spec: proto.NodeSpec{
 				Name:             v.Spec.Name,
@@ -1052,8 +1056,9 @@ func convertHelixSagaAppToProto(a []helixsagaoperatorv1.HelixSagaApp) []proto.He
 					CollisionCount:     v.Status.CollisionCount,
 				},
 			},
-			Command: v.Spec.Command,
-			Args:    v.Spec.Args,
+			Command:     v.Spec.Command,
+			Args:        v.Spec.Args,
+			WatchPolicy: proto.WatchPolicy(policy),
 		})
 	}
 	return res
@@ -1066,6 +1071,10 @@ func convertProtoToHelixSagaApp(a []proto.HelixSagaApp) []helixsagaoperatorv1.He
 		a := v.Spec.Replicas
 		c := *v.Spec.Status.CollisionCount
 		klog.Info("sepc replicas:", a)
+		policy := proto.WatchPolicyManual
+		if v.WatchPolicy == proto.WatchPolicyAuto {
+			policy = proto.WatchPolicyAuto
+		}
 		res = append(res, helixsagaoperatorv1.HelixSagaApp{
 			Spec: helixsagaoperatorv1.HelixSagaAppSpec{
 				Name:     v.Spec.Name,
@@ -1084,6 +1093,7 @@ func convertProtoToHelixSagaApp(a []proto.HelixSagaApp) []helixsagaoperatorv1.He
 				Env:            convertProtoToEnvVar(v.Spec.Env),
 				Command:        v.Command,
 				Args:           v.Args,
+				WatchPolicy:    helixsagaoperatorv1.WatchPolicy(policy),
 			},
 			Status: helixsagaoperatorv1.HelixSagaAppStatus{
 				ObservedGeneration: v.Spec.Status.ObservedGeneration,
