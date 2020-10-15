@@ -69,8 +69,13 @@ func (ha *harborApi) Hubs() (res []byte, err error) {
 }
 
 func (ha *harborApi) Projects(url string) (res []byte, err error) {
+	h, err := ha.group.HarborHub().Get(url)
+	if err != nil {
+		klog.V(2).Info(err)
+		return nil, err
+	}
 	t := make([]harbor.Project, 0)
-	if t, err = ha.group.HarborHub().Get(url).Projects(); err != nil {
+	if t, err = h.Projects(); err != nil {
 		klog.V(2).Info(err)
 		return nil, err
 	}
@@ -87,8 +92,13 @@ func (ha *harborApi) Projects(url string) (res []byte, err error) {
 }
 
 func (ha *harborApi) Repositories(url string, projectId int) (res []byte, err error) {
+	h, err := ha.group.HarborHub().Get(url)
+	if err != nil {
+		klog.V(2).Info(err)
+		return nil, err
+	}
 	t := make([]harbor.RepoRecord, 0)
-	if t, err = ha.group.HarborHub().Get(url).Repositories(projectId); err != nil {
+	if t, err = h.Repositories(projectId); err != nil {
 		klog.V(2).Info(err)
 		return nil, err
 	}
@@ -106,8 +116,13 @@ func (ha *harborApi) Repositories(url string, projectId int) (res []byte, err er
 }
 
 func (ha *harborApi) Tags(url, imageName string) (res []byte, err error) {
+	h, err := ha.group.HarborHub().Get(url)
+	if err != nil {
+		klog.V(2).Info(err)
+		return nil, err
+	}
 	t := make([]harbor.TagDetail, 0)
-	if t, err = ha.group.HarborHub().Get(url).Tags(imageName); err != nil {
+	if t, err = h.Tags(imageName); err != nil {
 		klog.V(2).Info(err)
 		return nil, err
 	}
