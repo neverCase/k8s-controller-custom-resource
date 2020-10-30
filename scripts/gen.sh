@@ -4,7 +4,7 @@ export GOPATH="/Users/nevermore/go"
 
 GENS="$1"
 
-# 代码生成的工作目录，也就是我们的项目路径
+# The working directory which was the root path of our project.
 ROOT_PACKAGE="github.com/nevercase/k8s-controller-custom-resource"
 # API Group
 CUSTOM_RESOURCE_NAME=${CRD}

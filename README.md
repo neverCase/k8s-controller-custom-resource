@@ -1,6 +1,7 @@
 # k8s-controller-custom-resource
 
-## features
+## Features
+- k8s-api: supports watching and listing default resources (such as Service, Pod, Configmap) and another custom resources definition
 - redis-operator: including a simple master-slave mode which was main based on the resources of **k8s.StatefulSet** and **k8s.Service**
 - mysql-operator: the same with the redis-operator
 
@@ -145,13 +146,12 @@ The usage was the same with the RedisOperator.
 ## New custom-controller
 ```go
 opt := k8sCoreV1.NewOption(&mysqlOperatorV1.MysqlOperator{},
-    controllerAgentName,
-    operatorKindName,
+    controllerName,
+    OperatorKindName,
     mysqlOperatorScheme.AddToScheme(scheme.Scheme),
-    sampleclientset,
+    clientSet,
     fooInformer,
-    fooInformer.Informer().HasSynced,
-    fooInformer.Informer().AddEventHandler,
+    fooInformer.Informer(),
     CompareResourceVersion,
     Get,
     Sync,
@@ -160,7 +160,7 @@ opts := k8sCoreV1.NewOptions()
 if err := opts.Add(opt); err != nil {
     klog.Fatal(err)
 }
-op := k8sCoreV1.NewKubernetesOperator(kubeclientset, stopCh, controllerAgentName, opts)
+op := k8sCoreV1.NewKubernetesOperator(k8sClientSet, stopCh, controllerName, opts)
 kc := k8sCoreV1.NewKubernetesController(op)
 ...
 ```
