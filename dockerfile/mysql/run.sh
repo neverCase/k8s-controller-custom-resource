@@ -55,6 +55,9 @@ docker-entrypoint.sh mysqld &
 
 until mysql -uroot -proot -h 127.0.0.1 -e "SELECT 1"; do sleep 1; done
 
+# set utf-8
+mysql -uroot -proot -e "SET NAMES utf8;"
+
 mysql -uroot -proot -e "show databases;"
 if [[ "$mysqlServerId" == "1" ]]
 then
