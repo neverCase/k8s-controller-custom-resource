@@ -21,7 +21,7 @@ spec:
           image: harbor.domain.com/lunara-common/api-server:v1.0.0
           imagePullPolicy: Always
           ports:
-            - containerPort: 9000
+            - containerPort: 9090
           command: ["/data/api-server"]
           args:
             - -alsologtostderr=true
@@ -37,7 +37,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  nname: k8s-api-server
+  name: k8s-api-server
   namespace: kube-api
   labels:
     app: k8s-api-server
