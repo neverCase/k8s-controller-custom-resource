@@ -45,8 +45,6 @@ else
 fi
 
 echo -e "\n"
-echo -e "default-character-set = utf8" >> ${defaultConf}
-echo -e "\n"
 echo -e "character_set_server = utf8" >> ${defaultConf}
 echo -e "\n"
 
