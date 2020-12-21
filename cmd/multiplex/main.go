@@ -86,7 +86,7 @@ func main() {
 
 	operator := k8sCoreV1.NewKubernetesOperator(k8sClientSet, stopCh, controllerName, opts)
 	kc := k8sCoreV1.NewKubernetesController(operator)
-	if err = kc.Run(4, stopCh); err != nil {
+	if err = kc.Run(10, stopCh); err != nil {
 		klog.Fatalf("Error running multiplex-controller: %s", err.Error())
 	}
 }
