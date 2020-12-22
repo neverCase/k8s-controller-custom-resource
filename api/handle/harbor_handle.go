@@ -2,11 +2,11 @@ package handle
 
 import (
 	"fmt"
-
 	harbor "github.com/nevercase/harbor-api"
 	"github.com/nevercase/k8s-controller-custom-resource/api/group"
 	"github.com/nevercase/k8s-controller-custom-resource/api/proto"
 	"k8s.io/klog"
+	"sort"
 )
 
 type HarborApiGetter interface {
@@ -88,6 +88,12 @@ func (ha *harborApi) Projects(url string) (res []byte, err error) {
 			ProjectID: int32(v.ProjectID),
 		})
 	}
+	sort.Slice(m.Items, func(i, j int) bool {
+		if m.Items[i].Name > m.Items[j].Name {
+			return true
+		}
+		return false
+	})
 	return m.Marshal()
 }
 
@@ -112,6 +118,12 @@ func (ha *harborApi) Repositories(url string, projectId int) (res []byte, err er
 			ProjectID:    int32(v.ProjectID),
 		})
 	}
+	sort.Slice(m.Items, func(i, j int) bool {
+		if m.Items[i].Name > m.Items[j].Name {
+			return true
+		}
+		return false
+	})
 	return m.Marshal()
 }
 
@@ -135,5 +147,17 @@ func (ha *harborApi) Tags(url, imageName string) (res []byte, err error) {
 			Name:   v.Name,
 		})
 	}
+	sort.Slice(m.Items, func(i, j int) bool {
+		if m.Items[i].Name == "latest" {
+			return true
+		}
+		if m.Items[j].Name == "latest" {
+			return false
+		}
+		if m.Items[i].Name > m.Items[j].Name {
+			return true
+		}
+		return false
+	})
 	return m.Marshal()
 }
