@@ -1056,10 +1056,97 @@ func convertHelixSagaAppToProto(a []helixsagaoperatorv1.HelixSagaApp) []proto.He
 					CollisionCount:     v.Status.CollisionCount,
 				},
 			},
-			Command:     v.Spec.Command,
-			Args:        v.Spec.Args,
-			WatchPolicy: proto.WatchPolicy(policy),
+			Command:            v.Spec.Command,
+			Args:               v.Spec.Args,
+			WatchPolicy:        proto.WatchPolicy(policy),
+			NodeSelector:       v.Spec.NodeSelector,
+			ServiceAccountName: v.Spec.ServiceAccountName,
+			Affinity: &proto.Affinity{
+				NodeAffinity: &proto.NodeAffinity{
+					RequiredDuringSchedulingIgnoredDuringExecution: &proto.NodeSelector{
+						NodeSelectorTerms: convertNodeSelectorTermsToProto(v.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms),
+					},
+					PreferredDuringSchedulingIgnoredDuringExecution: make([]proto.PreferredSchedulingTerm, 0),
+				},
+				PodAffinity:     &proto.PodAffinity{},
+				PodAntiAffinity: &proto.PodAntiAffinity{},
+			},
+			Tolerations: convertTolerationsToProto(v.Spec.Tolerations),
 		})
+	}
+	return res
+}
+
+func convertNodeSelectorTermsToProto(in []corev1.NodeSelectorTerm) []proto.NodeSelectorTerm {
+	res := make([]proto.NodeSelectorTerm, len(in))
+	for k, v := range in {
+		res[k] = proto.NodeSelectorTerm{
+			MatchExpressions: convertNodeSelectorRequirementsToProto(v.MatchExpressions),
+			MatchFields:      convertNodeSelectorRequirementsToProto(v.MatchFields),
+		}
+	}
+	return res
+}
+
+func convertProtoToNodeSelectorTerms(in []proto.NodeSelectorTerm) []corev1.NodeSelectorTerm {
+	res := make([]corev1.NodeSelectorTerm, len(in))
+	for k, v := range in {
+		res[k] = corev1.NodeSelectorTerm{
+			MatchExpressions: convertProtoToNodeSelectorRequirements(v.MatchExpressions),
+			MatchFields:      convertProtoToNodeSelectorRequirements(v.MatchFields),
+		}
+	}
+	return res
+}
+
+func convertNodeSelectorRequirementsToProto(in []corev1.NodeSelectorRequirement) []proto.NodeSelectorRequirement {
+	res := make([]proto.NodeSelectorRequirement, len(in))
+	for k, v := range in {
+		res[k] = proto.NodeSelectorRequirement{
+			Key:      v.Key,
+			Operator: proto.NodeSelectorOperator(v.Operator),
+			Values:   v.Values,
+		}
+	}
+	return res
+}
+
+func convertProtoToNodeSelectorRequirements(in []proto.NodeSelectorRequirement) []corev1.NodeSelectorRequirement {
+	res := make([]corev1.NodeSelectorRequirement, len(in))
+	for k, v := range in {
+		res[k] = corev1.NodeSelectorRequirement{
+			Key:      v.Key,
+			Operator: corev1.NodeSelectorOperator(v.Operator),
+			Values:   v.Values,
+		}
+	}
+	return res
+}
+
+func convertTolerationsToProto(in []corev1.Toleration) []proto.Toleration {
+	res := make([]proto.Toleration, len(in))
+	for k, v := range in {
+		res[k] = proto.Toleration{
+			Key:               v.Key,
+			Operator:          proto.TolerationOperator(v.Operator),
+			Value:             v.Value,
+			Effect:            proto.TaintEffect(v.Effect),
+			TolerationSeconds: v.TolerationSeconds,
+		}
+	}
+	return res
+}
+
+func convertProtoToTolerations(in []proto.Toleration) []corev1.Toleration {
+	res := make([]corev1.Toleration, len(in))
+	for k, v := range in {
+		res[k] = corev1.Toleration{
+			Key:               v.Key,
+			Operator:          corev1.TolerationOperator(v.Operator),
+			Value:             v.Value,
+			Effect:            corev1.TaintEffect(v.Effect),
+			TolerationSeconds: v.TolerationSeconds,
+		}
 	}
 	return res
 }
@@ -1070,7 +1157,7 @@ func convertProtoToHelixSagaApp(a []proto.HelixSagaApp) []helixsagaoperatorv1.He
 		klog.Infof("convertProtoToHelixSagaApp name:%v replicas:%v", v.Spec.Name, v.Spec.Replicas)
 		a := v.Spec.Replicas
 		c := *v.Spec.Status.CollisionCount
-		klog.Info("sepc replicas:", a)
+		klog.Info("spec replicas:", a)
 		policy := proto.WatchPolicyManual
 		if v.WatchPolicy == proto.WatchPolicyAuto {
 			policy = proto.WatchPolicyAuto
@@ -1085,15 +1172,28 @@ func convertProtoToHelixSagaApp(a []proto.HelixSagaApp) []helixsagaoperatorv1.He
 						Name: v.Spec.ImagePullSecrets,
 					},
 				},
-				VolumePath:     v.Spec.VolumePath,
-				Resources:      convertResourceRequirementsToProto(v.Spec.PodResource),
-				ContainerPorts: convertProtoToContainerPort(v.Spec.ContainerPorts),
-				ServicePorts:   convertProtoToServicePort(v.Spec.ServicePorts),
-				ServiceType:    convertServiceTypeToProto(v.Spec.ServiceType),
-				Env:            convertProtoToEnvVar(v.Spec.Env),
-				Command:        v.Command,
-				Args:           v.Args,
-				WatchPolicy:    helixsagaoperatorv1.WatchPolicy(policy),
+				VolumePath:         v.Spec.VolumePath,
+				Resources:          convertResourceRequirementsToProto(v.Spec.PodResource),
+				ContainerPorts:     convertProtoToContainerPort(v.Spec.ContainerPorts),
+				ServicePorts:       convertProtoToServicePort(v.Spec.ServicePorts),
+				ServiceType:        convertServiceTypeToProto(v.Spec.ServiceType),
+				Env:                convertProtoToEnvVar(v.Spec.Env),
+				Command:            v.Command,
+				Args:               v.Args,
+				WatchPolicy:        helixsagaoperatorv1.WatchPolicy(policy),
+				NodeSelector:       v.NodeSelector,
+				ServiceAccountName: v.ServiceAccountName,
+				Affinity: &corev1.Affinity{
+					NodeAffinity:    &corev1.NodeAffinity{
+						RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+							NodeSelectorTerms: convertProtoToNodeSelectorTerms(v.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms),
+						},
+						PreferredDuringSchedulingIgnoredDuringExecution: make([]corev1.PreferredSchedulingTerm, 0),
+					},
+					PodAffinity:     &corev1.PodAffinity{},
+					PodAntiAffinity: &corev1.PodAntiAffinity{},
+				},
+				Tolerations: convertProtoToTolerations(v.Tolerations),
 			},
 			Status: helixsagaoperatorv1.HelixSagaAppStatus{
 				ObservedGeneration: v.Spec.Status.ObservedGeneration,
