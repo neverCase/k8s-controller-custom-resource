@@ -1,11 +1,10 @@
 package service
 
 import (
+	"github.com/gorilla/websocket"
+	"k8s.io/klog/v2"
 	"net"
 	"net/http"
-
-	"github.com/gorilla/websocket"
-	"k8s.io/klog"
 )
 
 var upGrader = websocket.Upgrader{

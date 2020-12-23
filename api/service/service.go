@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-
 	"github.com/nevercase/k8s-controller-custom-resource/api/conf"
 	"github.com/nevercase/k8s-controller-custom-resource/api/group"
 )

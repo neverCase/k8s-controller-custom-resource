@@ -11,7 +11,7 @@ import (
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	appslistersv1 "k8s.io/client-go/listers/apps/v1"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 type KubernetesDeployment interface {

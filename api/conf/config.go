@@ -2,9 +2,8 @@ package conf
 
 import (
 	"flag"
-
 	harbor "github.com/nevercase/harbor-api"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 type arrayFlags []string

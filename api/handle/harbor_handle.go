@@ -5,7 +5,7 @@ import (
 	harbor "github.com/nevercase/harbor-api"
 	"github.com/nevercase/k8s-controller-custom-resource/api/group"
 	"github.com/nevercase/k8s-controller-custom-resource/api/proto"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 	"sort"
 )
 

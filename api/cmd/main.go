@@ -2,11 +2,10 @@ package main
 
 import (
 	"flag"
-
 	"github.com/nevercase/k8s-controller-custom-resource/api/conf"
 	"github.com/nevercase/k8s-controller-custom-resource/api/service"
 	"github.com/nevercase/k8s-controller-custom-resource/pkg/signals"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 func main() {
