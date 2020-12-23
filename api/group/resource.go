@@ -96,6 +96,7 @@ func NewResource(ctx context.Context, masterUrl, kubeconfigPath string, eventsCh
 		NewOption(Pod, empty),
 		NewOption(Secret, empty),
 		NewOption(Service, empty),
+		NewOption(ServiceAccount, empty),
 		NewOption(MysqlOperator, mysql),
 		NewOption(RedisOperator, redis),
 		NewOption(HelixSagaOperator, helixsaga),
@@ -233,6 +234,8 @@ func (r *resource) Get(rt ResourceType, nameSpace, specName string) (res interfa
 		res, err = r.kubeClientSet.CoreV1().Services(nameSpace).Get(specName, getOpts)
 	case Secret:
 		res, err = r.kubeClientSet.CoreV1().Secrets(nameSpace).Get(specName, getOpts)
+	case ServiceAccount:
+		res, err = r.kubeClientSet.CoreV1().ServiceAccounts(nameSpace).Get(specName, getOpts)
 	case MysqlOperator:
 		if opt, err = r.options.Get(rt); err != nil {
 			break
@@ -273,6 +276,8 @@ func (r *resource) List(rt ResourceType, nameSpace string, selector labels.Selec
 		res, err = r.kubeClientSet.CoreV1().Services(nameSpace).List(opts)
 	case Secret:
 		res, err = r.kubeClientSet.CoreV1().Secrets(nameSpace).List(opts)
+	case ServiceAccount:
+		res, err = r.kubeClientSet.CoreV1().ServiceAccounts(nameSpace).List(opts)
 	case MysqlOperator:
 		if opt, err = r.options.Get(rt); err != nil {
 			break

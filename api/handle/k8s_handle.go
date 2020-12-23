@@ -295,6 +295,17 @@ func (h *k8sHandle) Get(req proto.Param, obj []byte) (res []byte, err error) {
 		}
 		e = convertSecretToProto(n.(*corev1.Secret))
 		res, err = e.Marshal()
+	case group.ServiceAccount:
+		var e proto.ServiceAccount
+		if err = e.Unmarshal(obj); err != nil {
+			break
+		}
+		n, err = h.group.Resource().Get(req.ResourceType, req.NameSpace, e.Name)
+		if err != nil {
+			break
+		}
+		e = convertServiceAccountToProto(n.(*corev1.ServiceAccount))
+		res, err = e.Marshal()
 	case group.MysqlOperator:
 		var e proto.MysqlCrd
 		if err = e.Unmarshal(obj); err != nil {
@@ -381,6 +392,14 @@ func (h *k8sHandle) List(req proto.Param) (res []byte, err error) {
 		}
 		for _, v := range d.(*corev1.SecretList).Items {
 			m.Items = append(m.Items, convertSecretToProto(&v))
+		}
+		res, err = m.Marshal()
+	case group.ServiceAccount:
+		m := proto.ServiceAccountList{
+			Items: make([]proto.ServiceAccount, 0),
+		}
+		for _, v := range d.(*corev1.ServiceAccountList).Items {
+			m.Items = append(m.Items, convertServiceAccountToProto(&v))
 		}
 		res, err = m.Marshal()
 	case group.MysqlOperator:
@@ -981,6 +1000,13 @@ func convertSecretToProto(s *corev1.Secret) proto.Secret {
 	}
 }
 
+func convertServiceAccountToProto(s *corev1.ServiceAccount) proto.ServiceAccount {
+	return proto.ServiceAccount{
+		Name:      s.Name,
+		NameSpace: s.Namespace,
+	}
+}
+
 func convertProtoToEnvVar(e []proto.EnvVar) []corev1.EnvVar {
 	res := make([]corev1.EnvVar, 0)
 	for _, v := range e {
@@ -1184,7 +1210,7 @@ func convertProtoToHelixSagaApp(a []proto.HelixSagaApp) []helixsagaoperatorv1.He
 				NodeSelector:       v.NodeSelector,
 				ServiceAccountName: v.ServiceAccountName,
 				Affinity: &corev1.Affinity{
-					NodeAffinity:    &corev1.NodeAffinity{
+					NodeAffinity: &corev1.NodeAffinity{
 						RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
 							NodeSelectorTerms: convertProtoToNodeSelectorTerms(v.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms),
 						},

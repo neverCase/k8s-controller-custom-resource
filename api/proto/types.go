@@ -377,6 +377,15 @@ type SecretList struct {
 	Items []Secret `json:"items" protobuf:"bytes,1,rep,name=items"`
 }
 
+type ServiceAccount struct {
+	Name      string `json:"name" protobuf:"bytes,1,opt,name=name"`
+	NameSpace string `json:"nameSpace" protobuf:"bytes,2,opt,name=nameSpace"`
+}
+
+type ServiceAccountList struct {
+	Items []ServiceAccount `json:"items" protobuf:"bytes,1,rep,name=items"`
+}
+
 // The shortage ot the harbor projects
 type HarborHub struct {
 	Name string `json:"name" protobuf:"bytes,1,opt,name=name"`
