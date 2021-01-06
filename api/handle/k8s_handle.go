@@ -1059,6 +1059,10 @@ func convertHelixSagaAppToProto(a []helixsagaoperatorv1.HelixSagaApp) []proto.He
 		if v.Spec.WatchPolicy == helixsagaoperatorv1.WatchPolicyAuto {
 			policy = helixsagaoperatorv1.WatchPolicyAuto
 		}
+		nst := make([]corev1.NodeSelectorTerm, 0)
+		if v.Spec.Affinity != nil && len(v.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms) == 0 {
+			nst = v.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms
+		}
 		res = append(res, proto.HelixSagaApp{
 			Spec: proto.NodeSpec{
 				Name:             v.Spec.Name,
@@ -1090,7 +1094,7 @@ func convertHelixSagaAppToProto(a []helixsagaoperatorv1.HelixSagaApp) []proto.He
 			Affinity: &proto.Affinity{
 				NodeAffinity: &proto.NodeAffinity{
 					RequiredDuringSchedulingIgnoredDuringExecution: &proto.NodeSelector{
-						NodeSelectorTerms: convertNodeSelectorTermsToProto(v.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms),
+						NodeSelectorTerms: convertNodeSelectorTermsToProto(nst),
 					},
 					PreferredDuringSchedulingIgnoredDuringExecution: make([]proto.PreferredSchedulingTerm, 0),
 				},
@@ -1188,6 +1192,10 @@ func convertProtoToHelixSagaApp(a []proto.HelixSagaApp) []helixsagaoperatorv1.He
 		if v.WatchPolicy == proto.WatchPolicyAuto {
 			policy = proto.WatchPolicyAuto
 		}
+		nst := make([]proto.NodeSelectorTerm, 0)
+		if v.Affinity != nil && len(v.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms) == 0 {
+			nst = v.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms
+		}
 		res = append(res, helixsagaoperatorv1.HelixSagaApp{
 			Spec: helixsagaoperatorv1.HelixSagaAppSpec{
 				Name:     v.Spec.Name,
@@ -1212,7 +1220,7 @@ func convertProtoToHelixSagaApp(a []proto.HelixSagaApp) []helixsagaoperatorv1.He
 				Affinity: &corev1.Affinity{
 					NodeAffinity: &corev1.NodeAffinity{
 						RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
-							NodeSelectorTerms: convertProtoToNodeSelectorTerms(v.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms),
+							NodeSelectorTerms: convertProtoToNodeSelectorTerms(nst),
 						},
 						PreferredDuringSchedulingIgnoredDuringExecution: make([]corev1.PreferredSchedulingTerm, 0),
 					},
