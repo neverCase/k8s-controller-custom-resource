@@ -3,6 +3,7 @@ package group
 import (
 	"fmt"
 	"reflect"
+	"sort"
 	"sync"
 )
 
@@ -45,6 +46,12 @@ func (opts *options) GetOptionTypeList() []ResourceType {
 	for k := range opts.hub {
 		res = append(res, k)
 	}
+	sort.Slice(res, func(i, j int) bool {
+		if res[i] < res[j] {
+			return true
+		}
+		return false
+	})
 	return res
 }
 
