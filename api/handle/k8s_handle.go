@@ -1059,9 +1059,22 @@ func convertHelixSagaAppToProto(a []helixsagaoperatorv1.HelixSagaApp) []proto.He
 		if v.Spec.WatchPolicy == helixsagaoperatorv1.WatchPolicyAuto {
 			policy = helixsagaoperatorv1.WatchPolicyAuto
 		}
-		nst := make([]corev1.NodeSelectorTerm, 0)
-		if v.Spec.Affinity != nil && len(v.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms) == 0 {
-			nst = v.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms
+		aft := &proto.Affinity{}
+
+		if v.Spec.Affinity != nil &&
+			v.Spec.Affinity.NodeAffinity != nil &&
+			v.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution != nil &&
+			len(v.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms) == 0 {
+			aft = &proto.Affinity{
+				NodeAffinity: &proto.NodeAffinity{
+					RequiredDuringSchedulingIgnoredDuringExecution: &proto.NodeSelector{
+						NodeSelectorTerms: convertNodeSelectorTermsToProto(v.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms),
+					},
+					PreferredDuringSchedulingIgnoredDuringExecution: make([]proto.PreferredSchedulingTerm, 0),
+				},
+				PodAffinity:     &proto.PodAffinity{},
+				PodAntiAffinity: &proto.PodAntiAffinity{},
+			}
 		}
 		res = append(res, proto.HelixSagaApp{
 			Spec: proto.NodeSpec{
@@ -1091,17 +1104,8 @@ func convertHelixSagaAppToProto(a []helixsagaoperatorv1.HelixSagaApp) []proto.He
 			WatchPolicy:        proto.WatchPolicy(policy),
 			NodeSelector:       v.Spec.NodeSelector,
 			ServiceAccountName: v.Spec.ServiceAccountName,
-			Affinity: &proto.Affinity{
-				NodeAffinity: &proto.NodeAffinity{
-					RequiredDuringSchedulingIgnoredDuringExecution: &proto.NodeSelector{
-						NodeSelectorTerms: convertNodeSelectorTermsToProto(nst),
-					},
-					PreferredDuringSchedulingIgnoredDuringExecution: make([]proto.PreferredSchedulingTerm, 0),
-				},
-				PodAffinity:     &proto.PodAffinity{},
-				PodAntiAffinity: &proto.PodAntiAffinity{},
-			},
-			Tolerations: convertTolerationsToProto(v.Spec.Tolerations),
+			Affinity:           aft,
+			Tolerations:        convertTolerationsToProto(v.Spec.Tolerations),
 		})
 	}
 	return res
@@ -1184,17 +1188,27 @@ func convertProtoToTolerations(in []proto.Toleration) []corev1.Toleration {
 func convertProtoToHelixSagaApp(a []proto.HelixSagaApp) []helixsagaoperatorv1.HelixSagaApp {
 	res := make([]helixsagaoperatorv1.HelixSagaApp, 0)
 	for _, v := range a {
-		klog.Infof("convertProtoToHelixSagaApp name:%v replicas:%v", v.Spec.Name, v.Spec.Replicas)
 		a := v.Spec.Replicas
 		c := *v.Spec.Status.CollisionCount
-		klog.Info("spec replicas:", a)
 		policy := proto.WatchPolicyManual
 		if v.WatchPolicy == proto.WatchPolicyAuto {
 			policy = proto.WatchPolicyAuto
 		}
-		nst := make([]proto.NodeSelectorTerm, 0)
-		if v.Affinity != nil && len(v.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms) == 0 {
-			nst = v.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms
+		aft := &corev1.Affinity{}
+		if v.Affinity != nil &&
+			v.Affinity.NodeAffinity != nil &&
+			v.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution != nil &&
+			len(v.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms) == 0 {
+			aft = &corev1.Affinity{
+				NodeAffinity: &corev1.NodeAffinity{
+					RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+						NodeSelectorTerms: convertProtoToNodeSelectorTerms(v.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms),
+					},
+					PreferredDuringSchedulingIgnoredDuringExecution: make([]corev1.PreferredSchedulingTerm, 0),
+				},
+				PodAffinity:     &corev1.PodAffinity{},
+				PodAntiAffinity: &corev1.PodAntiAffinity{},
+			}
 		}
 		res = append(res, helixsagaoperatorv1.HelixSagaApp{
 			Spec: helixsagaoperatorv1.HelixSagaAppSpec{
@@ -1217,17 +1231,8 @@ func convertProtoToHelixSagaApp(a []proto.HelixSagaApp) []helixsagaoperatorv1.He
 				WatchPolicy:        helixsagaoperatorv1.WatchPolicy(policy),
 				NodeSelector:       v.NodeSelector,
 				ServiceAccountName: v.ServiceAccountName,
-				Affinity: &corev1.Affinity{
-					NodeAffinity: &corev1.NodeAffinity{
-						RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
-							NodeSelectorTerms: convertProtoToNodeSelectorTerms(nst),
-						},
-						PreferredDuringSchedulingIgnoredDuringExecution: make([]corev1.PreferredSchedulingTerm, 0),
-					},
-					PodAffinity:     &corev1.PodAffinity{},
-					PodAntiAffinity: &corev1.PodAntiAffinity{},
-				},
-				Tolerations: convertProtoToTolerations(v.Tolerations),
+				Affinity:           aft,
+				Tolerations:        convertProtoToTolerations(v.Tolerations),
 			},
 			Status: helixsagaoperatorv1.HelixSagaAppStatus{
 				ObservedGeneration: v.Spec.Status.ObservedGeneration,
