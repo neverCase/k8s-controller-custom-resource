@@ -29,14 +29,6 @@ message Affinity {
   // Describes node affinity scheduling rules for the pod.
   // +optional
   optional NodeAffinity nodeAffinity = 1;
-
-  // Describes pod affinity scheduling rules (e.g. co-locate this pod in the same node, zone, etc. as some other pod(s)).
-  // +optional
-  optional PodAffinity podAffinity = 2;
-
-  // Describes pod anti-affinity scheduling rules (e.g. avoid putting this pod in the same node, zone, etc. as some other pod(s)).
-  // +optional
-  optional PodAntiAffinity podAntiAffinity = 3;
 }
 
 message ConfigMap {
