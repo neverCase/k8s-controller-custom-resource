@@ -1102,10 +1102,21 @@ func convertHelixSagaAppToProto(a []helixsagaoperatorv1.HelixSagaApp) []proto.He
 			Command:            v.Spec.Command,
 			Args:               v.Spec.Args,
 			WatchPolicy:        proto.WatchPolicy(policy),
-			NodeSelector:       v.Spec.NodeSelector,
+			NodeSelector:       convertNodeSelectorElementToList(v.Spec.NodeSelector),
 			ServiceAccountName: v.Spec.ServiceAccountName,
 			Affinity:           aft,
 			Tolerations:        convertTolerationsToProto(v.Spec.Tolerations),
+		})
+	}
+	return res
+}
+
+func convertNodeSelectorElementToList(in map[string]string) []proto.NodeSelectorElement {
+	res := make([]proto.NodeSelectorElement, 0)
+	for k, v := range in {
+		res = append(res, proto.NodeSelectorElement{
+			Key:   k,
+			Value: v,
 		})
 	}
 	return res
@@ -1229,7 +1240,7 @@ func convertProtoToHelixSagaApp(a []proto.HelixSagaApp) []helixsagaoperatorv1.He
 				Command:            v.Command,
 				Args:               v.Args,
 				WatchPolicy:        helixsagaoperatorv1.WatchPolicy(policy),
-				NodeSelector:       v.NodeSelector,
+				NodeSelector:       convertNodeSelectorElementToMap(v.NodeSelector),
 				ServiceAccountName: v.ServiceAccountName,
 				Affinity:           aft,
 				Tolerations:        convertProtoToTolerations(v.Tolerations),
@@ -1245,6 +1256,14 @@ func convertProtoToHelixSagaApp(a []proto.HelixSagaApp) []helixsagaoperatorv1.He
 				CollisionCount:     &c,
 			},
 		})
+	}
+	return res
+}
+
+func convertNodeSelectorElementToMap(in []proto.NodeSelectorElement) map[string]string {
+	res := make(map[string]string, 0)
+	for _, v := range in {
+		res[v.Key] = v.Value
 	}
 	return res
 }

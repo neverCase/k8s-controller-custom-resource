@@ -456,6 +456,11 @@ const (
 	WatchPolicyManual WatchPolicy = "manual"
 )
 
+type NodeSelectorElement struct {
+	Key   string `json:"key" protobuf:"bytes,1,name=key"`
+	Value string `json:"value" protobuf:"bytes,2,name=value"`
+}
+
 type HelixSagaApp struct {
 	Spec NodeSpec `json:"spec" protobuf:"bytes,1,rep,name=spec"`
 	// Entrypoint array. Not executed within a shell.
@@ -486,7 +491,7 @@ type HelixSagaApp struct {
 	// Selector which must match a node's labels for the pod to be scheduled on that node.
 	// More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
 	// +optional
-	NodeSelector map[string]string `json:"nodeSelector,omitempty" protobuf:"bytes,5,rep,name=nodeSelector"`
+	NodeSelector []NodeSelectorElement `json:"nodeSelector,omitempty" protobuf:"bytes,5,rep,name=nodeSelector"`
 	// ServiceAccountName is the name of the ServiceAccount to use to run this pod.
 	// More info: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
 	// +optional

@@ -229,7 +229,7 @@ message HelixSagaApp {
   // Selector which must match a node's labels for the pod to be scheduled on that node.
   // More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
   // +optional
-  map<string, string> nodeSelector = 5;
+  repeated NodeSelectorElement nodeSelector = 5;
 
   // ServiceAccountName is the name of the ServiceAccount to use to run this pod.
   // More info: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
@@ -401,6 +401,12 @@ message NodeAffinity {
 message NodeSelector {
   // Required. A list of node selector terms. The terms are ORed.
   repeated NodeSelectorTerm nodeSelectorTerms = 1;
+}
+
+message NodeSelectorElement {
+  optional string key = 1;
+
+  optional string value = 2;
 }
 
 // A node selector requirement is a selector that contains values, a key, and an operator
