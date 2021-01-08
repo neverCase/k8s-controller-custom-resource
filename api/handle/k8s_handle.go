@@ -1059,12 +1059,28 @@ func convertHelixSagaAppToProto(a []helixsagaoperatorv1.HelixSagaApp) []proto.He
 		if v.Spec.WatchPolicy == helixsagaoperatorv1.WatchPolicyAuto {
 			policy = helixsagaoperatorv1.WatchPolicyAuto
 		}
-		aft := &proto.Affinity{}
-
+		aft := &proto.Affinity{
+			NodeAffinity: &proto.NodeAffinity{
+				RequiredDuringSchedulingIgnoredDuringExecution: &proto.NodeSelector{
+					NodeSelectorTerms: make([]proto.NodeSelectorTerm, 0),
+				},
+				PreferredDuringSchedulingIgnoredDuringExecution: make([]proto.PreferredSchedulingTerm, 0),
+			},
+		}
+		//if v.Spec.Affinity != nil {
+		//	klog.Infof("name:%s Affinity:%v", v.Spec.Name, *v.Spec.Affinity)
+		//	if v.Spec.Affinity.NodeAffinity != nil {
+		//		klog.Infof("name:%s NodeAffinity:%v", v.Spec.Name, *v.Spec.Affinity.NodeAffinity)
+		//		if v.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution != nil {
+		//			klog.Infof("name:%s RequiredDuringSchedulingIgnoredDuringExecution:%v", v.Spec.Name, *v.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution)
+		//			klog.Infof("name:%s NodeSelectorTerms:%v", v.Spec.Name, v.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms)
+		//		}
+		//	}
+		//}
 		if v.Spec.Affinity != nil &&
 			v.Spec.Affinity.NodeAffinity != nil &&
 			v.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution != nil &&
-			len(v.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms) == 0 {
+			len(v.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms) > 0 {
 			aft = &proto.Affinity{
 				NodeAffinity: &proto.NodeAffinity{
 					RequiredDuringSchedulingIgnoredDuringExecution: &proto.NodeSelector{
@@ -1072,8 +1088,8 @@ func convertHelixSagaAppToProto(a []helixsagaoperatorv1.HelixSagaApp) []proto.He
 					},
 					PreferredDuringSchedulingIgnoredDuringExecution: make([]proto.PreferredSchedulingTerm, 0),
 				},
-				PodAffinity:     &proto.PodAffinity{},
-				PodAntiAffinity: &proto.PodAntiAffinity{},
+				//PodAffinity:     &proto.PodAffinity{},
+				//PodAntiAffinity: &proto.PodAntiAffinity{},
 			}
 		}
 		res = append(res, proto.HelixSagaApp{
@@ -1209,7 +1225,7 @@ func convertProtoToHelixSagaApp(a []proto.HelixSagaApp) []helixsagaoperatorv1.He
 		if v.Affinity != nil &&
 			v.Affinity.NodeAffinity != nil &&
 			v.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution != nil &&
-			len(v.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms) == 0 {
+			len(v.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms) > 0 {
 			aft = &corev1.Affinity{
 				NodeAffinity: &corev1.NodeAffinity{
 					RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
