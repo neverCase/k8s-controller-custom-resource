@@ -14,6 +14,8 @@ rules:
       - namespaces
       - configmaps
       - pods
+      - pods/log
+      - pods/exec
       - nodes
       - persistentvolumes
       - persistentvolumeclaims
