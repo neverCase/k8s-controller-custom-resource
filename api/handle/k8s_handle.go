@@ -1279,6 +1279,9 @@ func convertProtoToHelixSagaApp(a []proto.HelixSagaApp) []helixsagaoperatorv1.He
 func convertNodeSelectorElementToMap(in []proto.NodeSelectorElement) map[string]string {
 	res := make(map[string]string, 0)
 	for _, v := range in {
+		if v.Key == "" {
+			continue
+		}
 		res[v.Key] = v.Value
 	}
 	return res
