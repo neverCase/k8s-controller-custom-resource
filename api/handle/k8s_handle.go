@@ -1093,36 +1093,59 @@ func convertHelixSagaAppToProto(a []helixsagaoperatorv1.HelixSagaApp) []proto.He
 			}
 		}
 		res = append(res, proto.HelixSagaApp{
-			Spec: proto.NodeSpec{
-				Name:             v.Spec.Name,
-				Replicas:         *v.Spec.Replicas,
-				Image:            v.Spec.Image,
-				ImagePullSecrets: v.Spec.ImagePullSecrets[0].Name,
-				VolumePath:       v.Spec.VolumePath,
-				PodResource:      convertProtoToResourceRequirements(v.Spec.Resources),
-				ContainerPorts:   convertContainerPortToProto(v.Spec.ContainerPorts),
-				ServicePorts:     convertServicePortToProto(v.Spec.ServicePorts),
-				ServiceType:      convertProtoToServiceType(v.Spec.ServiceType),
-				Env:              convertEnvVarToProto(v.Spec.Env),
-				Status: proto.Status{
-					ObservedGeneration: v.Status.ObservedGeneration,
-					Replicas:           v.Status.Replicas,
-					ReadyReplicas:      v.Status.ReadyReplicas,
-					CurrentReplicas:    v.Status.CurrentReplicas,
-					UpdatedReplicas:    v.Status.UpdatedReplicas,
-					CurrentRevision:    v.Status.CurrentRevision,
-					UpdateRevision:     v.Status.UpdateRevision,
-					CollisionCount:     v.Status.CollisionCount,
-				},
+			Spec: proto.HelixSagaAppSpec{
+				Name:               v.Spec.Name,
+				Replicas:           *v.Spec.Replicas,
+				Image:              v.Spec.Image,
+				ImagePullSecrets:   v.Spec.ImagePullSecrets[0].Name,
+				VolumePath:         v.Spec.VolumePath,
+				PodResource:        convertProtoToResourceRequirements(v.Spec.Resources),
+				ContainerPorts:     convertContainerPortToProto(v.Spec.ContainerPorts),
+				ServicePorts:       convertServicePortToProto(v.Spec.ServicePorts),
+				ServiceType:        convertProtoToServiceType(v.Spec.ServiceType),
+				Env:                convertEnvVarToProto(v.Spec.Env),
+				Command:            v.Spec.Command,
+				Args:               v.Spec.Args,
+				WatchPolicy:        proto.WatchPolicy(policy),
+				NodeSelector:       convertNodeSelectorElementToList(v.Spec.NodeSelector),
+				ServiceAccountName: v.Spec.ServiceAccountName,
+				Affinity:           aft,
+				Tolerations:        convertTolerationsToProto(v.Spec.Tolerations),
+				Template:           proto.TemplateType(v.Spec.Template),
 			},
-			Command:            v.Spec.Command,
-			Args:               v.Spec.Args,
-			WatchPolicy:        proto.WatchPolicy(policy),
-			NodeSelector:       convertNodeSelectorElementToList(v.Spec.NodeSelector),
-			ServiceAccountName: v.Spec.ServiceAccountName,
-			Affinity:           aft,
-			Tolerations:        convertTolerationsToProto(v.Spec.Tolerations),
+			Status: convertHelixSagaAppStatusToProto(proto.TemplateType(v.Spec.Template), v.Status),
 		})
+	}
+	return res
+}
+
+func convertHelixSagaAppStatusToProto(template proto.TemplateType, status helixsagaoperatorv1.HelixSagaAppStatus) proto.HelixSagaAppStatus {
+	res := proto.HelixSagaAppStatus{
+		Deployment:  proto.DeploymentStatus{},
+		StatefulSet: proto.StatefulSetStatus{},
+	}
+	switch template {
+	case proto.TemplateTypeStatefulSet:
+		res.StatefulSet = proto.StatefulSetStatus{
+			ObservedGeneration: status.StatefulSet.ObservedGeneration,
+			Replicas:           status.StatefulSet.Replicas,
+			ReadyReplicas:      status.StatefulSet.ReadyReplicas,
+			CurrentReplicas:    status.StatefulSet.CurrentReplicas,
+			UpdatedReplicas:    status.StatefulSet.UpdatedReplicas,
+			CurrentRevision:    status.StatefulSet.CurrentRevision,
+			UpdateRevision:     status.StatefulSet.UpdateRevision,
+			CollisionCount:     status.StatefulSet.CollisionCount,
+		}
+	case proto.TemplateTypeDeployment:
+		res.Deployment = proto.DeploymentStatus{
+			ObservedGeneration:  status.Deployment.ObservedGeneration,
+			Replicas:            status.Deployment.Replicas,
+			UpdatedReplicas:     status.Deployment.UpdatedReplicas,
+			ReadyReplicas:       status.Deployment.ReadyReplicas,
+			AvailableReplicas:   status.Deployment.AvailableReplicas,
+			UnavailableReplicas: status.Deployment.UnavailableReplicas,
+			CollisionCount:      status.Deployment.CollisionCount,
+		}
 	}
 	return res
 }
@@ -1216,20 +1239,24 @@ func convertProtoToHelixSagaApp(a []proto.HelixSagaApp) []helixsagaoperatorv1.He
 	res := make([]helixsagaoperatorv1.HelixSagaApp, 0)
 	for _, v := range a {
 		a := v.Spec.Replicas
-		c := *v.Spec.Status.CollisionCount
+		// set default policy
 		policy := proto.WatchPolicyManual
-		if v.WatchPolicy == proto.WatchPolicyAuto {
+		if v.Spec.WatchPolicy == proto.WatchPolicyAuto {
 			policy = proto.WatchPolicyAuto
 		}
+		// set default template
+		if v.Spec.Template == "" {
+			v.Spec.Template = proto.TemplateTypeStatefulSet
+		}
 		aft := &corev1.Affinity{}
-		if v.Affinity != nil &&
-			v.Affinity.NodeAffinity != nil &&
-			v.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution != nil &&
-			len(v.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms) > 0 {
+		if v.Spec.Affinity != nil &&
+			v.Spec.Affinity.NodeAffinity != nil &&
+			v.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution != nil &&
+			len(v.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms) > 0 {
 			aft = &corev1.Affinity{
 				NodeAffinity: &corev1.NodeAffinity{
 					RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
-						NodeSelectorTerms: convertProtoToNodeSelectorTerms(v.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms),
+						NodeSelectorTerms: convertProtoToNodeSelectorTerms(v.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms),
 					},
 					PreferredDuringSchedulingIgnoredDuringExecution: make([]corev1.PreferredSchedulingTerm, 0),
 				},
@@ -1253,25 +1280,50 @@ func convertProtoToHelixSagaApp(a []proto.HelixSagaApp) []helixsagaoperatorv1.He
 				ServicePorts:       convertProtoToServicePort(v.Spec.ServicePorts),
 				ServiceType:        convertServiceTypeToProto(v.Spec.ServiceType),
 				Env:                convertProtoToEnvVar(v.Spec.Env),
-				Command:            v.Command,
-				Args:               v.Args,
+				Command:            v.Spec.Command,
+				Args:               v.Spec.Args,
 				WatchPolicy:        helixsagaoperatorv1.WatchPolicy(policy),
-				NodeSelector:       convertNodeSelectorElementToMap(v.NodeSelector),
-				ServiceAccountName: v.ServiceAccountName,
+				NodeSelector:       convertNodeSelectorElementToMap(v.Spec.NodeSelector),
+				ServiceAccountName: v.Spec.ServiceAccountName,
 				Affinity:           aft,
-				Tolerations:        convertProtoToTolerations(v.Tolerations),
+				Tolerations:        convertProtoToTolerations(v.Spec.Tolerations),
+				Template:           helixsagaoperatorv1.TemplateType(v.Spec.Template),
 			},
-			Status: helixsagaoperatorv1.HelixSagaAppStatus{
-				ObservedGeneration: v.Spec.Status.ObservedGeneration,
-				Replicas:           v.Spec.Status.Replicas,
-				ReadyReplicas:      v.Spec.Status.ReadyReplicas,
-				CurrentReplicas:    v.Spec.Status.CurrentReplicas,
-				UpdatedReplicas:    v.Spec.Status.UpdatedReplicas,
-				CurrentRevision:    v.Spec.Status.CurrentRevision,
-				UpdateRevision:     v.Spec.Status.UpdateRevision,
-				CollisionCount:     &c,
-			},
+			Status: convertProtoToHelixSagaAppStatus(helixsagaoperatorv1.TemplateType(v.Spec.Template), v.Status),
 		})
+	}
+	return res
+}
+
+func convertProtoToHelixSagaAppStatus(template helixsagaoperatorv1.TemplateType, status proto.HelixSagaAppStatus) helixsagaoperatorv1.HelixSagaAppStatus {
+	res := helixsagaoperatorv1.HelixSagaAppStatus{
+		Deployment:  helixsagaoperatorv1.DeploymentStatus{},
+		StatefulSet: helixsagaoperatorv1.StatefulSetStatus{},
+	}
+	switch template {
+	case helixsagaoperatorv1.TemplateTypeStatefulSet:
+		c := *status.StatefulSet.CollisionCount
+		res.StatefulSet = helixsagaoperatorv1.StatefulSetStatus{
+			ObservedGeneration: status.StatefulSet.ObservedGeneration,
+			Replicas:           status.StatefulSet.Replicas,
+			ReadyReplicas:      status.StatefulSet.ReadyReplicas,
+			CurrentReplicas:    status.StatefulSet.CurrentReplicas,
+			UpdatedReplicas:    status.StatefulSet.UpdatedReplicas,
+			CurrentRevision:    status.StatefulSet.CurrentRevision,
+			UpdateRevision:     status.StatefulSet.UpdateRevision,
+			CollisionCount:     &c,
+		}
+	case helixsagaoperatorv1.TemplateTypeDeployment:
+		c := *status.Deployment.CollisionCount
+		res.Deployment = helixsagaoperatorv1.DeploymentStatus{
+			ObservedGeneration:  status.Deployment.ObservedGeneration,
+			Replicas:            status.Deployment.Replicas,
+			UpdatedReplicas:     status.Deployment.UpdatedReplicas,
+			ReadyReplicas:       status.Deployment.ReadyReplicas,
+			AvailableReplicas:   status.Deployment.AvailableReplicas,
+			UnavailableReplicas: status.Deployment.UnavailableReplicas,
+			CollisionCount:      &c,
+		}
 	}
 	return res
 }
