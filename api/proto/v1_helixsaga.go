@@ -134,8 +134,8 @@ type HelixSagaAppSpec struct {
 }
 
 type HelixSagaAppStatus struct {
-	Deployment  DeploymentStatus  `json:"deployment" protobuf:"bytes,1,opt,name=deployment"`
-	StatefulSet StatefulSetStatus `json:"statefulSet" protobuf:"bytes,2,opt,name=statefulSet"`
+	Deployment  DeploymentStatus  `json:"deployment" protobuf:"bytes,1,opt,name=Deployment"`
+	StatefulSet StatefulSetStatus `json:"statefulSet" protobuf:"bytes,2,opt,name=StatefulSet"`
 }
 
 type HelixSagaCrdList struct {

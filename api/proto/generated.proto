@@ -336,9 +336,9 @@ message HelixSagaAppSpec {
 }
 
 message HelixSagaAppStatus {
-  optional DeploymentStatus deployment = 1;
+  optional DeploymentStatus Deployment = 1;
 
-  optional StatefulSetStatus statefulSet = 2;
+  optional StatefulSetStatus StatefulSet = 2;
 }
 
 message HelixSagaConfigMapVolume {
