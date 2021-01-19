@@ -1059,6 +1059,9 @@ func convertHelixSagaAppToProto(a []helixsagaoperatorv1.HelixSagaApp) []proto.He
 		if v.Spec.WatchPolicy == helixsagaoperatorv1.WatchPolicyAuto {
 			policy = helixsagaoperatorv1.WatchPolicyAuto
 		}
+		if v.Spec.Template == "" {
+			v.Spec.Template = helixsagaoperatorv1.TemplateTypeStatefulSet
+		}
 		aft := &proto.Affinity{
 			NodeAffinity: &proto.NodeAffinity{
 				RequiredDuringSchedulingIgnoredDuringExecution: &proto.NodeSelector{
@@ -1092,6 +1095,7 @@ func convertHelixSagaAppToProto(a []helixsagaoperatorv1.HelixSagaApp) []proto.He
 				//PodAntiAffinity: &proto.PodAntiAffinity{},
 			}
 		}
+		klog.Infof("proto.HelixSagaApp Name:%v", v.Spec.Name)
 		res = append(res, proto.HelixSagaApp{
 			Spec: proto.HelixSagaAppSpec{
 				Name:               v.Spec.Name,
@@ -1124,8 +1128,14 @@ func convertHelixSagaAppStatusToProto(template proto.TemplateType, status helixs
 		Deployment:  proto.DeploymentStatus{},
 		StatefulSet: proto.StatefulSetStatus{},
 	}
+	var c int32
 	switch template {
 	case proto.TemplateTypeStatefulSet:
+		if status.StatefulSet.CollisionCount == nil {
+			c = 0
+		} else {
+			c = *status.StatefulSet.CollisionCount
+		}
 		res.StatefulSet = proto.StatefulSetStatus{
 			ObservedGeneration: status.StatefulSet.ObservedGeneration,
 			Replicas:           status.StatefulSet.Replicas,
@@ -1134,9 +1144,14 @@ func convertHelixSagaAppStatusToProto(template proto.TemplateType, status helixs
 			UpdatedReplicas:    status.StatefulSet.UpdatedReplicas,
 			CurrentRevision:    status.StatefulSet.CurrentRevision,
 			UpdateRevision:     status.StatefulSet.UpdateRevision,
-			CollisionCount:     status.StatefulSet.CollisionCount,
+			CollisionCount:     &c,
 		}
 	case proto.TemplateTypeDeployment:
+		if status.Deployment.CollisionCount == nil {
+			c = 0
+		} else {
+			c = *status.Deployment.CollisionCount
+		}
 		res.Deployment = proto.DeploymentStatus{
 			ObservedGeneration:  status.Deployment.ObservedGeneration,
 			Replicas:            status.Deployment.Replicas,
@@ -1144,7 +1159,7 @@ func convertHelixSagaAppStatusToProto(template proto.TemplateType, status helixs
 			ReadyReplicas:       status.Deployment.ReadyReplicas,
 			AvailableReplicas:   status.Deployment.AvailableReplicas,
 			UnavailableReplicas: status.Deployment.UnavailableReplicas,
-			CollisionCount:      status.Deployment.CollisionCount,
+			CollisionCount:      &c,
 		}
 	}
 	return res
@@ -1300,9 +1315,14 @@ func convertProtoToHelixSagaAppStatus(template helixsagaoperatorv1.TemplateType,
 		Deployment:  helixsagaoperatorv1.DeploymentStatus{},
 		StatefulSet: helixsagaoperatorv1.StatefulSetStatus{},
 	}
+	var c int32
 	switch template {
 	case helixsagaoperatorv1.TemplateTypeStatefulSet:
-		c := *status.StatefulSet.CollisionCount
+		if status.StatefulSet.CollisionCount == nil {
+			c = 0
+		} else {
+			c = *status.StatefulSet.CollisionCount
+		}
 		res.StatefulSet = helixsagaoperatorv1.StatefulSetStatus{
 			ObservedGeneration: status.StatefulSet.ObservedGeneration,
 			Replicas:           status.StatefulSet.Replicas,
@@ -1314,7 +1334,11 @@ func convertProtoToHelixSagaAppStatus(template helixsagaoperatorv1.TemplateType,
 			CollisionCount:     &c,
 		}
 	case helixsagaoperatorv1.TemplateTypeDeployment:
-		c := *status.Deployment.CollisionCount
+		if status.Deployment.CollisionCount == nil {
+			c = 0
+		} else {
+			c = *status.Deployment.CollisionCount
+		}
 		res.Deployment = helixsagaoperatorv1.DeploymentStatus{
 			ObservedGeneration:  status.Deployment.ObservedGeneration,
 			Replicas:            status.Deployment.Replicas,

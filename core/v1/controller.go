@@ -72,7 +72,7 @@ func NewKubernetesController(operator KubernetesOperator) KubernetesControllerV1
 	m := operator.Options().List()
 	for crdType := range m {
 		m[crdType].Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-			AddFunc: kc.EnqueueFoo,
+			AddFunc: kc.HandleObject,
 			UpdateFunc: func(old, new interface{}) {
 				if reflect.TypeOf(old) != reflect.TypeOf(new) {
 					return
@@ -365,7 +365,7 @@ func (kc *kubernetesController) HandleObject(obj interface{}) {
 		}
 		klog.V(4).Infof("Recovered deleted object '%s' from tombstone", object.GetName())
 	}
-	klog.V(4).Infof("Processing object: %s", object.GetName())
+	klog.V(4).Infof("Processing object: %s resource-type:%v", object.GetName(), reflect.TypeOf(obj))
 	if ownerRef := metav1.GetControllerOf(object); ownerRef != nil {
 		// If this object is not owned by a Foo, we should not do anything more
 		// with it.
