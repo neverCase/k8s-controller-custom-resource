@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-export GOPATH="/Users/nevermore/go"
+export GOPATH=`go env | grep -i gopath | awk '{split($0,a,"\""); print a[2]}'`
 
 GENS="$1"
 
