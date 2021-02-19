@@ -618,9 +618,19 @@ func convertPodToProto(p *corev1.Pod) proto.Pod {
 
 func convertProtoToMysqlCrd(req proto.Param, mysqlCrd proto.MysqlCrd) *mysqloperatorv1.MysqlOperator {
 	masterReplicas := mysqlCrd.Master.Replicas
-	masterCollisionCount := *mysqlCrd.Master.Status.CollisionCount
+	var a int32
+	var masterCollisionCount, slaveCollisionCount int32
+	if mysqlCrd.Master.Status.CollisionCount == nil {
+		masterCollisionCount = a
+	} else {
+		masterCollisionCount = *mysqlCrd.Master.Status.CollisionCount
+	}
 	slaveReplicas := mysqlCrd.Slave.Replicas
-	slaveCollisionCount := *mysqlCrd.Slave.Status.CollisionCount
+	if mysqlCrd.Slave.Status.CollisionCount == nil {
+		slaveCollisionCount = a
+	} else {
+		slaveCollisionCount = *mysqlCrd.Slave.Status.CollisionCount
+	}
 	return &mysqloperatorv1.MysqlOperator{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            mysqlCrd.Name,
@@ -741,9 +751,19 @@ func convertMysqlCrdToProto(m *mysqloperatorv1.MysqlOperator) proto.MysqlCrd {
 
 func convertProtoToRedisCrd(req proto.Param, redisCrd proto.RedisCrd) *redisoperatorv1.RedisOperator {
 	masterReplicas := redisCrd.Master.Replicas
-	masterCollisionCount := *redisCrd.Master.Status.CollisionCount
+	var a int32
+	var masterCollisionCount, slaveCollisionCount int32
+	if redisCrd.Master.Status.CollisionCount == nil {
+		masterCollisionCount = a
+	} else {
+		masterCollisionCount = *redisCrd.Master.Status.CollisionCount
+	}
 	slaveReplicas := redisCrd.Slave.Replicas
-	slaveCollisionCount := *redisCrd.Slave.Status.CollisionCount
+	if redisCrd.Slave.Status.CollisionCount == nil {
+		slaveCollisionCount = a
+	} else {
+		slaveCollisionCount = *redisCrd.Slave.Status.CollisionCount
+	}
 	return &redisoperatorv1.RedisOperator{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            redisCrd.Name,
