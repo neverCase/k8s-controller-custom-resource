@@ -72,7 +72,7 @@ func NewKubernetesController(operator KubernetesOperator) KubernetesControllerV1
 	m := operator.Options().List()
 	for crdType := range m {
 		m[crdType].Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-			AddFunc: kc.HandleObject,
+			AddFunc: kc.EnqueueFoo,
 			UpdateFunc: func(old, new interface{}) {
 				if reflect.TypeOf(old) != reflect.TypeOf(new) {
 					return
