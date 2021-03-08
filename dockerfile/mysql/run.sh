@@ -48,6 +48,15 @@ echo -e "\n"
 echo -e "character_set_server = utf8" >> ${defaultConf}
 echo -e "\n"
 
+echo -e "\n"
+echo -e "[client]" >> ${defaultConf}
+echo -e "\n"
+echo -e "default-character-set = utf8 " >> ${defaultConf}
+echo -e "\n"
+echo -e "[mysql]" >> ${defaultConf}
+echo -e "default-character-set = utf8 " >> ${defaultConf}
+echo -e "\n"
+
 shutdownSave() {
    mysqladmin  -uroot -proot shutdown
 }
