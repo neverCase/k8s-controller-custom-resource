@@ -350,7 +350,7 @@ func (r *resource) Watch(rt ResourceType, nameSpace string, selector labels.Sele
 		for {
 			select {
 			case e, isClosed := <-res.ResultChan():
-				klog.Infof("resource watch resourceType:%v obj:%v", rt, e)
+				//klog.Infof("resource watch resourceType:%v obj:%v", rt, e)
 				if !isClosed {
 					klog.Infof("resource watch resourceType:%v closed", rt)
 					res.Stop()

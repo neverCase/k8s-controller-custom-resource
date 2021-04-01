@@ -151,8 +151,8 @@ func (c *wsConn) ReadPump() (err error) {
 	for {
 		var msg proto.Request
 		var res []byte
-		messageType, message, err := c.conn.ReadMessage()
-		klog.Infof("messageType: %d message: %v err: %s\n", messageType, message, err)
+		_, message, err := c.conn.ReadMessage()
+		//klog.Infof("messageType: %d message: %v err: %s\n", messageType, message, err)
 		if err != nil {
 			klog.V(2).Info(err)
 			return err
@@ -262,7 +262,7 @@ func (c *wsConn) WritePump() (err error) {
 			if !isClose {
 				return nil
 			}
-			klog.Info("send to:", c.clientId, " msg:", string(msg))
+			//klog.Info("send to:", c.clientId, " msg:", string(msg))
 			s := time.Now()
 			if err := c.conn.WriteMessage(websocket.BinaryMessage, msg); err != nil {
 				klog.V(2).Info(err)
