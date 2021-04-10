@@ -1,11 +1,14 @@
 package v1
 
 import (
+	"context"
 	"fmt"
+	"github.com/nevercase/k8s-controller-custom-resource/pkg/env"
+	"time"
 
 	coreV1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	kubeInformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
@@ -22,15 +25,18 @@ type KubernetesConfigMap interface {
 }
 
 func NewKubernetesConfigMap(kubeClientSet kubernetes.Interface, kubeInformerFactory kubeInformers.SharedInformerFactory) KubernetesConfigMap {
+	timeout, _ := env.GetExecutionTimeoutDuration()
 	return &kubernetesConfigMap{
-		kubeClientSet:   kubeClientSet,
-		configMapLister: kubeInformerFactory.Core().V1().ConfigMaps().Lister(),
+		kubeClientSet:         kubeClientSet,
+		configMapLister:       kubeInformerFactory.Core().V1().ConfigMaps().Lister(),
+		executionTimeoutInSec: timeout,
 	}
 }
 
 type kubernetesConfigMap struct {
-	kubeClientSet   kubernetes.Interface
-	configMapLister coreListersV1.ConfigMapLister
+	kubeClientSet         kubernetes.Interface
+	configMapLister       coreListersV1.ConfigMapLister
+	executionTimeoutInSec int64
 }
 
 func (kcm *kubernetesConfigMap) Get(nameSpace, specDeploymentName string) (d *coreV1.ConfigMap, err error) {
@@ -49,7 +55,10 @@ func (kcm *kubernetesConfigMap) Get(nameSpace, specDeploymentName string) (d *co
 }
 
 func (kcm *kubernetesConfigMap) Create(nameSpace, specDeploymentName string, d *coreV1.ConfigMap) (*coreV1.ConfigMap, error) {
-	configMap, err := kcm.kubeClientSet.CoreV1().ConfigMaps(nameSpace).Create(d)
+	createOpt := metav1.CreateOptions{}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*time.Duration(kcm.executionTimeoutInSec))
+	configMap, err := kcm.kubeClientSet.CoreV1().ConfigMaps(nameSpace).Create(ctx, d, createOpt)
+	cancel()
 	if err != nil {
 		klog.V(2).Info(err)
 	}
@@ -57,7 +66,10 @@ func (kcm *kubernetesConfigMap) Create(nameSpace, specDeploymentName string, d *
 }
 
 func (kcm *kubernetesConfigMap) Update(nameSpace string, d *coreV1.ConfigMap) (*coreV1.ConfigMap, error) {
-	configMap, err := kcm.kubeClientSet.CoreV1().ConfigMaps(nameSpace).Update(d)
+	updateOpt := metav1.UpdateOptions{}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*time.Duration(kcm.executionTimeoutInSec))
+	configMap, err := kcm.kubeClientSet.CoreV1().ConfigMaps(nameSpace).Update(ctx, d, updateOpt)
+	cancel()
 	if err != nil {
 		klog.V(2).Info(err)
 	}
@@ -71,11 +83,13 @@ func (kcm *kubernetesConfigMap) Delete(nameSpace, specDeploymentName string) err
 	if errors.IsNotFound(err) {
 		return nil
 	}
-	opts := &metaV1.DeleteOptions{
+	opts := metav1.DeleteOptions{
 		//GracePeriodSeconds: int64ToPointer(30),
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*time.Duration(kcm.executionTimeoutInSec))
 	configMapName := fmt.Sprintf(ConfigMapTemplate, specDeploymentName)
-	err = kcm.kubeClientSet.CoreV1().ConfigMaps(nameSpace).Delete(configMapName, opts)
+	err = kcm.kubeClientSet.CoreV1().ConfigMaps(nameSpace).Delete(ctx, configMapName, opts)
+	cancel()
 	if err != nil {
 		klog.V(2).Info(err)
 		return err
@@ -84,10 +98,12 @@ func (kcm *kubernetesConfigMap) Delete(nameSpace, specDeploymentName string) err
 }
 
 func (kcm *kubernetesConfigMap) List(nameSpace, filterName string) (sl *coreV1.ConfigMapList, err error) {
-	opts := metaV1.ListOptions{
+	opts := metav1.ListOptions{
 		LabelSelector: filterName,
 	}
-	sl, err = kcm.kubeClientSet.CoreV1().ConfigMaps(nameSpace).List(opts)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*time.Duration(kcm.executionTimeoutInSec))
+	sl, err = kcm.kubeClientSet.CoreV1().ConfigMaps(nameSpace).List(ctx, opts)
+	cancel()
 	if err != nil {
 		klog.V(2).Info(err)
 	}

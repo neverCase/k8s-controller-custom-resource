@@ -16,4 +16,6 @@ func main() {
 	s := service.NewService(conf.Init())
 	s.Listen()
 	<-stopCh
+	s.Close()
+	<-stopCh
 }
