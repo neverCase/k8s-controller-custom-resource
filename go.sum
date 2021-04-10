@@ -24,8 +24,9 @@ github.com/Shanghai-Lunara/helixsaga-operator v0.0.0-20200903071621-279c87e50162
 github.com/Shanghai-Lunara/helixsaga-operator v0.0.0-20200903071621-279c87e50162/go.mod h1:UJDVz/uoZhhVNNGHDrc65cBq1JT6dc8JC7TGV6pa8pk=
 github.com/Shanghai-Lunara/helixsaga-operator v0.0.0-20200908053823-f9fbcf204e90 h1:UczcFxq/N/EOi4aXx95U7ttudeQj45mmf+bFc8O4+Vk=
 github.com/Shanghai-Lunara/helixsaga-operator v0.0.0-20200908053823-f9fbcf204e90/go.mod h1:b0gnP5fnwobYv69gePRCnUOy77qGROMG/KTCrY+Zh/4=
-github.com/Shanghai-Lunara/helixsaga-operator v0.0.0-20210410063026-ad4605d2f45b h1:8V6XVIweYh+eo62dBQMoNMsHhoirqjN6Jq3RgmYn9bQ=
 github.com/Shanghai-Lunara/helixsaga-operator v0.0.0-20210410063026-ad4605d2f45b/go.mod h1:5lB/iayOWoJ/Kw/yn66Y7rRhzuZ9U5v0Z4ySBy/9wII=
+github.com/Shanghai-Lunara/helixsaga-operator v0.0.0-20210410080632-0c1ea1cd03f5 h1:uKCp3K5IWLXgPh173t5+JC7oa1r3R1gK6/aQBq2Z1Vg=
+github.com/Shanghai-Lunara/helixsaga-operator v0.0.0-20210410080632-0c1ea1cd03f5/go.mod h1:SVD6PbpTQiYSsdR27gJq36CqwUj9aCsHeBgHi6bN5lE=
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
 github.com/davecgh/go-spew v0.0.0-20151105211317-5215b55f46b2/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
@@ -131,6 +132,7 @@ github.com/nevercase/k8s-controller-custom-resource v0.0.0-20200827085315-676144
 github.com/nevercase/k8s-controller-custom-resource v0.0.0-20200903031135-33eb6f9412ea/go.mod h1:xRhb9loaeozuRiCT5HlCDncSuoK/45iiOeAy8UiTLQM=
 github.com/nevercase/k8s-controller-custom-resource v0.0.0-20200908053329-9c0d33a47c5e/go.mod h1:aQxEAqBA4CbEgNj/7j54Su+jbGYvdSC6tksutpVEuZc=
 github.com/nevercase/k8s-controller-custom-resource v0.0.0-20201008035539-143fcc5213b7/go.mod h1:Q0wgVUFpTtHAnv1FNib/MUsW1rJ8eRrQbJtFpyU6E74=
+github.com/nevercase/k8s-controller-custom-resource v0.0.0-20210410075810-b0742ab026e1/go.mod h1:OcqVLoEukD/mZmxJ9QRUrQcoQCRlAVgOhOZIFgcDVeI=
 github.com/onsi/ginkgo v0.0.0-20170829012221-11459a886d9c/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=
 github.com/onsi/ginkgo v1.6.0/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=
 github.com/onsi/ginkgo v1.8.0/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=
