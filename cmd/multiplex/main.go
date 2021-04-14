@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"github.com/Shanghai-Lunara/helixsaga-operator/pkg/serviceloadbalancer"
 
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -27,16 +28,18 @@ func (i *arrayFlags) Set(value string) error {
 }
 
 var (
-	masterURL      string
-	kubeconfig     string
-	dockerUrl      arrayFlags
-	dockerAdmin    arrayFlags
-	dockerPassword arrayFlags
+	masterurl                 string
+	kubeconfig                string
+	serviceloadbalancerConfig string
+	dockerUrl                 arrayFlags
+	dockerAdmin               arrayFlags
+	dockerPassword            arrayFlags
 )
 
 func init() {
 	flag.StringVar(&kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required if out-of-cluster.")
-	flag.StringVar(&masterURL, "masterurl", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
+	flag.StringVar(&masterurl, "masterurl", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
+	flag.StringVar(&serviceloadbalancerConfig, "serviceloadbalacnerConfig", "", "The config of the service load balancer")
 	flag.Var(&dockerUrl, "dockerurl", "The address of the Harbor server.")
 	flag.Var(&dockerAdmin, "dockeradmin", "The username of the Harbor's account")
 	flag.Var(&dockerPassword, "dockerpwd", "The password of the Harbor's password")
@@ -49,7 +52,7 @@ func main() {
 	// set up signals so we handle the first shutdown signal gracefully
 	stopCh := signals.SetupSignalHandler()
 
-	cfg, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfig)
+	cfg, err := clientcmd.BuildConfigFromFlags(masterurl, kubeconfig)
 	if err != nil {
 		klog.Fatalf("Error building kubeconfig: %s", err.Error())
 	}
@@ -58,6 +61,8 @@ func main() {
 	if err != nil {
 		klog.Fatalf("Error building kubernetes clientSet: %s", err.Error())
 	}
+
+	serviceloadbalancer.Init(serviceloadbalancerConfig)
 
 	dockerHub := make([]harbor.Config, 0)
 	for k, url := range dockerUrl {
