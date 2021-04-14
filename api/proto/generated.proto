@@ -209,7 +209,9 @@ message HarborRequest {
 
   optional int32 projectId = 3;
 
-  optional string imageName = 4;
+  optional string projectName = 4;
+
+  optional string imageName = 5;
 }
 
 message HarborTag {
