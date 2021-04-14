@@ -323,7 +323,7 @@ func (r *resource) Watch(rt ResourceType, nameSpace string, selector labels.Sele
 		LabelSelector:  selector.String(),
 		TimeoutSeconds: &timeout,
 	}
-	ctx, cancel := context.WithTimeout(r.ctx, time.Second*time.Duration(r.executionTimeoutInSec))
+	ctx := context.Background()
 	var res watch.Interface
 	switch rt {
 	case ConfigMap:
@@ -354,7 +354,6 @@ func (r *resource) Watch(rt ResourceType, nameSpace string, selector labels.Sele
 		}
 		res, err = opt.Get().(*helixsagaclientset.Clientset).NevercaseV1().HelixSagas(nameSpace).Watch(ctx, opts)
 	}
-	cancel()
 	if err != nil {
 		klog.V(2).Info(err)
 		return err
