@@ -4,8 +4,14 @@ metadata:
   name: redisoperators.nevercase.io
 spec:
   group: nevercase.io
-  version: v1
+  versions:
+    - name: v1
+      served: true
+      storage: true
   names:
     kind: RedisOperator
     plural: redisoperators
+    singular: redisoperator
+    shortNames:
+      - ro
   scope: Namespaced
