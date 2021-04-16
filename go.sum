@@ -677,6 +677,8 @@ github.com/nevercase/harbor-api v0.0.0-20210106033732-e7c0582cc57b h1:L2TbJcIAKb
 github.com/nevercase/harbor-api v0.0.0-20210106033732-e7c0582cc57b/go.mod h1:fZEzKNBjY0S7nwhravn9zESrDhi6n3DfgzrJOSQxdfA=
 github.com/nevercase/harbor-api v0.0.0-20210414032946-69012ccd9adc h1:2dA1UGesr8C2KR1LEsYarpr+Ab9ykZF+LGR3m5b/JI0=
 github.com/nevercase/harbor-api v0.0.0-20210414032946-69012ccd9adc/go.mod h1:Tx8evDDPZZ5CaJk7fxnlAMkG/POsDawOxrZbG18TiC4=
+github.com/nevercase/harbor-api v0.0.0-20210416034155-29a19f873e7c h1:nTlPnc1WQU/DAbiL02MxxfD5Idkd86DU1mnkcGqTHuY=
+github.com/nevercase/harbor-api v0.0.0-20210416034155-29a19f873e7c/go.mod h1:Tx8evDDPZZ5CaJk7fxnlAMkG/POsDawOxrZbG18TiC4=
 github.com/nevercase/k8s-controller-custom-resource v0.0.0-20200717080405-ac4619074009/go.mod h1:9eK+R0nkBYAe0JXVF5svNwvPfsuOUrLPOiEEvcvjnnw=
 github.com/nevercase/k8s-controller-custom-resource v0.0.0-20200814062711-3a466b2f7cf3/go.mod h1:mtoT/UOmYMYcqfSCT4VFLsb6xVvBQBykwAh6KQX86Xo=
 github.com/nevercase/k8s-controller-custom-resource v0.0.0-20200819024455-58f90d01a554/go.mod h1:yw57dsunJu6CpX1g3OHWrGmLI5o/iFM+aiVYwx1x154=
