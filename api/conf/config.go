@@ -24,6 +24,8 @@ var (
 	dockerUrl      arrayFlags
 	dockerAdmin    arrayFlags
 	dockerPassword arrayFlags
+	rbacRulePath   string
+	rbacMysqlPath  string
 )
 
 func init() {
@@ -33,6 +35,8 @@ func init() {
 	flag.Var(&dockerUrl, "dockerurl", "The address of the Harbor server.")
 	flag.Var(&dockerAdmin, "dockeradmin", "The username of the Harbor's account")
 	flag.Var(&dockerPassword, "dockerpwd", "The password of the Harbor's password")
+	flag.StringVar(&rbacRulePath, "rbacRulePath", "", "The path of the rbac rule.")
+	flag.StringVar(&rbacMysqlPath, "rbacMysqlPath", "", "The path of the rbac mysql.")
 }
 
 type Config interface {
@@ -40,13 +44,17 @@ type Config interface {
 	KubeConfig() string
 	ApiService() string
 	DockerHub() []harbor.Config
+	RbacRulePath() string
+	RbacMysqlPath() string
 }
 
 type config struct {
-	masterUrl  string
-	kubeConfig string
-	apiService string
-	dockerHub  []harbor.Config
+	masterUrl     string
+	kubeConfig    string
+	apiService    string
+	dockerHub     []harbor.Config
+	rbacRulePath  string
+	rbacMysqlPath string
 }
 
 func (c *config) MasterUrl() string {
@@ -63,6 +71,13 @@ func (c *config) ApiService() string {
 
 func (c *config) DockerHub() []harbor.Config {
 	return c.dockerHub
+}
+
+func (c *config) RbacRulePath() string {
+	return c.rbacRulePath
+}
+func (c *config) RbacMysqlPath() string {
+	return c.rbacMysqlPath
 }
 
 func Init() Config {
@@ -83,9 +98,11 @@ func Init() Config {
 	}
 	klog.Info("dockerhub:", dockerHub)
 	return &config{
-		masterUrl:  masterUrl,
-		kubeConfig: kubeconfig,
-		apiService: apiservice,
-		dockerHub:  dockerHub,
+		masterUrl:     masterUrl,
+		kubeConfig:    kubeconfig,
+		apiService:    apiservice,
+		dockerHub:     dockerHub,
+		rbacRulePath:  rbacRulePath,
+		rbacMysqlPath: rbacMysqlPath,
 	}
 }
