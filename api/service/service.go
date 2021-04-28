@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"github.com/Shanghai-Lunara/pkg/authentication"
 	"github.com/Shanghai-Lunara/pkg/casbinrbac"
 	"github.com/Shanghai-Lunara/pkg/zaplogger"
 	"github.com/gin-contrib/cors"
@@ -39,7 +40,8 @@ func NewService(c conf.Config) Service {
 	}
 	router := gin.New()
 	router.Use(cors.Default())
-	casbinrbac.NewWithMysqlConf(c.RbacRulePath(), c.RbacMysqlPath(), router.Group("/rbac"))
+	casbinrbac.NewWithMysqlConf(c.RbacRulePath(), c.RbacMysqlPath(), "/rbac", router)
+	authentication.New("/authentication", router)
 	router.Group("api").GET("/test", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"code": 213131})
 	})
