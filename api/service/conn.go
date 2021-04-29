@@ -124,6 +124,7 @@ type wsConn struct {
 	status            connStatus
 	ctx               context.Context
 	cancel            context.CancelFunc
+	once              sync.Once
 }
 
 func (c *wsConn) Ping() {
@@ -273,18 +274,17 @@ func (c *wsConn) WritePump() (err error) {
 }
 
 func (c *wsConn) Close() {
-	if c.status == connClosed {
-		return
-	}
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	if c.status == connClosed {
-		return
-	}
-	c.status = connClosed
-	if err := c.conn.Close(); err != nil {
-		klog.V(2).Info(err)
-	}
-	close(c.writeChan)
-	close(c.readChan)
+	c.once.Do(func() {
+		c.mu.Lock()
+		defer c.mu.Unlock()
+		if c.status == connClosed {
+			return
+		}
+		c.status = connClosed
+		if err := c.conn.Close(); err != nil {
+			klog.V(2).Info(err)
+		}
+		close(c.writeChan)
+		close(c.readChan)
+	})
 }
