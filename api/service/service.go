@@ -42,9 +42,6 @@ func NewService(c conf.Config) Service {
 	router.Use(cors.Default())
 	casbinrbac.NewWithMysqlConf(c.RbacRulePath(), c.RbacMysqlPath(), "/rbac", router)
 	authentication.New("/authentication", router)
-	router.Group("api").GET("/test", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"code": 213131})
-	})
 	router.Group("dashboard").GET("", s.handler)
 	server := &http.Server{
 		Addr:    s.conf.ApiService(),

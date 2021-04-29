@@ -67,7 +67,7 @@ func (ch *connHub) BroadcastWatch() {
 
 func NewConnHub(ctx context.Context, g group.Group) ConnHub {
 	b := make(chan []byte, 4096)
-	ch :=  &connHub{
+	ch := &connHub{
 		group:        g,
 		handle:       handle.NewHandle(g, b),
 		autoClientId: 0,
@@ -238,13 +238,12 @@ func (c *wsConn) SendToChannel(msg []byte) (err error) {
 	if c.status == connClosed {
 		return
 	}
-	tick := time.NewTicker(time.Second * 2)
-	defer tick.Stop()
+	after := time.After(time.Second * 2)
 	for {
 		select {
 		case c.writeChan <- msg:
 			return
-		case <-tick.C:
+		case <-after:
 			err = fmt.Errorf("wsSend timeout ws.cid:%d msg:(%v) ws:%v\n", c.clientId, msg, c)
 			klog.V(2).Info(err)
 			return err
