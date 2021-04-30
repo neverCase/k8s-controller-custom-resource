@@ -2,8 +2,10 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"github.com/Shanghai-Lunara/pkg/authentication"
 	"github.com/Shanghai-Lunara/pkg/casbinrbac"
+	"github.com/Shanghai-Lunara/pkg/jwttoken"
 	"github.com/Shanghai-Lunara/pkg/zaplogger"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -11,6 +13,7 @@ import (
 	"github.com/nevercase/k8s-controller-custom-resource/api/conf"
 	"github.com/nevercase/k8s-controller-custom-resource/api/group"
 	"net/http"
+	"time"
 )
 
 type Service interface {
@@ -42,7 +45,7 @@ func NewService(c conf.Config) Service {
 	router.Use(cors.Default())
 	casbinrbac.NewWithMysqlConf(c.RbacRulePath(), c.RbacMysqlPath(), "/rbac", router)
 	authentication.New("/authentication", router)
-	router.Group("dashboard").GET("", s.handler)
+	router.Group("dashboard").GET("/:token", s.handler)
 	server := &http.Server{
 		Addr:    s.conf.ApiService(),
 		Handler: router,
@@ -66,13 +69,30 @@ var upGrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
 		return true
 	},
+	Error: func(w http.ResponseWriter, r *http.Request, status int, reason error) {
+		http.Error(w, reason.Error(), status)
+	},
 }
 
 func (s *service) handler(c *gin.Context) {
+	token := c.Param("token")
+	if token == "" {
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+	zaplogger.Sugar().Info("token: ", token)
+	tokenClaims, err := jwttoken.Parse(token)
+	if err != nil {
+		zaplogger.Sugar().Error(err)
+		upGrader.Error(c.Writer, c.Request, http.StatusUnauthorized, fmt.Errorf(http.StatusText(http.StatusUnauthorized)))
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+	zaplogger.Sugar().Info("tokenClaims:", tokenClaims)
 	conn, err := upGrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		zaplogger.Sugar().Error(err)
 		return
 	}
-	s.conn.NewConn(conn)
+	s.conn.NewConn(conn, tokenClaims.ExpiresAt-time.Now().Unix())
 }

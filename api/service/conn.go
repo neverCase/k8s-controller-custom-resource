@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"github.com/Shanghai-Lunara/pkg/zaplogger"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -16,7 +17,7 @@ import (
 )
 
 type ConnHub interface {
-	NewConn(conn *websocket.Conn)
+	NewConn(conn *websocket.Conn, expiration int64)
 }
 
 type connHub struct {
@@ -32,7 +33,7 @@ type connHub struct {
 	ctx context.Context
 }
 
-func (ch *connHub) NewConn(conn *websocket.Conn) {
+func (ch *connHub) NewConn(conn *websocket.Conn, expiration int64) {
 	ch.mu.Lock()
 	defer ch.mu.Unlock()
 	id := atomic.AddInt32(&ch.autoClientId, 1)
@@ -47,7 +48,7 @@ func (ch *connHub) NewConn(conn *websocket.Conn) {
 			klog.V(2).Info(err)
 		}
 	}()
-	go ch.connections[id].KeepAlive()
+	go ch.connections[id].KeepAlive(expiration)
 }
 
 func (ch *connHub) BroadcastWatch() {
@@ -81,7 +82,7 @@ func NewConnHub(ctx context.Context, g group.Group) ConnHub {
 
 type WsConn interface {
 	Ping()
-	KeepAlive()
+	KeepAlive(expiration int64)
 	ReadPump() (err error)
 	SendToChannel(data []byte) (err error)
 	WritePump() (err error)
@@ -131,10 +132,12 @@ func (c *wsConn) Ping() {
 	c.lastHeartBeatTime = time.Now()
 }
 
-func (c *wsConn) KeepAlive() {
+func (c *wsConn) KeepAlive(expiration int64) {
 	defer c.Close()
+	after := time.After(time.Second * time.Duration(expiration))
+	tick := time.NewTicker(5 * time.Second)
+	defer tick.Stop()
 	for {
-		tick := time.NewTicker(10 * time.Second)
 		select {
 		case <-c.ctx.Done():
 			return
@@ -143,6 +146,9 @@ func (c *wsConn) KeepAlive() {
 				klog.Info("keepAlive timeout")
 				return
 			}
+		case <-after:
+			zaplogger.Sugar().Info("token expired")
+			return
 		}
 	}
 }
