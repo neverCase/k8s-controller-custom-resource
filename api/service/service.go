@@ -42,7 +42,10 @@ func NewService(c conf.Config) Service {
 		cancel: cancel,
 	}
 	router := gin.New()
-	router.Use(cors.Default())
+	df := cors.DefaultConfig()
+	df.AllowAllOrigins = true
+	df.AllowHeaders = []string{"Origin", "Content-Length", "Content-Type", jwttoken.TokenKey}
+	router.Use(cors.New(df))
 	casbinrbac.NewWithMysqlConf(c.RbacRulePath(), c.RbacMysqlPath(), "/rbac", router)
 	authentication.New("/authentication", router)
 	router.Group("dashboard").GET("/:token", s.handler)
