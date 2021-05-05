@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/Shanghai-Lunara/pkg/zaplogger"
+	"github.com/nevercase/k8s-controller-custom-resource/api/rbac"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -17,7 +18,7 @@ import (
 )
 
 type ConnHub interface {
-	NewConn(conn *websocket.Conn, expiration int64)
+	NewConn(conn *websocket.Conn, uth *rbac.Authentication)
 }
 
 type connHub struct {
@@ -33,11 +34,11 @@ type connHub struct {
 	ctx context.Context
 }
 
-func (ch *connHub) NewConn(conn *websocket.Conn, expiration int64) {
+func (ch *connHub) NewConn(conn *websocket.Conn, auth *rbac.Authentication) {
 	ch.mu.Lock()
 	defer ch.mu.Unlock()
 	id := atomic.AddInt32(&ch.autoClientId, 1)
-	ch.connections[id] = NewConn(id, ch.ctx, conn, ch.group, ch.handle)
+	ch.connections[id] = NewConn(id, ch.ctx, conn, ch.group, ch.handle, auth)
 	go func() {
 		if err := ch.connections[id].ReadPump(); err != nil {
 			klog.V(2).Info(err)
@@ -48,7 +49,7 @@ func (ch *connHub) NewConn(conn *websocket.Conn, expiration int64) {
 			klog.V(2).Info(err)
 		}
 	}()
-	go ch.connections[id].KeepAlive(expiration)
+	go ch.connections[id].KeepAlive()
 }
 
 func (ch *connHub) BroadcastWatch() {
@@ -82,17 +83,18 @@ func NewConnHub(ctx context.Context, g group.Group) ConnHub {
 
 type WsConn interface {
 	Ping()
-	KeepAlive(expiration int64)
+	KeepAlive()
 	ReadPump() (err error)
 	SendToChannel(data []byte) (err error)
 	WritePump() (err error)
 	Close()
 }
 
-func NewConn(clientId int32, ctx context.Context, ws *websocket.Conn, g group.Group, h handle.Handle) WsConn {
+func NewConn(clientId int32, ctx context.Context, ws *websocket.Conn, g group.Group, h handle.Handle, auth *rbac.Authentication) WsConn {
 	c := &wsConn{
 		handle:            h,
 		group:             g,
+		auth:              auth,
 		clientId:          clientId,
 		conn:              ws,
 		readChan:          make(chan interface{}),
@@ -112,9 +114,9 @@ const (
 )
 
 type wsConn struct {
-	group  group.Group
-	handle handle.Handle
-
+	group             group.Group
+	handle            handle.Handle
+	auth              *rbac.Authentication
 	mu                sync.RWMutex
 	clientId          int32
 	conn              *websocket.Conn
@@ -132,9 +134,9 @@ func (c *wsConn) Ping() {
 	c.lastHeartBeatTime = time.Now()
 }
 
-func (c *wsConn) KeepAlive(expiration int64) {
+func (c *wsConn) KeepAlive() {
 	defer c.Close()
-	after := time.After(time.Second * time.Duration(expiration))
+	after := time.After(time.Second * time.Duration(c.auth.TokenClaims.ExpiresAt-time.Now().Unix()))
 	tick := time.NewTicker(5 * time.Second)
 	defer tick.Stop()
 	for {
@@ -169,6 +171,7 @@ func (c *wsConn) ReadPump() (err error) {
 			return err
 		}
 		klog.Info("proto Request:", msg)
+		ctx := rbac.NewContext(c.ctx, c.auth)
 		switch proto.ApiService(msg.Param.Service) {
 		case proto.SvcPing:
 			c.Ping()
@@ -176,21 +179,21 @@ func (c *wsConn) ReadPump() (err error) {
 				return err
 			}
 		case proto.SvcCreate:
-			if res, err = c.handle.KubernetesApi().Create(msg.Param, msg.Data); err != nil {
+			if res, err = c.handle.KubernetesApi().Create(ctx, msg.Param, msg.Data); err != nil {
 				klog.V(2).Info(err)
 				if res, err = proto.ErrorResponse(msg.Param, err.Error()); err != nil {
 					klog.V(2).Info(err)
 				}
 			}
 		case proto.SvcUpdate:
-			if res, err = c.handle.KubernetesApi().Update(msg.Param, msg.Data); err != nil {
+			if res, err = c.handle.KubernetesApi().Update(ctx, msg.Param, msg.Data); err != nil {
 				klog.V(2).Info(err)
 				if res, err = proto.ErrorResponse(msg.Param, err.Error()); err != nil {
 					klog.V(2).Info(err)
 				}
 			}
 		case proto.SvcDelete:
-			if err = c.handle.KubernetesApi().Delete(msg.Param, msg.Data); err != nil {
+			if err = c.handle.KubernetesApi().Delete(ctx, msg.Param, msg.Data); err != nil {
 				klog.V(2).Info(err)
 				if res, err = proto.ErrorResponse(msg.Param, err.Error()); err != nil {
 					klog.V(2).Info(err)
@@ -201,14 +204,14 @@ func (c *wsConn) ReadPump() (err error) {
 				}
 			}
 		case proto.SvcGet:
-			if res, err = c.handle.KubernetesApi().Get(msg.Param, msg.Data); err != nil {
+			if res, err = c.handle.KubernetesApi().Get(ctx, msg.Param, msg.Data); err != nil {
 				klog.V(2).Info(err)
 				if res, err = proto.ErrorResponse(msg.Param, err.Error()); err != nil {
 					klog.V(2).Info(err)
 				}
 			}
 		case proto.SvcList:
-			if res, err = c.handle.KubernetesApi().List(msg.Param); err != nil {
+			if res, err = c.handle.KubernetesApi().List(ctx, msg.Param); err != nil {
 				klog.V(2).Info(err)
 				if res, err = proto.ErrorResponse(msg.Param, err.Error()); err != nil {
 					klog.V(2).Info(err)
@@ -216,7 +219,7 @@ func (c *wsConn) ReadPump() (err error) {
 			}
 		case proto.SvcWatch:
 		case proto.SvcResource:
-			if res, err = c.handle.KubernetesApi().Resources(msg.Param); err != nil {
+			if res, err = c.handle.KubernetesApi().Resources(ctx, msg.Param); err != nil {
 				klog.V(2).Info(err)
 				if res, err = proto.ErrorResponse(msg.Param, err.Error()); err != nil {
 					klog.V(2).Info(err)

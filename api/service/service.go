@@ -12,8 +12,8 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/nevercase/k8s-controller-custom-resource/api/conf"
 	"github.com/nevercase/k8s-controller-custom-resource/api/group"
+	"github.com/nevercase/k8s-controller-custom-resource/api/rbac"
 	"net/http"
-	"time"
 )
 
 type Service interface {
@@ -97,5 +97,5 @@ func (s *service) handler(c *gin.Context) {
 		zaplogger.Sugar().Error(err)
 		return
 	}
-	s.conn.NewConn(conn, tokenClaims.ExpiresAt-time.Now().Unix())
+	s.conn.NewConn(conn, &rbac.Authentication{TokenClaims: tokenClaims})
 }

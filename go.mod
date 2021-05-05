@@ -4,7 +4,7 @@ go 1.15
 
 require (
 	github.com/Shanghai-Lunara/helixsaga-operator v0.0.0-20210414065929-e1a73929445c
-	github.com/Shanghai-Lunara/pkg v0.0.0-20210430063801-f0ab65e6eb9b
+	github.com/Shanghai-Lunara/pkg v0.0.0-20210505112250-7b0d946d3d50
 	github.com/gin-contrib/cors v1.3.1
 	github.com/gin-gonic/gin v1.6.3
 	github.com/gogo/protobuf v1.3.1
