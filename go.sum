@@ -86,8 +86,8 @@ github.com/Shanghai-Lunara/helixsaga-operator v0.0.0-20210414065929-e1a73929445c
 github.com/Shanghai-Lunara/helixsaga-operator v0.0.0-20210414065929-e1a73929445c/go.mod h1:UiP4DVWF0GkVhMs60C4KfJ3mhfE3PO4CoTD+vPVyjmk=
 github.com/Shanghai-Lunara/pkg v0.0.0-20210410040202-9b354dbed557 h1:ifa8c3FJiVjhQkFFjtMyiUDOFqn/wvLHdsIBfZTSSO8=
 github.com/Shanghai-Lunara/pkg v0.0.0-20210410040202-9b354dbed557/go.mod h1:J08175Zem81ie7jWg0s2ssXVMCYgoWw9JNKRCSlz5dE=
-github.com/Shanghai-Lunara/pkg v0.0.0-20210505112250-7b0d946d3d50 h1:rmV9HodxPhLuGLuYFoUPNaVlON1M22mYDKzRsn+WVyM=
-github.com/Shanghai-Lunara/pkg v0.0.0-20210505112250-7b0d946d3d50/go.mod h1:nomrKHInyaXvYmzhPwrUCBikQyXyQV2+Idlz7CvvbDo=
+github.com/Shanghai-Lunara/pkg v0.0.0-20210506030104-1eac3080daae h1:D6OSOoKf/8s+jK9nDynIA/8ZZzPQCVmL/PB5Rv768+k=
+github.com/Shanghai-Lunara/pkg v0.0.0-20210506030104-1eac3080daae/go.mod h1:nomrKHInyaXvYmzhPwrUCBikQyXyQV2+Idlz7CvvbDo=
 github.com/Shopify/logrus-bugsnag v0.0.0-20171204204709-577dee27f20d h1:UrqY+r/OJnIp5u0s1SbQ8dVfLCZJsnvazdBP5hS4iRs=
 github.com/Shopify/logrus-bugsnag v0.0.0-20171204204709-577dee27f20d/go.mod h1:HI8ITrYtUY+O+ZhtlqUnD8+KwNPOyugEhfP9fdUIaEQ=
 github.com/Shopify/sarama v1.19.0/go.mod h1:FVkBWblsNy7DGZRfXLU0O9RCGt5g3g3yEuWXgklEdEo=
