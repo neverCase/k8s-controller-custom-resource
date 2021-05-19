@@ -157,6 +157,37 @@ func (c *wsConn) KeepAlive() {
 	}
 }
 
+func (c *wsConn) rbac(msg proto.Request) bool {
+	ok, err := casbinrbac.Enforce(c.auth.TokenClaims.Username, msg.Param.NameSpace, string(msg.Param.ResourceType), msg.Param.Service)
+	if err != nil {
+		klog.V(2).Info(err)
+		zaplogger.Sugar().Errorw("rbac", "username", c.auth.TokenClaims.Username, "msg", msg, "err", err)
+		return false
+	}
+	return ok
+}
+
+func (c *wsConn) readRbac(msg proto.Request) bool {
+	switch c.auth.TokenClaims.IsAdmin {
+	case true:
+		return true
+	case false:
+		switch proto.ApiService(msg.Param.Service) {
+		case proto.SvcList:
+			if msg.Param.ResourceType != group.NameSpace {
+				return c.rbac(msg)
+			} else {
+				return true
+			}
+		case proto.SvcResource, proto.SvcHarbor:
+			return true
+		default:
+			return c.rbac(msg)
+		}
+	}
+	return false
+}
+
 func (c *wsConn) ReadPump() (err error) {
 	defer c.Close()
 	for {
@@ -171,6 +202,10 @@ func (c *wsConn) ReadPump() (err error) {
 		if err = msg.Unmarshal(message); err != nil {
 			klog.V(2).Info(err)
 			return err
+		}
+		if ok := c.readRbac(msg); !ok {
+			zaplogger.Sugar().Infow("readRbac no root", "username", c.auth.TokenClaims.Username, "msg", msg)
+			continue
 		}
 		klog.Info("proto Request:", msg)
 		ctx := rbac.NewContext(c.ctx, c.auth)
