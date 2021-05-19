@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"github.com/Shanghai-Lunara/pkg/casbinrbac"
 	"github.com/Shanghai-Lunara/pkg/zaplogger"
 	"github.com/nevercase/k8s-controller-custom-resource/api/rbac"
 	"sync"
@@ -29,7 +30,7 @@ type connHub struct {
 	autoClientId int32
 	connections  map[int32]WsConn
 
-	broadcast chan []byte
+	broadcast chan *handle.BroadcastMessage
 
 	ctx context.Context
 }
@@ -58,7 +59,7 @@ func (ch *connHub) BroadcastWatch() {
 		case msg := <-ch.broadcast:
 			ch.mu.RLock()
 			for _, v := range ch.connections {
-				if err := v.SendToChannel(msg); err != nil {
+				if err := v.SendToChannelWithRbac(msg); err != nil {
 					klog.V(2).Info("BroadcastWatch err:%v", err)
 				}
 			}
@@ -68,7 +69,7 @@ func (ch *connHub) BroadcastWatch() {
 }
 
 func NewConnHub(ctx context.Context, g group.Group) ConnHub {
-	b := make(chan []byte, 4096)
+	b := make(chan *handle.BroadcastMessage, 4096)
 	ch := &connHub{
 		group:        g,
 		handle:       handle.NewHandle(g, b),
@@ -85,6 +86,7 @@ type WsConn interface {
 	Ping()
 	KeepAlive()
 	ReadPump() (err error)
+	SendToChannelWithRbac(bm *handle.BroadcastMessage) (err error)
 	SendToChannel(data []byte) (err error)
 	WritePump() (err error)
 	Close()
@@ -237,6 +239,20 @@ func (c *wsConn) ReadPump() (err error) {
 			return err
 		}
 	}
+}
+
+func (c *wsConn) SendToChannelWithRbac(bm *handle.BroadcastMessage) (err error) {
+	switch c.auth.TokenClaims.IsAdmin {
+	case false:
+		ok, err := casbinrbac.Enforce(c.auth.TokenClaims.Username, bm.Namespace, bm.ResourceType, bm.Action)
+		if err != nil {
+			return err
+		}
+		if !ok {
+			return nil
+		}
+	}
+	return c.SendToChannel(bm.Data)
 }
 
 func (c *wsConn) SendToChannel(msg []byte) (err error) {

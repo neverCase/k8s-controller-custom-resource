@@ -34,11 +34,18 @@ type KubernetesApiInterface interface {
 	Delete(ctx context.Context, req proto.Param, obj []byte) (err error)
 	Get(ctx context.Context, req proto.Param, obj []byte) (res []byte, err error)
 	List(ctx context.Context, req proto.Param) ([]byte, error)
-	Watch(broadcast chan []byte)
+	Watch(broadcast chan *BroadcastMessage)
 	Resources(ctx context.Context, req proto.Param) (res []byte, err error)
 }
 
-func NewKubernetesApiHandle(g group.Group, broadcast chan []byte) KubernetesApiInterface {
+type BroadcastMessage struct {
+	Namespace    string
+	ResourceType string
+	Action       string
+	Data         []byte
+}
+
+func NewKubernetesApiHandle(g group.Group, broadcast chan *BroadcastMessage) KubernetesApiInterface {
 	kh := &k8sHandle{
 		group: g,
 	}
@@ -461,11 +468,12 @@ func (h *k8sHandle) List(ctx context.Context, req proto.Param) (res []byte, err 
 	return proto.GetResponse(req, res)
 }
 
-func (h *k8sHandle) convertObjFromEvent(obj interface{}, et watch.EventType) (res []byte, err error) {
+func (h *k8sHandle) convertObjFromEvent(obj interface{}, et watch.EventType) (bm *BroadcastMessage, err error) {
 	req := proto.Param{
 		Service:        string(proto.SvcWatch),
 		WatchEventType: proto.EventType(et),
 	}
+	var res []byte
 	switch reflect.TypeOf(obj) {
 	case reflect.TypeOf(&corev1.ConfigMap{}):
 		var e proto.ConfigMap
@@ -484,6 +492,7 @@ func (h *k8sHandle) convertObjFromEvent(obj interface{}, et watch.EventType) (re
 		var e proto.Pod
 		n := obj.(*corev1.Pod)
 		req.ResourceType = group.Pod
+		req.NameSpace = n.Namespace
 		e = convertPodToProto(n)
 		res, err = e.Marshal()
 	case reflect.TypeOf(&corev1.Service{}):
@@ -523,13 +532,21 @@ func (h *k8sHandle) convertObjFromEvent(obj interface{}, et watch.EventType) (re
 		res, err = e.Marshal()
 	}
 	if err != nil {
-		klog.V(2).Info(err)
 		return nil, err
 	}
-	return proto.GetResponse(req, res)
+	data, err := proto.GetResponse(req, res)
+	if err != nil {
+		return nil, err
+	}
+	return &BroadcastMessage{
+		Namespace:    req.NameSpace,
+		ResourceType: string(req.ResourceType),
+		Action:       string(proto.SvcWatch),
+		Data:         data,
+	}, nil
 }
 
-func (h *k8sHandle) Watch(broadcast chan []byte) {
+func (h *k8sHandle) Watch(broadcast chan *BroadcastMessage) {
 	for {
 		select {
 		case e, isClosed := <-h.group.WatchEvents():
