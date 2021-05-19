@@ -4,8 +4,14 @@ metadata:
   name: mysqloperators.nevercase.io
 spec:
   group: nevercase.io
-  version: v1
+  versions:
+    - name: v1
+      served: true
+      storage: true
   names:
     kind: MysqlOperator
     plural: mysqloperators
+    singular: mysqloperator
+    shortNames:
+      - mo
   scope: Namespaced

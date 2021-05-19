@@ -1,11 +1,14 @@
 package v1
 
 import (
+	"context"
 	"fmt"
+	"github.com/nevercase/k8s-controller-custom-resource/pkg/env"
+	"time"
 
-	appsV1 "k8s.io/api/apps/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/watch"
@@ -16,28 +19,31 @@ import (
 )
 
 type KubernetesStatefulSet interface {
-	Get(nameSpace, specName string) (d *appsV1.StatefulSet, err error)
-	Create(nameSpace string, d *appsV1.StatefulSet) (*appsV1.StatefulSet, error)
-	Update(nameSpace string, d *appsV1.StatefulSet) (*appsV1.StatefulSet, error)
+	Get(nameSpace, specName string) (d *appsv1.StatefulSet, err error)
+	Create(nameSpace string, d *appsv1.StatefulSet) (*appsv1.StatefulSet, error)
+	Update(nameSpace string, d *appsv1.StatefulSet) (*appsv1.StatefulSet, error)
 	Delete(nameSpace, specName string) error
-	List(nameSpace, filterName string) (dl *appsV1.StatefulSetList, err error)
+	List(nameSpace, filterName string) (dl *appsv1.StatefulSetList, err error)
 	Watch(nameSpace string, filter string) (w watch.Interface, err error)
-	Patch(nameSpace string, name string, pt types.PatchType, data []byte, subResources ...string) (*appsV1.StatefulSet, error)
+	Patch(nameSpace string, name string, pt types.PatchType, data []byte, subResources ...string) (*appsv1.StatefulSet, error)
 }
 
 func NewKubernetesStatefulSet(kubeClientSet kubernetes.Interface, kubeInformerFactory kubeinformers.SharedInformerFactory) KubernetesStatefulSet {
+	timeout, _ := env.GetExecutionTimeoutDuration()
 	return &kubernetesStatefulSet{
-		kubeClientSet:     kubeClientSet,
-		statefulSetLister: kubeInformerFactory.Apps().V1().StatefulSets().Lister(),
+		kubeClientSet:         kubeClientSet,
+		statefulSetLister:     kubeInformerFactory.Apps().V1().StatefulSets().Lister(),
+		executionTimeoutInSec: timeout,
 	}
 }
 
 type kubernetesStatefulSet struct {
-	kubeClientSet     kubernetes.Interface
-	statefulSetLister appslistersv1.StatefulSetLister
+	kubeClientSet         kubernetes.Interface
+	statefulSetLister     appslistersv1.StatefulSetLister
+	executionTimeoutInSec int64
 }
 
-func (kss *kubernetesStatefulSet) Get(nameSpace, specName string) (ss *appsV1.StatefulSet, err error) {
+func (sts *kubernetesStatefulSet) Get(nameSpace, specName string) (ss *appsv1.StatefulSet, err error) {
 	var name string
 	if specName == "" {
 		// We choose to absorb the error here as the worker would requeue the
@@ -48,38 +54,46 @@ func (kss *kubernetesStatefulSet) Get(nameSpace, specName string) (ss *appsV1.St
 	}
 	name = fmt.Sprintf(StatefulSetNameTemplate, specName)
 	// Get the statefulSet with the name specified in spec
-	statefulSet, err := kss.statefulSetLister.StatefulSets(nameSpace).Get(name)
+	statefulSet, err := sts.statefulSetLister.StatefulSets(nameSpace).Get(name)
 	return statefulSet, err
 }
 
-func (kss *kubernetesStatefulSet) Create(nameSpace string, ss *appsV1.StatefulSet) (*appsV1.StatefulSet, error) {
-	statefulSet, err := kss.kubeClientSet.AppsV1().StatefulSets(nameSpace).Create(ss)
+func (sts *kubernetesStatefulSet) Create(nameSpace string, ss *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
+	createOpt := metav1.CreateOptions{}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*time.Duration(sts.executionTimeoutInSec))
+	statefulSet, err := sts.kubeClientSet.AppsV1().StatefulSets(nameSpace).Create(ctx, ss, createOpt)
+	cancel()
 	if err != nil {
 		klog.V(2).Info(err)
 	}
 	return statefulSet, err
 }
 
-func (kss *kubernetesStatefulSet) Update(nameSpace string, ss *appsV1.StatefulSet) (*appsV1.StatefulSet, error) {
-	statefulSet, err := kss.kubeClientSet.AppsV1().StatefulSets(nameSpace).Update(ss)
+func (sts *kubernetesStatefulSet) Update(nameSpace string, ss *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
+	opt := metav1.UpdateOptions{}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*time.Duration(sts.executionTimeoutInSec))
+	statefulSet, err := sts.kubeClientSet.AppsV1().StatefulSets(nameSpace).Update(ctx, ss, opt)
+	cancel()
 	if err != nil {
 		klog.V(2).Info(err)
 	}
 	return statefulSet, err
 }
 
-func (kss *kubernetesStatefulSet) Delete(nameSpace, specName string) error {
+func (sts *kubernetesStatefulSet) Delete(nameSpace, specName string) error {
 	// Get the statefulSet with the name specified in spec
-	_, err := kss.Get(nameSpace, specName)
+	_, err := sts.Get(nameSpace, specName)
 	// If the resource doesn't exist, we'll return nil
 	if errors.IsNotFound(err) {
 		return nil
 	}
-	opts := &metaV1.DeleteOptions{
+	opts := metav1.DeleteOptions{
 		//GracePeriodSeconds: int64ToPointer(30),
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*time.Duration(sts.executionTimeoutInSec))
 	name := fmt.Sprintf(StatefulSetNameTemplate, specName)
-	err = kss.kubeClientSet.AppsV1().StatefulSets(nameSpace).Delete(name, opts)
+	err = sts.kubeClientSet.AppsV1().StatefulSets(nameSpace).Delete(ctx, name, opts)
+	cancel()
 	if err != nil {
 		klog.V(2).Info(err)
 		return err
@@ -87,32 +101,43 @@ func (kss *kubernetesStatefulSet) Delete(nameSpace, specName string) error {
 	return nil
 }
 
-func (kss *kubernetesStatefulSet) List(nameSpace, filterName string) (ssl *appsV1.StatefulSetList, err error) {
+func (sts *kubernetesStatefulSet) List(nameSpace, filterName string) (ssl *appsv1.StatefulSetList, err error) {
 	timeout := int64(300)
-	opts := metaV1.ListOptions{
+	opts := metav1.ListOptions{
 		LabelSelector:  filterName,
 		TimeoutSeconds: &timeout,
 	}
-	ssl, err = kss.kubeClientSet.AppsV1().StatefulSets(nameSpace).List(opts)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*time.Duration(sts.executionTimeoutInSec))
+	ssl, err = sts.kubeClientSet.AppsV1().StatefulSets(nameSpace).List(ctx, opts)
+	cancel()
 	if err != nil {
 		klog.V(2).Info(err)
 	}
 	return ssl, err
 }
 
-func (kss *kubernetesStatefulSet) Watch(nameSpace string, filterName string) (w watch.Interface, err error) {
+func (sts *kubernetesStatefulSet) Watch(nameSpace string, filterName string) (w watch.Interface, err error) {
 	timeout := int64(300)
-	opts := metaV1.ListOptions{
+	opts := metav1.ListOptions{
 		LabelSelector:  filterName,
 		TimeoutSeconds: &timeout,
 	}
-	w, err = kss.kubeClientSet.AppsV1().StatefulSets(nameSpace).Watch(opts)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*time.Duration(sts.executionTimeoutInSec))
+	w, err = sts.kubeClientSet.AppsV1().StatefulSets(nameSpace).Watch(ctx, opts)
+	cancel()
 	if err != nil {
 		klog.V(2).Info(err)
 	}
 	return w, err
 }
 
-func (kss *kubernetesStatefulSet) Patch(nameSpace string, name string, pt types.PatchType, data []byte, subResources ...string) (*appsV1.StatefulSet, error) {
-	return kss.kubeClientSet.AppsV1().StatefulSets(nameSpace).Patch(name, pt, data, subResources...)
+func (sts *kubernetesStatefulSet) Patch(nameSpace string, name string, pt types.PatchType, data []byte, subResources ...string) (*appsv1.StatefulSet, error) {
+	opt := metav1.PatchOptions{}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*time.Duration(sts.executionTimeoutInSec))
+	s, err := sts.kubeClientSet.AppsV1().StatefulSets(nameSpace).Patch(ctx, name, pt, data, opt, subResources...)
+	cancel()
+	if err != nil {
+		klog.V(2).Info(err)
+	}
+	return s, err
 }

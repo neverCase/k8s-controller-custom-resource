@@ -19,6 +19,8 @@ limitations under the License.
 package fake
 
 import (
+	"context"
+
 	redisoperatorv1 "github.com/nevercase/k8s-controller-custom-resource/pkg/apis/redisoperator/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
@@ -39,7 +41,7 @@ var redisoperatorsResource = schema.GroupVersionResource{Group: "nevercase.io", 
 var redisoperatorsKind = schema.GroupVersionKind{Group: "nevercase.io", Version: "v1", Kind: "RedisOperator"}
 
 // Get takes name of the redisOperator, and returns the corresponding redisOperator object, and an error if there is any.
-func (c *FakeRedisOperators) Get(name string, options v1.GetOptions) (result *redisoperatorv1.RedisOperator, err error) {
+func (c *FakeRedisOperators) Get(ctx context.Context, name string, options v1.GetOptions) (result *redisoperatorv1.RedisOperator, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewGetAction(redisoperatorsResource, c.ns, name), &redisoperatorv1.RedisOperator{})
 
@@ -50,7 +52,7 @@ func (c *FakeRedisOperators) Get(name string, options v1.GetOptions) (result *re
 }
 
 // List takes label and field selectors, and returns the list of RedisOperators that match those selectors.
-func (c *FakeRedisOperators) List(opts v1.ListOptions) (result *redisoperatorv1.RedisOperatorList, err error) {
+func (c *FakeRedisOperators) List(ctx context.Context, opts v1.ListOptions) (result *redisoperatorv1.RedisOperatorList, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewListAction(redisoperatorsResource, redisoperatorsKind, c.ns, opts), &redisoperatorv1.RedisOperatorList{})
 
@@ -72,14 +74,14 @@ func (c *FakeRedisOperators) List(opts v1.ListOptions) (result *redisoperatorv1.
 }
 
 // Watch returns a watch.Interface that watches the requested redisOperators.
-func (c *FakeRedisOperators) Watch(opts v1.ListOptions) (watch.Interface, error) {
+func (c *FakeRedisOperators) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
 		InvokesWatch(testing.NewWatchAction(redisoperatorsResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a redisOperator and creates it.  Returns the server's representation of the redisOperator, and an error, if there is any.
-func (c *FakeRedisOperators) Create(redisOperator *redisoperatorv1.RedisOperator) (result *redisoperatorv1.RedisOperator, err error) {
+func (c *FakeRedisOperators) Create(ctx context.Context, redisOperator *redisoperatorv1.RedisOperator, opts v1.CreateOptions) (result *redisoperatorv1.RedisOperator, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewCreateAction(redisoperatorsResource, c.ns, redisOperator), &redisoperatorv1.RedisOperator{})
 
@@ -90,7 +92,7 @@ func (c *FakeRedisOperators) Create(redisOperator *redisoperatorv1.RedisOperator
 }
 
 // Update takes the representation of a redisOperator and updates it. Returns the server's representation of the redisOperator, and an error, if there is any.
-func (c *FakeRedisOperators) Update(redisOperator *redisoperatorv1.RedisOperator) (result *redisoperatorv1.RedisOperator, err error) {
+func (c *FakeRedisOperators) Update(ctx context.Context, redisOperator *redisoperatorv1.RedisOperator, opts v1.UpdateOptions) (result *redisoperatorv1.RedisOperator, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewUpdateAction(redisoperatorsResource, c.ns, redisOperator), &redisoperatorv1.RedisOperator{})
 
@@ -101,7 +103,7 @@ func (c *FakeRedisOperators) Update(redisOperator *redisoperatorv1.RedisOperator
 }
 
 // Delete takes name of the redisOperator and deletes it. Returns an error if one occurs.
-func (c *FakeRedisOperators) Delete(name string, options *v1.DeleteOptions) error {
+func (c *FakeRedisOperators) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
 		Invokes(testing.NewDeleteAction(redisoperatorsResource, c.ns, name), &redisoperatorv1.RedisOperator{})
 
@@ -109,15 +111,15 @@ func (c *FakeRedisOperators) Delete(name string, options *v1.DeleteOptions) erro
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *FakeRedisOperators) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(redisoperatorsResource, c.ns, listOptions)
+func (c *FakeRedisOperators) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
+	action := testing.NewDeleteCollectionAction(redisoperatorsResource, c.ns, listOpts)
 
 	_, err := c.Fake.Invokes(action, &redisoperatorv1.RedisOperatorList{})
 	return err
 }
 
 // Patch applies the patch and returns the patched redisOperator.
-func (c *FakeRedisOperators) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *redisoperatorv1.RedisOperator, err error) {
+func (c *FakeRedisOperators) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *redisoperatorv1.RedisOperator, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewPatchSubresourceAction(redisoperatorsResource, c.ns, name, pt, data, subresources...), &redisoperatorv1.RedisOperator{})
 

@@ -1,7 +1,10 @@
 package v1
 
 import (
+	"context"
 	"fmt"
+	"github.com/nevercase/k8s-controller-custom-resource/pkg/env"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -22,15 +25,18 @@ type KubernetesService interface {
 }
 
 func NewKubernetesService(kubeClientSet kubernetes.Interface, kubeInformerFactory kubeinformers.SharedInformerFactory) KubernetesService {
+	timeout, _ := env.GetExecutionTimeoutDuration()
 	return &kubernetesService{
-		kubeClientSet:  kubeClientSet,
-		servicesLister: kubeInformerFactory.Core().V1().Services().Lister(),
+		kubeClientSet:         kubeClientSet,
+		servicesLister:        kubeInformerFactory.Core().V1().Services().Lister(),
+		executionTimeoutInSec: timeout,
 	}
 }
 
 type kubernetesService struct {
-	kubeClientSet  kubernetes.Interface
-	servicesLister corelistersv1.ServiceLister
+	kubeClientSet         kubernetes.Interface
+	servicesLister        corelistersv1.ServiceLister
+	executionTimeoutInSec int64
 }
 
 func (ks *kubernetesService) Get(nameSpace, specName string) (d *corev1.Service, err error) {
@@ -49,7 +55,10 @@ func (ks *kubernetesService) Get(nameSpace, specName string) (d *corev1.Service,
 }
 
 func (ks *kubernetesService) Create(nameSpace string, d *corev1.Service) (*corev1.Service, error) {
-	service, err := ks.kubeClientSet.CoreV1().Services(nameSpace).Create(d)
+	createOpt := metav1.CreateOptions{}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*time.Duration(ks.executionTimeoutInSec))
+	service, err := ks.kubeClientSet.CoreV1().Services(nameSpace).Create(ctx, d, createOpt)
+	cancel()
 	if err != nil {
 		klog.V(2).Info(err)
 	}
@@ -57,7 +66,10 @@ func (ks *kubernetesService) Create(nameSpace string, d *corev1.Service) (*corev
 }
 
 func (ks *kubernetesService) Update(nameSpace string, d *corev1.Service) (*corev1.Service, error) {
-	service, err := ks.kubeClientSet.CoreV1().Services(nameSpace).Update(d)
+	updateOpt := metav1.UpdateOptions{}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*time.Duration(ks.executionTimeoutInSec))
+	service, err := ks.kubeClientSet.CoreV1().Services(nameSpace).Update(ctx, d, updateOpt)
+	cancel()
 	if err != nil {
 		klog.V(2).Info(err)
 	}
@@ -71,11 +83,13 @@ func (ks *kubernetesService) Delete(nameSpace, specName string) error {
 	if errors.IsNotFound(err) {
 		return nil
 	}
-	opts := &metav1.DeleteOptions{
+	opts := metav1.DeleteOptions{
 		//GracePeriodSeconds: int64ToPointer(30),
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*time.Duration(ks.executionTimeoutInSec))
 	name := fmt.Sprintf(ServiceNameTemplate, specName)
-	err = ks.kubeClientSet.CoreV1().Services(nameSpace).Delete(name, opts)
+	err = ks.kubeClientSet.CoreV1().Services(nameSpace).Delete(ctx, name, opts)
+	cancel()
 	if err != nil {
 		klog.V(2).Info(err)
 		return err
@@ -87,7 +101,9 @@ func (ks *kubernetesService) List(nameSpace, filterName string) (sl *corev1.Serv
 	opts := metav1.ListOptions{
 		LabelSelector: filterName,
 	}
-	sl, err = ks.kubeClientSet.CoreV1().Services(nameSpace).List(opts)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*time.Duration(ks.executionTimeoutInSec))
+	sl, err = ks.kubeClientSet.CoreV1().Services(nameSpace).List(ctx, opts)
+	cancel()
 	if err != nil {
 		klog.V(2).Info(err)
 	}

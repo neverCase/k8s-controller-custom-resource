@@ -19,6 +19,7 @@ limitations under the License.
 package v1
 
 import (
+	"context"
 	time "time"
 
 	mysqloperatorv1 "github.com/nevercase/k8s-controller-custom-resource/pkg/apis/mysqloperator/v1"
@@ -61,13 +62,13 @@ func NewFilteredMysqlOperatorInformer(client versioned.Interface, namespace stri
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.NevercaseV1().MysqlOperators(namespace).List(options)
+				return client.NevercaseV1().MysqlOperators(namespace).List(context.TODO(), options)
 			},
 			WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.NevercaseV1().MysqlOperators(namespace).Watch(options)
+				return client.NevercaseV1().MysqlOperators(namespace).Watch(context.TODO(), options)
 			},
 		},
 		&mysqloperatorv1.MysqlOperator{},

@@ -157,7 +157,9 @@ func (in *RedisSpec) DeepCopyInto(out *RedisSpec) {
 	if in.ServicePorts != nil {
 		in, out := &in.ServicePorts, &out.ServicePorts
 		*out = make([]corev1.ServicePort, len(*in))
-		copy(*out, *in)
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
 	}
 	return
 }

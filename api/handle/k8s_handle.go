@@ -1,6 +1,10 @@
 package handle
 
 import (
+	"context"
+	"github.com/Shanghai-Lunara/pkg/casbinrbac"
+	"github.com/Shanghai-Lunara/pkg/zaplogger"
+	"github.com/nevercase/k8s-controller-custom-resource/api/rbac"
 	"reflect"
 
 	corev1 "k8s.io/api/core/v1"
@@ -25,16 +29,23 @@ type KubernetesApiGetter interface {
 }
 
 type KubernetesApiInterface interface {
-	Create(req proto.Param, obj []byte) (res []byte, err error)
-	Update(req proto.Param, obj []byte) (res []byte, err error)
-	Delete(req proto.Param, obj []byte) (err error)
-	Get(req proto.Param, obj []byte) (res []byte, err error)
-	List(req proto.Param) ([]byte, error)
-	Watch(broadcast chan []byte)
-	Resources(req proto.Param) (res []byte, err error)
+	Create(ctx context.Context, req proto.Param, obj []byte) (res []byte, err error)
+	Update(ctx context.Context, req proto.Param, obj []byte) (res []byte, err error)
+	Delete(ctx context.Context, req proto.Param, obj []byte) (err error)
+	Get(ctx context.Context, req proto.Param, obj []byte) (res []byte, err error)
+	List(ctx context.Context, req proto.Param) ([]byte, error)
+	Watch(broadcast chan *BroadcastMessage)
+	Resources(ctx context.Context, req proto.Param) (res []byte, err error)
 }
 
-func NewKubernetesApiHandle(g group.Group, broadcast chan []byte) KubernetesApiInterface {
+type BroadcastMessage struct {
+	Namespace    string
+	ResourceType string
+	Action       string
+	Data         []byte
+}
+
+func NewKubernetesApiHandle(g group.Group, broadcast chan *BroadcastMessage) KubernetesApiInterface {
 	kh := &k8sHandle{
 		group: g,
 	}
@@ -46,7 +57,7 @@ type k8sHandle struct {
 	group group.Group
 }
 
-func (h *k8sHandle) Create(req proto.Param, obj []byte) (res []byte, err error) {
+func (h *k8sHandle) Create(ctx context.Context, req proto.Param, obj []byte) (res []byte, err error) {
 	var n interface{}
 	switch req.ResourceType {
 	case group.ConfigMap:
@@ -123,7 +134,7 @@ func (h *k8sHandle) Create(req proto.Param, obj []byte) (res []byte, err error) 
 	return proto.GetResponse(req, res)
 }
 
-func (h *k8sHandle) Update(req proto.Param, obj []byte) (res []byte, err error) {
+func (h *k8sHandle) Update(ctx context.Context, req proto.Param, obj []byte) (res []byte, err error) {
 	var n interface{}
 	switch req.ResourceType {
 	case group.ConfigMap:
@@ -200,7 +211,7 @@ func (h *k8sHandle) Update(req proto.Param, obj []byte) (res []byte, err error) 
 	return proto.GetResponse(req, res)
 }
 
-func (h *k8sHandle) Delete(req proto.Param, obj []byte) (err error) {
+func (h *k8sHandle) Delete(ctx context.Context, req proto.Param, obj []byte) (err error) {
 	var name string
 	switch req.ResourceType {
 	case group.ConfigMap:
@@ -248,7 +259,7 @@ func (h *k8sHandle) Delete(req proto.Param, obj []byte) (err error) {
 	return err
 }
 
-func (h *k8sHandle) Get(req proto.Param, obj []byte) (res []byte, err error) {
+func (h *k8sHandle) Get(ctx context.Context, req proto.Param, obj []byte) (res []byte, err error) {
 	var n interface{}
 	switch req.ResourceType {
 	case group.ConfigMap:
@@ -347,7 +358,13 @@ func (h *k8sHandle) Get(req proto.Param, obj []byte) (res []byte, err error) {
 	return proto.GetResponse(req, res)
 }
 
-func (h *k8sHandle) List(req proto.Param) (res []byte, err error) {
+func (h *k8sHandle) List(ctx context.Context, req proto.Param) (res []byte, err error) {
+	//if req.ResourceType != group.NameSpace {
+	//	if req.NameSpace == "" {
+	//		return nil, fmt.Errorf("you must specify a namespce instead of an empty string")
+	//	}
+	//}
+	auth, _ := rbac.FromContext(ctx)
 	var d interface{}
 	var selector = labels.NewSelector()
 	if d, err = h.group.Resource().List(req.ResourceType, req.NameSpace, selector); err != nil {
@@ -366,9 +383,26 @@ func (h *k8sHandle) List(req proto.Param) (res []byte, err error) {
 		m := proto.NameSpaceList{
 			Items: make([]proto.NameSpace, 0),
 		}
-		for _, v := range d.(*corev1.NamespaceList).Items {
-			m.Items = append(m.Items, convertNameSpaceToProto(&v))
+		switch auth.TokenClaims.IsAdmin {
+		case true:
+			for _, v := range d.(*corev1.NamespaceList).Items {
+				m.Items = append(m.Items, convertNameSpaceToProto(&v))
+			}
+		case false:
+			policies := casbinrbac.ListPoliciesByUsername(auth.TokenClaims.Username)
+			zaplogger.Sugar().Info("policies: ", policies)
+			tmp := make(map[string]bool, 0)
+			for _, v := range policies {
+				tmp[v.Namespace] = true
+			}
+			zaplogger.Sugar().Info("Namespaces: ", d.(*corev1.NamespaceList).Items)
+			for _, v := range d.(*corev1.NamespaceList).Items {
+				if _, ok := tmp[v.Name]; ok {
+					m.Items = append(m.Items, convertNameSpaceToProto(&v))
+				}
+			}
 		}
+		zaplogger.Sugar().Info("finally res: ", m.Items)
 		res, err = m.Marshal()
 	case group.Pod:
 		m := proto.PodList{
@@ -434,11 +468,12 @@ func (h *k8sHandle) List(req proto.Param) (res []byte, err error) {
 	return proto.GetResponse(req, res)
 }
 
-func (h *k8sHandle) convertObjFromEvent(obj interface{}, et watch.EventType) (res []byte, err error) {
+func (h *k8sHandle) convertObjFromEvent(obj interface{}, et watch.EventType) (bm *BroadcastMessage, err error) {
 	req := proto.Param{
 		Service:        string(proto.SvcWatch),
 		WatchEventType: proto.EventType(et),
 	}
+	var res []byte
 	switch reflect.TypeOf(obj) {
 	case reflect.TypeOf(&corev1.ConfigMap{}):
 		var e proto.ConfigMap
@@ -457,6 +492,7 @@ func (h *k8sHandle) convertObjFromEvent(obj interface{}, et watch.EventType) (re
 		var e proto.Pod
 		n := obj.(*corev1.Pod)
 		req.ResourceType = group.Pod
+		req.NameSpace = n.Namespace
 		e = convertPodToProto(n)
 		res, err = e.Marshal()
 	case reflect.TypeOf(&corev1.Service{}):
@@ -496,13 +532,21 @@ func (h *k8sHandle) convertObjFromEvent(obj interface{}, et watch.EventType) (re
 		res, err = e.Marshal()
 	}
 	if err != nil {
-		klog.V(2).Info(err)
 		return nil, err
 	}
-	return proto.GetResponse(req, res)
+	data, err := proto.GetResponse(req, res)
+	if err != nil {
+		return nil, err
+	}
+	return &BroadcastMessage{
+		Namespace:    req.NameSpace,
+		ResourceType: string(req.ResourceType),
+		Action:       string(proto.SvcWatch),
+		Data:         data,
+	}, nil
 }
 
-func (h *k8sHandle) Watch(broadcast chan []byte) {
+func (h *k8sHandle) Watch(broadcast chan *BroadcastMessage) {
 	for {
 		select {
 		case e, isClosed := <-h.group.WatchEvents():
@@ -519,9 +563,29 @@ func (h *k8sHandle) Watch(broadcast chan []byte) {
 	}
 }
 
-func (h *k8sHandle) Resources(req proto.Param) (res []byte, err error) {
+func (h *k8sHandle) Resources(ctx context.Context, req proto.Param) (res []byte, err error) {
+	auth, _ := rbac.FromContext(ctx)
+	rt := make([]group.ResourceType, 0)
+	switch auth.TokenClaims.IsAdmin {
+	case true:
+		rt = h.group.Resource().ResourceTypes()
+	case false:
+		policies := casbinrbac.ListPoliciesByUsername(auth.TokenClaims.Username)
+		zaplogger.Sugar().Info("policies: ", policies)
+		tmp := make(map[group.ResourceType]bool, 0)
+		for _, v := range policies {
+			tmp[group.ResourceType(v.Object)] = true
+		}
+		zaplogger.Sugar().Info("ResourceTypes: ", h.group.Resource().ResourceTypes())
+		for _, v := range h.group.Resource().ResourceTypes() {
+			if _, ok := tmp[v]; ok {
+				rt = append(rt, v)
+			}
+		}
+	}
+	zaplogger.Sugar().Info("finally res: ", rt)
 	m := proto.ResourceList{
-		Items: h.group.Resource().ResourceTypes(),
+		Items: rt,
 	}
 	o, err := m.Marshal()
 	if err != nil {

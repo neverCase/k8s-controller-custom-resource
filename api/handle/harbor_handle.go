@@ -2,11 +2,13 @@ package handle
 
 import (
 	"fmt"
-	harbor "github.com/nevercase/harbor-api"
+	"github.com/goharbor/harbor/src/common/models"
+	"github.com/goharbor/harbor/src/controller/tag"
 	"github.com/nevercase/k8s-controller-custom-resource/api/group"
 	"github.com/nevercase/k8s-controller-custom-resource/api/proto"
 	"k8s.io/klog/v2"
 	"sort"
+	"strings"
 )
 
 type HarborApiGetter interface {
@@ -17,7 +19,7 @@ type HarborApiInterface interface {
 	Core(req proto.Param, obj []byte) (res []byte, err error)
 	Hubs() (res []byte, err error)
 	Projects(url string) (res []byte, err error)
-	Repositories(url string, projectId int) (res []byte, err error)
+	Repositories(url string, projectName string) (res []byte, err error)
 	Tags(url, imageName string) (res []byte, err error)
 }
 
@@ -43,7 +45,7 @@ func (ha *harborApi) Core(req proto.Param, obj []byte) (res []byte, err error) {
 	case proto.Projects:
 		res, err = ha.Projects(req.HarborRequest.HarborUrl)
 	case proto.Repositories:
-		res, err = ha.Repositories(req.HarborRequest.HarborUrl, int(req.HarborRequest.ProjectID))
+		res, err = ha.Repositories(req.HarborRequest.HarborUrl, req.HarborRequest.ProjectName)
 	case proto.Tags:
 		res, err = ha.Tags(req.HarborRequest.HarborUrl, req.HarborRequest.ImageName)
 	}
@@ -74,7 +76,7 @@ func (ha *harborApi) Projects(url string) (res []byte, err error) {
 		klog.V(2).Info(err)
 		return nil, err
 	}
-	t := make([]harbor.Project, 0)
+	t := make([]models.Project, 0)
 	if t, err = h.Projects(); err != nil {
 		klog.V(2).Info(err)
 		return nil, err
@@ -97,14 +99,14 @@ func (ha *harborApi) Projects(url string) (res []byte, err error) {
 	return m.Marshal()
 }
 
-func (ha *harborApi) Repositories(url string, projectId int) (res []byte, err error) {
+func (ha *harborApi) Repositories(url string, projectName string) (res []byte, err error) {
 	h, err := ha.group.HarborHub().Get(url)
 	if err != nil {
 		klog.V(2).Info(err)
 		return nil, err
 	}
-	t := make([]harbor.RepoRecord, 0)
-	if t, err = h.Repositories(projectId); err != nil {
+	t := make([]models.RepoRecord, 0)
+	if t, err = h.Repositories(projectName); err != nil {
 		klog.V(2).Info(err)
 		return nil, err
 	}
@@ -133,8 +135,13 @@ func (ha *harborApi) Tags(url, imageName string) (res []byte, err error) {
 		klog.V(2).Info(err)
 		return nil, err
 	}
-	t := make([]harbor.TagDetail, 0)
-	if t, err = h.Tags(imageName); err != nil {
+	t := make([]*tag.Tag, 0)
+	name := strings.Split(imageName, "/")
+	if len(name) != 2 {
+		err = fmt.Errorf("the imageName does't contain projectName/repositoryName: %s", imageName)
+		return nil, err
+	}
+	if t, err = h.Tags(name[0], name[1]); err != nil {
 		klog.V(2).Info(err)
 		return nil, err
 	}
@@ -143,7 +150,7 @@ func (ha *harborApi) Tags(url, imageName string) (res []byte, err error) {
 	}
 	for _, v := range t {
 		m.Items = append(m.Items, proto.HarborTag{
-			Digest: v.Digest,
+			Digest: "",
 			Name:   v.Name,
 		})
 	}

@@ -3,6 +3,9 @@ package service
 import (
 	"context"
 	"fmt"
+	"github.com/Shanghai-Lunara/pkg/casbinrbac"
+	"github.com/Shanghai-Lunara/pkg/zaplogger"
+	"github.com/nevercase/k8s-controller-custom-resource/api/rbac"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -16,7 +19,7 @@ import (
 )
 
 type ConnHub interface {
-	NewConn(conn *websocket.Conn)
+	NewConn(conn *websocket.Conn, uth *rbac.Authentication)
 }
 
 type connHub struct {
@@ -27,16 +30,16 @@ type connHub struct {
 	autoClientId int32
 	connections  map[int32]WsConn
 
-	broadcast chan []byte
+	broadcast chan *handle.BroadcastMessage
 
 	ctx context.Context
 }
 
-func (ch *connHub) NewConn(conn *websocket.Conn) {
+func (ch *connHub) NewConn(conn *websocket.Conn, auth *rbac.Authentication) {
 	ch.mu.Lock()
 	defer ch.mu.Unlock()
 	id := atomic.AddInt32(&ch.autoClientId, 1)
-	ch.connections[id] = NewConn(id, ch.ctx, conn, ch.group, ch.handle)
+	ch.connections[id] = NewConn(id, ch.ctx, conn, ch.group, ch.handle, auth)
 	go func() {
 		if err := ch.connections[id].ReadPump(); err != nil {
 			klog.V(2).Info(err)
@@ -56,7 +59,7 @@ func (ch *connHub) BroadcastWatch() {
 		case msg := <-ch.broadcast:
 			ch.mu.RLock()
 			for _, v := range ch.connections {
-				if err := v.SendToChannel(msg); err != nil {
+				if err := v.SendToChannelWithRbac(msg); err != nil {
 					klog.V(2).Info("BroadcastWatch err:%v", err)
 				}
 			}
@@ -66,8 +69,8 @@ func (ch *connHub) BroadcastWatch() {
 }
 
 func NewConnHub(ctx context.Context, g group.Group) ConnHub {
-	b := make(chan []byte, 4096)
-	ch :=  &connHub{
+	b := make(chan *handle.BroadcastMessage, 4096)
+	ch := &connHub{
 		group:        g,
 		handle:       handle.NewHandle(g, b),
 		autoClientId: 0,
@@ -83,15 +86,17 @@ type WsConn interface {
 	Ping()
 	KeepAlive()
 	ReadPump() (err error)
+	SendToChannelWithRbac(bm *handle.BroadcastMessage) (err error)
 	SendToChannel(data []byte) (err error)
 	WritePump() (err error)
 	Close()
 }
 
-func NewConn(clientId int32, ctx context.Context, ws *websocket.Conn, g group.Group, h handle.Handle) WsConn {
+func NewConn(clientId int32, ctx context.Context, ws *websocket.Conn, g group.Group, h handle.Handle, auth *rbac.Authentication) WsConn {
 	c := &wsConn{
 		handle:            h,
 		group:             g,
+		auth:              auth,
 		clientId:          clientId,
 		conn:              ws,
 		readChan:          make(chan interface{}),
@@ -111,9 +116,9 @@ const (
 )
 
 type wsConn struct {
-	group  group.Group
-	handle handle.Handle
-
+	group             group.Group
+	handle            handle.Handle
+	auth              *rbac.Authentication
 	mu                sync.RWMutex
 	clientId          int32
 	conn              *websocket.Conn
@@ -124,6 +129,7 @@ type wsConn struct {
 	status            connStatus
 	ctx               context.Context
 	cancel            context.CancelFunc
+	once              sync.Once
 }
 
 func (c *wsConn) Ping() {
@@ -132,8 +138,10 @@ func (c *wsConn) Ping() {
 
 func (c *wsConn) KeepAlive() {
 	defer c.Close()
+	after := time.After(time.Second * time.Duration(c.auth.TokenClaims.ExpiresAt-time.Now().Unix()))
+	tick := time.NewTicker(5 * time.Second)
+	defer tick.Stop()
 	for {
-		tick := time.NewTicker(10 * time.Second)
 		select {
 		case <-c.ctx.Done():
 			return
@@ -142,8 +150,42 @@ func (c *wsConn) KeepAlive() {
 				klog.Info("keepAlive timeout")
 				return
 			}
+		case <-after:
+			zaplogger.Sugar().Info("token expired")
+			return
 		}
 	}
+}
+
+func (c *wsConn) rbac(msg proto.Request) bool {
+	ok, err := casbinrbac.Enforce(c.auth.TokenClaims.Username, msg.Param.NameSpace, string(msg.Param.ResourceType), msg.Param.Service)
+	if err != nil {
+		klog.V(2).Info(err)
+		zaplogger.Sugar().Errorw("rbac", "username", c.auth.TokenClaims.Username, "msg", msg, "err", err)
+		return false
+	}
+	return ok
+}
+
+func (c *wsConn) readRbac(msg proto.Request) bool {
+	switch c.auth.TokenClaims.IsAdmin {
+	case true:
+		return true
+	case false:
+		switch proto.ApiService(msg.Param.Service) {
+		case proto.SvcList:
+			if msg.Param.ResourceType != group.NameSpace {
+				return c.rbac(msg)
+			} else {
+				return true
+			}
+		case proto.SvcResource, proto.SvcHarbor:
+			return true
+		default:
+			return c.rbac(msg)
+		}
+	}
+	return false
 }
 
 func (c *wsConn) ReadPump() (err error) {
@@ -161,7 +203,12 @@ func (c *wsConn) ReadPump() (err error) {
 			klog.V(2).Info(err)
 			return err
 		}
+		if ok := c.readRbac(msg); !ok {
+			zaplogger.Sugar().Infow("readRbac no root", "username", c.auth.TokenClaims.Username, "msg", msg)
+			continue
+		}
 		klog.Info("proto Request:", msg)
+		ctx := rbac.NewContext(c.ctx, c.auth)
 		switch proto.ApiService(msg.Param.Service) {
 		case proto.SvcPing:
 			c.Ping()
@@ -169,21 +216,21 @@ func (c *wsConn) ReadPump() (err error) {
 				return err
 			}
 		case proto.SvcCreate:
-			if res, err = c.handle.KubernetesApi().Create(msg.Param, msg.Data); err != nil {
+			if res, err = c.handle.KubernetesApi().Create(ctx, msg.Param, msg.Data); err != nil {
 				klog.V(2).Info(err)
 				if res, err = proto.ErrorResponse(msg.Param, err.Error()); err != nil {
 					klog.V(2).Info(err)
 				}
 			}
 		case proto.SvcUpdate:
-			if res, err = c.handle.KubernetesApi().Update(msg.Param, msg.Data); err != nil {
+			if res, err = c.handle.KubernetesApi().Update(ctx, msg.Param, msg.Data); err != nil {
 				klog.V(2).Info(err)
 				if res, err = proto.ErrorResponse(msg.Param, err.Error()); err != nil {
 					klog.V(2).Info(err)
 				}
 			}
 		case proto.SvcDelete:
-			if err = c.handle.KubernetesApi().Delete(msg.Param, msg.Data); err != nil {
+			if err = c.handle.KubernetesApi().Delete(ctx, msg.Param, msg.Data); err != nil {
 				klog.V(2).Info(err)
 				if res, err = proto.ErrorResponse(msg.Param, err.Error()); err != nil {
 					klog.V(2).Info(err)
@@ -194,14 +241,14 @@ func (c *wsConn) ReadPump() (err error) {
 				}
 			}
 		case proto.SvcGet:
-			if res, err = c.handle.KubernetesApi().Get(msg.Param, msg.Data); err != nil {
+			if res, err = c.handle.KubernetesApi().Get(ctx, msg.Param, msg.Data); err != nil {
 				klog.V(2).Info(err)
 				if res, err = proto.ErrorResponse(msg.Param, err.Error()); err != nil {
 					klog.V(2).Info(err)
 				}
 			}
 		case proto.SvcList:
-			if res, err = c.handle.KubernetesApi().List(msg.Param); err != nil {
+			if res, err = c.handle.KubernetesApi().List(ctx, msg.Param); err != nil {
 				klog.V(2).Info(err)
 				if res, err = proto.ErrorResponse(msg.Param, err.Error()); err != nil {
 					klog.V(2).Info(err)
@@ -209,7 +256,7 @@ func (c *wsConn) ReadPump() (err error) {
 			}
 		case proto.SvcWatch:
 		case proto.SvcResource:
-			if res, err = c.handle.KubernetesApi().Resources(msg.Param); err != nil {
+			if res, err = c.handle.KubernetesApi().Resources(ctx, msg.Param); err != nil {
 				klog.V(2).Info(err)
 				if res, err = proto.ErrorResponse(msg.Param, err.Error()); err != nil {
 					klog.V(2).Info(err)
@@ -229,6 +276,20 @@ func (c *wsConn) ReadPump() (err error) {
 	}
 }
 
+func (c *wsConn) SendToChannelWithRbac(bm *handle.BroadcastMessage) (err error) {
+	switch c.auth.TokenClaims.IsAdmin {
+	case false:
+		ok, err := casbinrbac.Enforce(c.auth.TokenClaims.Username, bm.Namespace, bm.ResourceType, bm.Action)
+		if err != nil {
+			return err
+		}
+		if !ok {
+			return nil
+		}
+	}
+	return c.SendToChannel(bm.Data)
+}
+
 func (c *wsConn) SendToChannel(msg []byte) (err error) {
 	if c.status == connClosed {
 		return
@@ -238,13 +299,12 @@ func (c *wsConn) SendToChannel(msg []byte) (err error) {
 	if c.status == connClosed {
 		return
 	}
-	tick := time.NewTicker(time.Second * 2)
-	defer tick.Stop()
+	after := time.After(time.Second * 2)
 	for {
 		select {
 		case c.writeChan <- msg:
 			return
-		case <-tick.C:
+		case <-after:
 			err = fmt.Errorf("wsSend timeout ws.cid:%d msg:(%v) ws:%v\n", c.clientId, msg, c)
 			klog.V(2).Info(err)
 			return err
@@ -274,18 +334,17 @@ func (c *wsConn) WritePump() (err error) {
 }
 
 func (c *wsConn) Close() {
-	if c.status == connClosed {
-		return
-	}
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	if c.status == connClosed {
-		return
-	}
-	c.status = connClosed
-	if err := c.conn.Close(); err != nil {
-		klog.V(2).Info(err)
-	}
-	close(c.writeChan)
-	close(c.readChan)
+	c.once.Do(func() {
+		c.mu.Lock()
+		defer c.mu.Unlock()
+		if c.status == connClosed {
+			return
+		}
+		c.status = connClosed
+		if err := c.conn.Close(); err != nil {
+			klog.V(2).Info(err)
+		}
+		close(c.writeChan)
+		close(c.readChan)
+	})
 }

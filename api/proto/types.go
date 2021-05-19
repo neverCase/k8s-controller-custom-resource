@@ -28,8 +28,10 @@ const (
 )
 
 const (
-	CodeNone = iota
-	CodeErr  = 10001
+	CodeNone         = iota
+	CodeErr          = 10001
+	CodeUnauthorized = 401
+	CodeForbidden    = 403
 )
 
 // EventType defines the possible types of events.
