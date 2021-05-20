@@ -413,15 +413,48 @@ type Pod struct {
 	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
 	// +optional
 	ResourceVersion string `json:"resourceVersion,omitempty" protobuf:"bytes,3,opt,name=resourceVersion"`
-	// ContainerNames are the list of all the containers' names inside the pod
-	ContainerNames []string `json:"containerNames" protobuf:"bytes,4,opt,name=containerNames"`
 	// Most recently observed status of the pod.
 	// This data may not be up to date.
 	// Populated by the system.
 	// Read-only.
 	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
 	// +optional
-	Status PodStatus `json:"status" protobuf:"bytes,5,opt,name=status"`
+	Status PodStatus `json:"status" protobuf:"bytes,4,opt,name=status"`
+}
+
+// ContainerStatus contains details for the current status of this container.
+type ContainerStatus struct {
+	// This must be a DNS_LABEL. Each container in a pod must have a unique name.
+	// Cannot be updated.
+	Name string `json:"name" protobuf:"bytes,1,opt,name=name"`
+	// Details about the container's current condition.
+	// +optional
+	//State ContainerState `json:"state,omitempty" protobuf:"bytes,2,opt,name=state"`
+	// Details about the container's last termination condition.
+	// +optional
+	//LastTerminationState ContainerState `json:"lastState,omitempty" protobuf:"bytes,3,opt,name=lastState"`
+	// Specifies whether the container has passed its readiness probe.
+	Ready bool `json:"ready" protobuf:"varint,4,opt,name=ready"`
+	// The number of times the container has been restarted, currently based on
+	// the number of dead containers that have not yet been removed.
+	// Note that this is calculated from dead containers. But those containers are subject to
+	// garbage collection. This value will get capped at 5 by GC.
+	RestartCount int32 `json:"restartCount" protobuf:"varint,5,opt,name=restartCount"`
+	// The image the container is running.
+	// More info: https://kubernetes.io/docs/concepts/containers/images
+	// TODO(dchen1107): Which image the container is running with?
+	Image string `json:"image" protobuf:"bytes,6,opt,name=image"`
+	// ImageID of the container's image.
+	ImageID string `json:"imageID" protobuf:"bytes,7,opt,name=imageID"`
+	// Container's ID in the format 'docker://<container_id>'.
+	// +optional
+	ContainerID string `json:"containerID,omitempty" protobuf:"bytes,8,opt,name=containerID"`
+	// Specifies whether the container has passed its startup probe.
+	// Initialized as false, becomes true after startupProbe is considered successful.
+	// Resets to false when the container is restarted, or if kubelet loses state temporarily.
+	// Is always true when no startupProbe is defined.
+	// +optional
+	Started *bool `json:"started,omitempty" protobuf:"varint,9,opt,name=started"`
 }
 
 type PodStatus struct {
@@ -434,6 +467,15 @@ type PodStatus struct {
 	// Empty if not yet allocated.
 	// +optional
 	PodIP string `json:"podIP,omitempty" protobuf:"bytes,3,opt,name=podIP"`
+	// RFC 3339 date and time at which the object was acknowledged by the Kubelet.
+	// This is before the Kubelet pulled the container image(s) for the pod.
+	// +optional
+	StartTime string `json:"startTime,omitempty" protobuf:"bytes,4,opt,name=startTime"`
+	// The list has one entry per container in the manifest. Each entry is currently the output
+	// of `docker inspect`.
+	// More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#pod-and-container-status
+	// +optional
+	ContainerStatuses []ContainerStatus `json:"containerStatuses,omitempty" protobuf:"bytes,5,rep,name=containerStatuses"`
 }
 
 // PodPhase is a label for the condition of a pod at the current time.

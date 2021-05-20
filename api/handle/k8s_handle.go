@@ -5,8 +5,6 @@ import (
 	"github.com/Shanghai-Lunara/pkg/casbinrbac"
 	"github.com/Shanghai-Lunara/pkg/zaplogger"
 	"github.com/nevercase/k8s-controller-custom-resource/api/rbac"
-	"reflect"
-
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -15,6 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/klog/v2"
+	"reflect"
 
 	helixsagaoperatorv1 "github.com/Shanghai-Lunara/helixsaga-operator/pkg/apis/helixsaga/v1"
 	mysqloperatorv1 "github.com/nevercase/k8s-controller-custom-resource/pkg/apis/mysqloperator/v1"
@@ -662,20 +661,33 @@ func convertServiceTypeToProto(st proto.ServiceType) corev1.ServiceType {
 	return corev1.ServiceType(st)
 }
 
-func convertPodToProto(p *corev1.Pod) proto.Pod {
-	names := make([]string, 0)
-	for _, v := range p.Spec.Containers {
-		names = append(names, v.Name)
+func convertContainerStatusToProto(in []corev1.ContainerStatus) []proto.ContainerStatus {
+	res := make([]proto.ContainerStatus, 0)
+	for _, v := range in {
+		res = append(res, proto.ContainerStatus{
+			Name:         v.Name,
+			Ready:        v.Ready,
+			RestartCount: v.RestartCount,
+			Image:        v.Image,
+			ImageID:      v.ImageID,
+			ContainerID:  v.ContainerID,
+			Started:      v.Started,
+		})
 	}
+	return res
+}
+
+func convertPodToProto(p *corev1.Pod) proto.Pod {
 	return proto.Pod{
 		Name:            p.Name,
 		Namespace:       p.Namespace,
 		ResourceVersion: p.ResourceVersion,
-		ContainerNames:  names,
 		Status: proto.PodStatus{
-			Phase:  proto.PodPhase(p.Status.Phase),
-			HostIP: p.Status.HostIP,
-			PodIP:  p.Status.PodIP,
+			Phase:             proto.PodPhase(p.Status.Phase),
+			HostIP:            p.Status.HostIP,
+			PodIP:             p.Status.PodIP,
+			StartTime:         p.Status.StartTime.Format("2006-01-02T15:04:05.000000Z"),
+			ContainerStatuses: convertContainerStatusToProto(p.Status.ContainerStatuses),
 		},
 	}
 }
