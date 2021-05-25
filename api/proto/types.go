@@ -110,6 +110,8 @@ type NodeSpec struct {
 	// The status of the specific StatefulSet which was owned by the crd
 	// +optional
 	Status Status `json:"status" protobuf:"bytes,11,rep,name=status"`
+	// ServiceWhiteList
+	ServiceWhiteList bool `json:"serviceWhiteList" protobuf:"bytes,12,opt,name=serviceWhiteList"`
 }
 
 type EnvVar struct {

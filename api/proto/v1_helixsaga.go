@@ -131,6 +131,8 @@ type HelixSagaAppSpec struct {
 	Tolerations []Toleration `json:"tolerations,omitempty" protobuf:"bytes,18,opt,name=tolerations"`
 	// Template was the type of the resource which would be created by the custom operator
 	Template TemplateType `json:"template" protobuf:"bytes,19,opt,name=template"`
+	// ServiceWhiteList
+	ServiceWhiteList bool `json:"serviceWhiteList" protobuf:"bytes,20,opt,name=serviceWhiteList"`
 }
 
 type HelixSagaAppStatus struct {
