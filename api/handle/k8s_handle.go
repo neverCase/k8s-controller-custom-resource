@@ -678,6 +678,10 @@ func convertContainerStatusToProto(in []corev1.ContainerStatus) []proto.Containe
 }
 
 func convertPodToProto(p *corev1.Pod) proto.Pod {
+	t := ""
+	if p.Status.StartTime != nil {
+		t = p.Status.StartTime.Format("2006-01-02 15:04:05")
+	}
 	return proto.Pod{
 		Name:            p.Name,
 		Namespace:       p.Namespace,
@@ -686,7 +690,7 @@ func convertPodToProto(p *corev1.Pod) proto.Pod {
 			Phase:             proto.PodPhase(p.Status.Phase),
 			HostIP:            p.Status.HostIP,
 			PodIP:             p.Status.PodIP,
-			StartTime:         p.Status.StartTime.Format("2006-01-02T15:04:05.000000Z"),
+			StartTime:         t,
 			ContainerStatuses: convertContainerStatusToProto(p.Status.ContainerStatuses),
 		},
 	}
