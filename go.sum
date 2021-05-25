@@ -95,8 +95,8 @@ github.com/Shanghai-Lunara/helixsaga-operator v0.0.0-20200908053823-f9fbcf204e90
 github.com/Shanghai-Lunara/helixsaga-operator v0.0.0-20200908053823-f9fbcf204e90/go.mod h1:b0gnP5fnwobYv69gePRCnUOy77qGROMG/KTCrY+Zh/4=
 github.com/Shanghai-Lunara/helixsaga-operator v0.0.0-20201207050716-1360de681619/go.mod h1:veOuHmyWwoeUMPqotAs7VPM4ZjwccJOYbnB6UnwAIU8=
 github.com/Shanghai-Lunara/helixsaga-operator v0.0.0-20210410063026-ad4605d2f45b/go.mod h1:5lB/iayOWoJ/Kw/yn66Y7rRhzuZ9U5v0Z4ySBy/9wII=
-github.com/Shanghai-Lunara/helixsaga-operator v0.0.0-20210524040307-a080adc712f0 h1:lyi46r6g90qhhdvZMTVk42JkelSmKGmfyCqVJrdcqJo=
-github.com/Shanghai-Lunara/helixsaga-operator v0.0.0-20210524040307-a080adc712f0/go.mod h1:VVvSmmb7YPCgJfaCB/W6lWhuqjqth2NcCW6ieViSSKQ=
+github.com/Shanghai-Lunara/helixsaga-operator v0.0.0-20210525034633-2938d5b8c629 h1:TLjAb9LD//Uf1UDb3+OvOx5G6fiWnexAmf1sEsz2yTM=
+github.com/Shanghai-Lunara/helixsaga-operator v0.0.0-20210525034633-2938d5b8c629/go.mod h1:VVvSmmb7YPCgJfaCB/W6lWhuqjqth2NcCW6ieViSSKQ=
 github.com/Shanghai-Lunara/pkg v0.0.0-20210410040202-9b354dbed557 h1:ifa8c3FJiVjhQkFFjtMyiUDOFqn/wvLHdsIBfZTSSO8=
 github.com/Shanghai-Lunara/pkg v0.0.0-20210410040202-9b354dbed557/go.mod h1:J08175Zem81ie7jWg0s2ssXVMCYgoWw9JNKRCSlz5dE=
 github.com/Shanghai-Lunara/pkg v0.0.0-20210519072902-f7f341582f62 h1:4OZucrs4YvWmdAtuP04EmoAKc7LVcSZ+ir9Ev3w8XBM=
