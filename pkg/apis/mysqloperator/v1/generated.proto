@@ -150,6 +150,9 @@ message MysqlSpec {
 
   // The config of the mysql instance.
   optional ServerConfig serverConfig = 13;
+
+  // ServiceWhiteList
+  optional bool serviceWhiteList = 14;
 }
 
 // MysqlSpecStatus is the status for a MysqlOperator resource
