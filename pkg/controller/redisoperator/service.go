@@ -25,19 +25,9 @@ func NewService(foo *redisOperatorV1.RedisOperator, rds *redisOperatorV1.RedisSp
 	if len(rds.ServicePorts) > 0 {
 		ports = rds.ServicePorts
 	}
-	annotations := make(map[string]string, 0)
-	switch rds.ServiceType {
-	case corev1.ServiceTypeLoadBalancer:
-		annotations = serviceloadbalancer.Get().Annotations
-		if rds.ServiceWhiteList == true {
-			for k, v := range serviceloadbalancer.Get().WhiteList {
-				annotations[k] = v
-			}
-		}
-	}
 	return &corev1.Service{
 		ObjectMeta: metaV1.ObjectMeta{
-			Annotations: annotations,
+			Annotations: serviceloadbalancer.Annotation(rds.ServiceType, rds.ServiceWhiteList),
 			Name:        serviceName,
 			Namespace:   foo.Namespace,
 			OwnerReferences: []metaV1.OwnerReference{
