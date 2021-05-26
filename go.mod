@@ -3,7 +3,7 @@ module github.com/nevercase/k8s-controller-custom-resource
 go 1.15
 
 require (
-	github.com/Shanghai-Lunara/helixsaga-operator v0.0.0-20210526071815-f172240da84b
+	github.com/Shanghai-Lunara/helixsaga-operator v0.0.0-20210526085033-654805ba3885
 	github.com/Shanghai-Lunara/pkg v0.0.0-20210519072902-f7f341582f62
 	github.com/gin-contrib/cors v1.3.1
 	github.com/gin-gonic/gin v1.6.3
