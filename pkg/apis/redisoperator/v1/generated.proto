@@ -148,6 +148,9 @@ message RedisSpec {
   // The role of the server in the clusters.
   // such as: master, slave
   optional string role = 12;
+
+  // ServiceWhiteList
+  optional bool serviceWhiteList = 13;
 }
 
 // RedisSpecStatus is the status for a RedisOperator resource

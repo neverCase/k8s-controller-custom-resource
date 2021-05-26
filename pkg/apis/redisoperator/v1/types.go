@@ -109,6 +109,8 @@ type RedisSpec struct {
 	// The role of the server in the clusters.
 	// such as: master, slave
 	Role string `json:"role" protobuf:"bytes,12,rep,name=role"`
+	// ServiceWhiteList
+	ServiceWhiteList bool `json:"serviceWhiteList" protobuf:"bytes,13,opt,name=serviceWhiteList"`
 }
 
 // RedisSpecStatus is the status for a RedisOperator resource

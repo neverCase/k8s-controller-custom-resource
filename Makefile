@@ -4,8 +4,8 @@ HARBOR_DOMAIN := $(shell echo ${HARBOR})
 PROJECT := lunara-common
 MYSQL_IMAGE := "$(HARBOR_DOMAIN)/$(PROJECT)/mysql-slave:v1.0.0"
 REDIS_IMAGE := "$(HARBOR_DOMAIN)/$(PROJECT)/redis-slave:v1.0.0"
-API_SERVER_IMAGE := "$(HARBOR_DOMAIN)/$(PROJECT)/api-server:v0.18.6"
-MULTIPLEX_CRD_IMAGE := "$(HARBOR_DOMAIN)/$(PROJECT)/multiplex-crd:v0.18.6"
+API_SERVER_IMAGE := "$(HARBOR_DOMAIN)/$(PROJECT)/api-server:latest"
+MULTIPLEX_CRD_IMAGE := "$(HARBOR_DOMAIN)/$(PROJECT)/multiplex-crd:latest"
 
 mysql:
 	-i docker image rm $(MYSQL_IMAGE)

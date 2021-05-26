@@ -376,6 +376,9 @@ message HelixSagaAppSpec {
 
   // Template was the type of the resource which would be created by the custom operator
   optional string template = 19;
+
+  // ServiceWhiteList
+  optional bool serviceWhiteList = 20;
 }
 
 message HelixSagaAppStatus {
@@ -632,6 +635,9 @@ message NodeSpec {
   // The status of the specific StatefulSet which was owned by the crd
   // +optional
   optional Status status = 11;
+
+  // ServiceWhiteList
+  optional bool serviceWhiteList = 12;
 }
 
 message Param {

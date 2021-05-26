@@ -114,6 +114,8 @@ type MysqlSpec struct {
 	Role string `json:"role" protobuf:"bytes,12,rep,name=role"`
 	// The config of the mysql instance.
 	Config ServerConfig `json:"server_config" protobuf:"bytes,13,rep,name=serverConfig"`
+	// ServiceWhiteList
+	ServiceWhiteList bool `json:"serviceWhiteList" protobuf:"bytes,14,opt,name=serviceWhiteList"`
 }
 
 // ServerConfig is the configuration for a MysqlDeploymentSpec of a MysqlOperator resource
