@@ -67,6 +67,7 @@ docker-entrypoint.sh mysqld &
 
 until mysql -uroot -proot -h 127.0.0.1 -e "SELECT 1"; do sleep 1; done
 
+
 # set utf-8
 mysql -uroot -proot -e "SET NAMES utf8;"
 
@@ -77,10 +78,16 @@ then
 #            mysql -uroot -proot -e "CREATE USER 'repl'@'%.example.com' IDENTIFIED BY 'password';"
 #            mysql -uroot -proot -e "GRANT REPLICATION SLAVE ON *.* TO 'repl'@'%.example.com';"
     mysql -uroot -proot -e "CREATE USER IF NOT EXISTS 'repl' IDENTIFIED BY 'root';"
+#    mysql -uroot -proot -e "CREATE USER IF NOT EXISTS 'repl'@'${MYSQL_MASTER_HOST}:${MYSQL_MASTER_PORT}' IDENTIFIED BY 'root';"
     mysql -uroot -proot -e "GRANT REPLICATION SLAVE ON *.* TO 'repl';"
 else
     echo "**********salve************"
-    mysql -uroot -proot -e "CHANGE MASTER TO MASTER_HOST='${MYSQL_MASTER_HOST}', MASTER_PORT=${MYSQL_MASTER_PORT}, MASTER_USER='repl', MASTER_PASSWORD='root', MASTER_CONNECT_RETRY=10, MASTER_LOG_FILE='', MASTER_LOG_POS=0;"
+    export MASTER_LOG_FILE=`mysql -uroot -proot -e "show slave status\G" | grep Master_Log_File | grep -v Relay | awk '{split($0,a,"\:"); print a[2]}' | xargs`
+    echo ${MASTER_LOG_FILE}
+    export MASTER_LOG_POS=`mysql -uroot -proot -e "show slave status\G" | grep Read_Master_Log_Pos | awk '{split($0,a,"\:"); print a[2]}'`
+    echo ${MASTER_LOG_POS}
+    mysql -uroot -proot -e "STOP SLAVE IO_THREAD FOR CHANNEL '';"
+    mysql -uroot -proot -e "CHANGE MASTER TO MASTER_HOST='${MYSQL_MASTER_HOST}', MASTER_PORT=${MYSQL_MASTER_PORT}, MASTER_USER='repl', MASTER_PASSWORD='root', MASTER_CONNECT_RETRY=10, MASTER_LOG_FILE='${MASTER_LOG_FILE}', MASTER_LOG_POS=${MASTER_LOG_POS};"
     mysql -uroot -proot -e "START SLAVE;"
 fi
 
