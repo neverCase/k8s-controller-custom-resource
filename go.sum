@@ -95,8 +95,8 @@ github.com/Shanghai-Lunara/helixsaga-operator v0.0.0-20200908053823-f9fbcf204e90
 github.com/Shanghai-Lunara/helixsaga-operator v0.0.0-20200908053823-f9fbcf204e90/go.mod h1:b0gnP5fnwobYv69gePRCnUOy77qGROMG/KTCrY+Zh/4=
 github.com/Shanghai-Lunara/helixsaga-operator v0.0.0-20201207050716-1360de681619/go.mod h1:veOuHmyWwoeUMPqotAs7VPM4ZjwccJOYbnB6UnwAIU8=
 github.com/Shanghai-Lunara/helixsaga-operator v0.0.0-20210410063026-ad4605d2f45b/go.mod h1:5lB/iayOWoJ/Kw/yn66Y7rRhzuZ9U5v0Z4ySBy/9wII=
-github.com/Shanghai-Lunara/helixsaga-operator v0.0.0-20210526085033-654805ba3885 h1:/aB5T6TMGq+UniBYa3YN8fSfRC+zKm8YBwaHuXt3N0M=
-github.com/Shanghai-Lunara/helixsaga-operator v0.0.0-20210526085033-654805ba3885/go.mod h1:VVvSmmb7YPCgJfaCB/W6lWhuqjqth2NcCW6ieViSSKQ=
+github.com/Shanghai-Lunara/helixsaga-operator v0.0.0-20210623074901-10fb6c7b2781 h1:hEF62ccI2VHyGSBXK9tNoMAdDcWpdEW5L7+MGaqi/RA=
+github.com/Shanghai-Lunara/helixsaga-operator v0.0.0-20210623074901-10fb6c7b2781/go.mod h1:63C0vcHk3p3C3bXREbdmiSC+xZFQ2prwaU73ng6sKM0=
 github.com/Shanghai-Lunara/pkg v0.0.0-20210410040202-9b354dbed557 h1:ifa8c3FJiVjhQkFFjtMyiUDOFqn/wvLHdsIBfZTSSO8=
 github.com/Shanghai-Lunara/pkg v0.0.0-20210410040202-9b354dbed557/go.mod h1:J08175Zem81ie7jWg0s2ssXVMCYgoWw9JNKRCSlz5dE=
 github.com/Shanghai-Lunara/pkg v0.0.0-20210519072902-f7f341582f62 h1:4OZucrs4YvWmdAtuP04EmoAKc7LVcSZ+ir9Ev3w8XBM=
@@ -736,10 +736,8 @@ github.com/nevercase/harbor-api v0.0.0-20201010035445-4a7dfa7c098b h1:MNf7qdVMub
 github.com/nevercase/harbor-api v0.0.0-20201010035445-4a7dfa7c098b/go.mod h1:/NDdtl4wLA+nPVN6N+Xy4xKKWi2ulHglZwDOvHxa1nE=
 github.com/nevercase/harbor-api v0.0.0-20210106033732-e7c0582cc57b h1:L2TbJcIAKbY7j2RHsyjXB/TwWxmvONio0RYERyayWug=
 github.com/nevercase/harbor-api v0.0.0-20210106033732-e7c0582cc57b/go.mod h1:fZEzKNBjY0S7nwhravn9zESrDhi6n3DfgzrJOSQxdfA=
-github.com/nevercase/harbor-api v0.0.0-20210414032946-69012ccd9adc h1:2dA1UGesr8C2KR1LEsYarpr+Ab9ykZF+LGR3m5b/JI0=
-github.com/nevercase/harbor-api v0.0.0-20210414032946-69012ccd9adc/go.mod h1:Tx8evDDPZZ5CaJk7fxnlAMkG/POsDawOxrZbG18TiC4=
-github.com/nevercase/harbor-api v0.0.0-20210524040131-a6c4641c7d1d h1:5RtW6MdwtzG8syDlEDSO0VywApPP7+gwV0Yo4Khah1o=
-github.com/nevercase/harbor-api v0.0.0-20210524040131-a6c4641c7d1d/go.mod h1:bR5d47FxJeMgn0q3v56HvMmOMc9dYk+mypYUvUueuac=
+github.com/nevercase/harbor-api v0.0.0-20210623074710-82b690faeed2 h1:1yfT6CFuSNL7mHNUZdQ/o8Kdldc0bF2968t82XbBpIg=
+github.com/nevercase/harbor-api v0.0.0-20210623074710-82b690faeed2/go.mod h1:bR5d47FxJeMgn0q3v56HvMmOMc9dYk+mypYUvUueuac=
 github.com/nevercase/k8s-controller-custom-resource v0.0.0-20200717080405-ac4619074009/go.mod h1:9eK+R0nkBYAe0JXVF5svNwvPfsuOUrLPOiEEvcvjnnw=
 github.com/nevercase/k8s-controller-custom-resource v0.0.0-20200814062711-3a466b2f7cf3/go.mod h1:mtoT/UOmYMYcqfSCT4VFLsb6xVvBQBykwAh6KQX86Xo=
 github.com/nevercase/k8s-controller-custom-resource v0.0.0-20200819024455-58f90d01a554/go.mod h1:yw57dsunJu6CpX1g3OHWrGmLI5o/iFM+aiVYwx1x154=
