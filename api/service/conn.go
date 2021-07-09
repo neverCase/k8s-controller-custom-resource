@@ -203,11 +203,12 @@ func (c *wsConn) ReadPump() (err error) {
 			klog.V(2).Info(err)
 			return err
 		}
-		if ok := c.readRbac(msg); !ok {
-			zaplogger.Sugar().Infow("readRbac no root", "username", c.auth.TokenClaims.Username, "msg", msg)
-			continue
+		if proto.ApiService(msg.Param.Service) != proto.SvcPing {
+			if ok := c.readRbac(msg); !ok {
+				zaplogger.Sugar().Infow("readRbac no root", "username", c.auth.TokenClaims.Username, "msg", msg)
+				continue
+			}
 		}
-		klog.Info("proto Request:", msg)
 		ctx := rbac.NewContext(c.ctx, c.auth)
 		switch proto.ApiService(msg.Param.Service) {
 		case proto.SvcPing:
@@ -254,6 +255,7 @@ func (c *wsConn) ReadPump() (err error) {
 					klog.V(2).Info(err)
 				}
 			}
+			klog.Info("list result:", string(res))
 		case proto.SvcWatch:
 		case proto.SvcResource:
 			if res, err = c.handle.KubernetesApi().Resources(ctx, msg.Param); err != nil {
