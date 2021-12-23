@@ -127,6 +127,8 @@ func NewStatefulSet(foo *mysqlOperatorV1.MysqlOperator, rds *mysqlOperatorV1.Mys
 						},
 					},
 					ImagePullSecrets: rds.ImagePullSecrets,
+					Affinity:         rds.Affinity,
+					Tolerations:      rds.Tolerations,
 				},
 			},
 		},

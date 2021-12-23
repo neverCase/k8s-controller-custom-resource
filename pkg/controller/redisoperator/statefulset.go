@@ -124,6 +124,8 @@ func NewStatefulSet(foo *redisOperatorV1.RedisOperator, rds *redisOperatorV1.Red
 						},
 					},
 					ImagePullSecrets: rds.ImagePullSecrets,
+					Affinity:         rds.Affinity,
+					Tolerations:      rds.Tolerations,
 				},
 			},
 		},
