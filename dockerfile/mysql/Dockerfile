@@ -4,4 +4,4 @@ LABEL maintainer="1024769485@qq.com"
 
 COPY run.sh /
 
-CMD ["bash", "/run.sh"]
+CMD ["bash", "-x", "/run.sh"]

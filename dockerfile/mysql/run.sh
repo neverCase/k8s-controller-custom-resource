@@ -85,7 +85,16 @@ else
     export MASTER_LOG_FILE=`mysql -uroot -proot -e "show slave status\G" | grep Master_Log_File | grep -v Relay | awk '{split($0,a,"\:"); print a[2]}' | xargs`
     echo ${MASTER_LOG_FILE}
     export MASTER_LOG_POS=`mysql -uroot -proot -e "show slave status\G" | grep Read_Master_Log_Pos | awk '{split($0,a,"\:"); print a[2]}'`
-    echo ${MASTER_LOG_POS}
+    if [ "$MASTER_LOG_POS" = "" ]
+    then
+      echo "MASTER_LOG_POS is not set!, we set 0"
+      MASTER_LOG_POS=0
+    else
+      echo "MASTER_LOG_POS is set !"
+      echo ${MASTER_LOG_POS}
+    fi
+    mysql -uroot -proot -e "set global read_only=1;"
+    mysql -uroot -proot -e "set global super_read_only=on;"
     mysql -uroot -proot -e "STOP SLAVE IO_THREAD FOR CHANNEL '';"
     mysql -uroot -proot -e "CHANGE MASTER TO MASTER_HOST='${MYSQL_MASTER_HOST}', MASTER_PORT=${MYSQL_MASTER_PORT}, MASTER_USER='repl', MASTER_PASSWORD='root', MASTER_CONNECT_RETRY=10, MASTER_LOG_FILE='${MASTER_LOG_FILE}', MASTER_LOG_POS=${MASTER_LOG_POS};"
     mysql -uroot -proot -e "START SLAVE;"
