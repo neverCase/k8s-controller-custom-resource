@@ -26,8 +26,10 @@ import (
 )
 
 // RedisOperatorLister helps list RedisOperators.
+// All objects returned here must be treated as read-only.
 type RedisOperatorLister interface {
 	// List lists all RedisOperators in the indexer.
+	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1.RedisOperator, err error)
 	// RedisOperators returns an object that can list and get RedisOperators.
 	RedisOperators(namespace string) RedisOperatorNamespaceLister
@@ -58,10 +60,13 @@ func (s *redisOperatorLister) RedisOperators(namespace string) RedisOperatorName
 }
 
 // RedisOperatorNamespaceLister helps list and get RedisOperators.
+// All objects returned here must be treated as read-only.
 type RedisOperatorNamespaceLister interface {
 	// List lists all RedisOperators in the indexer for a given namespace.
+	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1.RedisOperator, err error)
 	// Get retrieves the RedisOperator from the indexer for a given namespace and name.
+	// Objects returned here must be treated as read-only.
 	Get(name string) (*v1.RedisOperator, error)
 	RedisOperatorNamespaceListerExpansion
 }

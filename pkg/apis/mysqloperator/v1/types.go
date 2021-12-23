@@ -116,6 +116,12 @@ type MysqlSpec struct {
 	Config ServerConfig `json:"server_config" protobuf:"bytes,13,rep,name=serverConfig"`
 	// ServiceWhiteList
 	ServiceWhiteList bool `json:"serviceWhiteList" protobuf:"bytes,14,opt,name=serviceWhiteList"`
+	// If specified, the pod's scheduling constraints
+	// +optional
+	Affinity *corev1.Affinity `json:"affinity,omitempty" protobuf:"bytes,15,opt,name=affinity"`
+	// If specified, the pod's tolerations.
+	// +optional
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty" protobuf:"bytes,16,opt,name=tolerations"`
 }
 
 // ServerConfig is the configuration for a MysqlDeploymentSpec of a MysqlOperator resource
