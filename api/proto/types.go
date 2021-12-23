@@ -112,6 +112,12 @@ type NodeSpec struct {
 	Status Status `json:"status" protobuf:"bytes,11,rep,name=status"`
 	// ServiceWhiteList
 	ServiceWhiteList bool `json:"serviceWhiteList" protobuf:"bytes,12,opt,name=serviceWhiteList"`
+	// If specified, the pod's scheduling constraints
+	// +optional
+	Affinity *Affinity `json:"affinity,omitempty" protobuf:"bytes,13,opt,name=affinity"`
+	// If specified, the pod's tolerations.
+	// +optional
+	Tolerations []Toleration `json:"tolerations,omitempty" protobuf:"bytes,14,opt,name=tolerations"`
 }
 
 type EnvVar struct {

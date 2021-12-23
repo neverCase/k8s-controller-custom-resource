@@ -735,6 +735,8 @@ func convertProtoToMysqlCrd(req proto.Param, mysqlCrd proto.MysqlCrd) *mysqloper
 					ServiceType:      convertServiceTypeToProto(mysqlCrd.Master.ServiceType),
 					ServiceWhiteList: mysqlCrd.Master.ServiceWhiteList,
 					Env:              convertProtoToEnvVar(mysqlCrd.Master.Env),
+					Affinity:         convertNodeSpecToV1Affinity(&mysqlCrd.Master),
+					Tolerations:      convertProtoToTolerations(mysqlCrd.Master.Tolerations),
 				},
 				Status: mysqloperatorv1.MysqlStatus{
 					ObservedGeneration: mysqlCrd.Master.Status.ObservedGeneration,
@@ -764,6 +766,8 @@ func convertProtoToMysqlCrd(req proto.Param, mysqlCrd proto.MysqlCrd) *mysqloper
 					ServiceType:      convertServiceTypeToProto(mysqlCrd.Slave.ServiceType),
 					ServiceWhiteList: mysqlCrd.Slave.ServiceWhiteList,
 					Env:              convertProtoToEnvVar(mysqlCrd.Slave.Env),
+					Affinity:         convertNodeSpecToV1Affinity(&mysqlCrd.Slave),
+					Tolerations:      convertProtoToTolerations(mysqlCrd.Slave.Tolerations),
 				},
 				Status: mysqloperatorv1.MysqlStatus{
 					ObservedGeneration: mysqlCrd.Slave.Status.ObservedGeneration,
@@ -796,6 +800,8 @@ func convertMysqlCrdToProto(m *mysqloperatorv1.MysqlOperator) proto.MysqlCrd {
 			ServiceType:      convertProtoToServiceType(m.Spec.MasterSpec.Spec.ServiceType),
 			ServiceWhiteList: m.Spec.MasterSpec.Spec.ServiceWhiteList,
 			Env:              convertEnvVarToProto(m.Spec.MasterSpec.Spec.Env),
+			Affinity:         convertMysqlSpecToNodeSpecV1Affinity(&m.Spec.MasterSpec.Spec),
+			Tolerations:      convertTolerationsToProto(m.Spec.MasterSpec.Spec.Tolerations),
 			Status: proto.Status{
 				ObservedGeneration: m.Spec.MasterSpec.Status.ObservedGeneration,
 				Replicas:           m.Spec.MasterSpec.Status.Replicas,
@@ -819,6 +825,8 @@ func convertMysqlCrdToProto(m *mysqloperatorv1.MysqlOperator) proto.MysqlCrd {
 			ServiceType:      convertProtoToServiceType(m.Spec.SlaveSpec.Spec.ServiceType),
 			ServiceWhiteList: m.Spec.SlaveSpec.Spec.ServiceWhiteList,
 			Env:              convertEnvVarToProto(m.Spec.SlaveSpec.Spec.Env),
+			Affinity:         convertMysqlSpecToNodeSpecV1Affinity(&m.Spec.SlaveSpec.Spec),
+			Tolerations:      convertTolerationsToProto(m.Spec.SlaveSpec.Spec.Tolerations),
 			Status: proto.Status{
 				ObservedGeneration: m.Spec.SlaveSpec.Status.ObservedGeneration,
 				Replicas:           m.Spec.SlaveSpec.Status.Replicas,
@@ -831,6 +839,39 @@ func convertMysqlCrdToProto(m *mysqloperatorv1.MysqlOperator) proto.MysqlCrd {
 			},
 		},
 	}
+}
+
+func convertNodeSpecToV1Affinity(v *proto.NodeSpec) *corev1.Affinity {
+	var in *proto.Affinity
+	if v.Affinity == nil {
+		in = nil
+	} else {
+		in = v.Affinity
+	}
+	aft := convertProtoToAffinity(in)
+	return aft
+}
+
+func convertRedisSpecToNodeSpecV1Affinity(v *redisoperatorv1.RedisSpec) *proto.Affinity {
+	var in *corev1.Affinity
+	if v.Affinity == nil {
+		in = nil
+	} else {
+		in = v.Affinity
+	}
+	aft := convertAffinityToProto(in)
+	return aft
+}
+
+func convertMysqlSpecToNodeSpecV1Affinity(v *mysqloperatorv1.MysqlSpec) *proto.Affinity {
+	var in *corev1.Affinity
+	if v.Affinity == nil {
+		in = nil
+	} else {
+		in = v.Affinity
+	}
+	aft := convertAffinityToProto(in)
+	return aft
 }
 
 func convertProtoToRedisCrd(req proto.Param, redisCrd proto.RedisCrd) *redisoperatorv1.RedisOperator {
@@ -872,6 +913,8 @@ func convertProtoToRedisCrd(req proto.Param, redisCrd proto.RedisCrd) *redisoper
 					ServiceType:      convertServiceTypeToProto(redisCrd.Master.ServiceType),
 					ServiceWhiteList: redisCrd.Master.ServiceWhiteList,
 					Env:              convertProtoToEnvVar(redisCrd.Master.Env),
+					Affinity:         convertNodeSpecToV1Affinity(&redisCrd.Master),
+					Tolerations:      convertProtoToTolerations(redisCrd.Master.Tolerations),
 				},
 				Status: redisoperatorv1.RedisStatus{
 					ObservedGeneration: redisCrd.Master.Status.ObservedGeneration,
@@ -901,6 +944,8 @@ func convertProtoToRedisCrd(req proto.Param, redisCrd proto.RedisCrd) *redisoper
 					ServiceType:      convertServiceTypeToProto(redisCrd.Slave.ServiceType),
 					ServiceWhiteList: redisCrd.Slave.ServiceWhiteList,
 					Env:              convertProtoToEnvVar(redisCrd.Slave.Env),
+					Affinity:         convertNodeSpecToV1Affinity(&redisCrd.Slave),
+					Tolerations:      convertProtoToTolerations(redisCrd.Slave.Tolerations),
 				},
 				Status: redisoperatorv1.RedisStatus{
 					ObservedGeneration: redisCrd.Slave.Status.ObservedGeneration,
@@ -933,6 +978,8 @@ func convertRedisCrdToProto(v *redisoperatorv1.RedisOperator) proto.RedisCrd {
 			ServiceType:      convertProtoToServiceType(v.Spec.MasterSpec.Spec.ServiceType),
 			ServiceWhiteList: v.Spec.MasterSpec.Spec.ServiceWhiteList,
 			Env:              convertEnvVarToProto(v.Spec.MasterSpec.Spec.Env),
+			Affinity:         convertRedisSpecToNodeSpecV1Affinity(&v.Spec.MasterSpec.Spec),
+			Tolerations:      convertTolerationsToProto(v.Spec.MasterSpec.Spec.Tolerations),
 			Status: proto.Status{
 				ObservedGeneration: v.Spec.MasterSpec.Status.ObservedGeneration,
 				Replicas:           v.Spec.MasterSpec.Status.Replicas,
@@ -956,6 +1003,8 @@ func convertRedisCrdToProto(v *redisoperatorv1.RedisOperator) proto.RedisCrd {
 			ServiceType:      convertProtoToServiceType(v.Spec.SlaveSpec.Spec.ServiceType),
 			ServiceWhiteList: v.Spec.SlaveSpec.Spec.ServiceWhiteList,
 			Env:              convertEnvVarToProto(v.Spec.SlaveSpec.Spec.Env),
+			Affinity:         convertRedisSpecToNodeSpecV1Affinity(&v.Spec.SlaveSpec.Spec),
+			Tolerations:      convertTolerationsToProto(v.Spec.SlaveSpec.Spec.Tolerations),
 			Status: proto.Status{
 				ObservedGeneration: v.Spec.SlaveSpec.Status.ObservedGeneration,
 				Replicas:           v.Spec.SlaveSpec.Status.Replicas,
@@ -1160,6 +1209,33 @@ func convertProtoToHelixSagaCrd(req proto.Param, hs proto.HelixSagaCrd) *helixsa
 	}
 }
 
+func convertAffinityToProto(in *corev1.Affinity) *proto.Affinity {
+	aft := &proto.Affinity{
+		NodeAffinity: &proto.NodeAffinity{
+			RequiredDuringSchedulingIgnoredDuringExecution: &proto.NodeSelector{
+				NodeSelectorTerms: make([]proto.NodeSelectorTerm, 0),
+			},
+			PreferredDuringSchedulingIgnoredDuringExecution: make([]proto.PreferredSchedulingTerm, 0),
+		},
+	}
+	if in != nil &&
+		in.NodeAffinity != nil &&
+		in.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution != nil &&
+		len(in.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms) > 0 {
+		aft = &proto.Affinity{
+			NodeAffinity: &proto.NodeAffinity{
+				RequiredDuringSchedulingIgnoredDuringExecution: &proto.NodeSelector{
+					NodeSelectorTerms: convertNodeSelectorTermsToProto(in.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms),
+				},
+				PreferredDuringSchedulingIgnoredDuringExecution: make([]proto.PreferredSchedulingTerm, 0),
+			},
+			//PodAffinity:     &proto.PodAffinity{},
+			//PodAntiAffinity: &proto.PodAntiAffinity{},
+		}
+	}
+	return aft
+}
+
 func convertHelixSagaAppToProto(a []helixsagaoperatorv1.HelixSagaApp) []proto.HelixSagaApp {
 	res := make([]proto.HelixSagaApp, 0)
 	for _, v := range a {
@@ -1170,39 +1246,13 @@ func convertHelixSagaAppToProto(a []helixsagaoperatorv1.HelixSagaApp) []proto.He
 		if v.Spec.Template == "" {
 			v.Spec.Template = helixsagaoperatorv1.TemplateTypeStatefulSet
 		}
-		aft := &proto.Affinity{
-			NodeAffinity: &proto.NodeAffinity{
-				RequiredDuringSchedulingIgnoredDuringExecution: &proto.NodeSelector{
-					NodeSelectorTerms: make([]proto.NodeSelectorTerm, 0),
-				},
-				PreferredDuringSchedulingIgnoredDuringExecution: make([]proto.PreferredSchedulingTerm, 0),
-			},
+		var in *corev1.Affinity
+		if v.Spec.Affinity == nil {
+			in = nil
+		} else {
+			in = v.Spec.Affinity
 		}
-		//if v.Spec.Affinity != nil {
-		//	klog.Infof("name:%s Affinity:%v", v.Spec.Name, *v.Spec.Affinity)
-		//	if v.Spec.Affinity.NodeAffinity != nil {
-		//		klog.Infof("name:%s NodeAffinity:%v", v.Spec.Name, *v.Spec.Affinity.NodeAffinity)
-		//		if v.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution != nil {
-		//			klog.Infof("name:%s RequiredDuringSchedulingIgnoredDuringExecution:%v", v.Spec.Name, *v.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution)
-		//			klog.Infof("name:%s NodeSelectorTerms:%v", v.Spec.Name, v.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms)
-		//		}
-		//	}
-		//}
-		if v.Spec.Affinity != nil &&
-			v.Spec.Affinity.NodeAffinity != nil &&
-			v.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution != nil &&
-			len(v.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms) > 0 {
-			aft = &proto.Affinity{
-				NodeAffinity: &proto.NodeAffinity{
-					RequiredDuringSchedulingIgnoredDuringExecution: &proto.NodeSelector{
-						NodeSelectorTerms: convertNodeSelectorTermsToProto(v.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms),
-					},
-					PreferredDuringSchedulingIgnoredDuringExecution: make([]proto.PreferredSchedulingTerm, 0),
-				},
-				//PodAffinity:     &proto.PodAffinity{},
-				//PodAntiAffinity: &proto.PodAntiAffinity{},
-			}
-		}
+		aft := convertAffinityToProto(in)
 		klog.Infof("proto.HelixSagaApp Name:%v", v.Spec.Name)
 		res = append(res, proto.HelixSagaApp{
 			Spec: proto.HelixSagaAppSpec{
@@ -1359,6 +1409,26 @@ func convertProtoToTolerations(in []proto.Toleration) []corev1.Toleration {
 	return res
 }
 
+func convertProtoToAffinity(in *proto.Affinity) *corev1.Affinity {
+	aft := &corev1.Affinity{}
+	if in != nil &&
+		in.NodeAffinity != nil &&
+		in.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution != nil &&
+		len(in.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms) > 0 {
+		aft = &corev1.Affinity{
+			NodeAffinity: &corev1.NodeAffinity{
+				RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+					NodeSelectorTerms: convertProtoToNodeSelectorTerms(in.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms),
+				},
+				PreferredDuringSchedulingIgnoredDuringExecution: make([]corev1.PreferredSchedulingTerm, 0),
+			},
+			PodAffinity:     &corev1.PodAffinity{},
+			PodAntiAffinity: &corev1.PodAntiAffinity{},
+		}
+	}
+	return aft
+}
+
 func convertProtoToHelixSagaApp(a []proto.HelixSagaApp) []helixsagaoperatorv1.HelixSagaApp {
 	res := make([]helixsagaoperatorv1.HelixSagaApp, 0)
 	for _, v := range a {
@@ -1372,7 +1442,13 @@ func convertProtoToHelixSagaApp(a []proto.HelixSagaApp) []helixsagaoperatorv1.He
 		if v.Spec.Template == "" {
 			v.Spec.Template = proto.TemplateTypeStatefulSet
 		}
-		aft := &corev1.Affinity{}
+		var in *proto.Affinity
+		if v.Spec.Affinity == nil {
+			in = nil
+		} else {
+			in = v.Spec.Affinity
+		}
+		aft := convertProtoToAffinity(in)
 		if v.Spec.Affinity != nil &&
 			v.Spec.Affinity.NodeAffinity != nil &&
 			v.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution != nil &&

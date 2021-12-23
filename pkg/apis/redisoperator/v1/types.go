@@ -111,6 +111,12 @@ type RedisSpec struct {
 	Role string `json:"role" protobuf:"bytes,12,rep,name=role"`
 	// ServiceWhiteList
 	ServiceWhiteList bool `json:"serviceWhiteList" protobuf:"bytes,13,opt,name=serviceWhiteList"`
+	// If specified, the pod's scheduling constraints
+	// +optional
+	Affinity *corev1.Affinity `json:"affinity,omitempty" protobuf:"bytes,14,opt,name=affinity"`
+	// If specified, the pod's tolerations.
+	// +optional
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty" protobuf:"bytes,15,opt,name=tolerations"`
 }
 
 // RedisSpecStatus is the status for a RedisOperator resource
